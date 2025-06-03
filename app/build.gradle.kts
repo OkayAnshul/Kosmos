@@ -1,0 +1,269 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.kotlin.allopen)
+}
+
+android {
+    namespace = "com.example.kosmos"
+    compileSdk = 36
+    val releaseStoreFile = project.findProperty("RELEASE_STORE_FILE") as String?
+    val releaseStorePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String?
+    val releaseKeyAlias = project.findProperty("RELEASE_KEY_ALIAS") as String?
+    val releaseKeyPassword = project.findProperty("RELEASE_KEY_PASSWORD") as String?
+    val hasReleaseSigning = !releaseStoreFile.isNullOrBlank() &&
+        !releaseStorePassword.isNullOrBlank() &&
+        !releaseKeyAlias.isNullOrBlank() &&
+        !releaseKeyPassword.isNullOrBlank()
+
+    defaultConfig {
+        applicationId = "com.aravya.apps.kosmos"
+        minSdk = 26
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+    }
+
+    buildTypes {
+
+        debug {
+            // Add debug-specific build config fields
+            // Replace with your actual Google Cloud API key for Speech-to-Text
+            buildConfigField("String", "GOOGLE_CLOUD_API_KEY", "\"${project.findProperty("GOOGLE_CLOUD_API_KEY") ?: ""}\"")
+            buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL") ?: ""}\"")
+            buildConfigField("String", "SUPABASE_ANON_KEY", "\"${project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
+            buildConfigField("boolean", "ENABLE_LOGGING", "true")
+            // [FUTURE F1] Voice recording feature flag — set to true when implementing
+            // the full MediaRecorder → Supabase Storage → ExoPlayer pipeline
+            buildConfigField("boolean", "VOICE_ENABLED", "false")
+
+            // Enable detailed logging for debugging
+            isDebuggable = true
+        }
+
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            // Add your production API keys here
+            buildConfigField("String", "GOOGLE_CLOUD_API_KEY", "\"${project.findProperty("GOOGLE_CLOUD_API_KEY_PROD") ?: project.findProperty("GOOGLE_CLOUD_API_KEY") ?: ""}\"")
+            buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL_PROD") ?: project.findProperty("SUPABASE_URL") ?: ""}\"")
+            buildConfigField("String", "SUPABASE_ANON_KEY", "\"${project.findProperty("SUPABASE_ANON_KEY_PROD") ?: project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
+            buildConfigField("boolean", "ENABLE_LOGGING", "false")
+
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+            freeCompilerArgs.addAll(
+                "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
+            )
+        }
+    }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/INDEX.LIST"
+            excludes += "/META-INF/DEPENDENCIES"
+            excludes += "/META-INF/LICENSE.md"
+            excludes += "/META-INF/LICENSE-notice.md"
+            excludes += "/META-INF/NOTICE.md"
+        }
+    }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+            all {
+                // Enable MockK inline mocking (required to mock final Kotlin classes/methods)
+                it.jvmArgs("-XX:+EnableDynamicAgentLoading", "-Xshare:off")
+            }
+        }
+    }
+}
+
+// Make @Singleton classes open so MockK can subclass them in unit tests
+allOpen {
+    annotation("javax.inject.Singleton")
+}
+
+apply(plugin = "jacoco")
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest")
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    val fileFilter = listOf(
+        "**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/*_Hilt*",
+        "**/*Hilt_*", "**/*_Factory*", "**/*_MembersInjector*"
+    )
+    classDirectories.setFrom(files(
+        fileTree("${buildDir}/tmp/kotlin-classes/debug") { exclude(fileFilter) }
+    ))
+    sourceDirectories.setFrom(files("${projectDir}/src/main/java"))
+    executionData.setFrom(fileTree(buildDir) { include("**/*.exec", "**/*.ec") })
+}
+
+dependencies {
+    // AndroidX Core
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.compose)
+
+    // Compose BOM - this manages all Compose library versions
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
+
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    // Dependency Injection - Hilt
+    implementation(libs.hilt.android)
+    implementation(libs.androidx.foundation)
+    ksp(libs.hilt.android.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+
+    // Room Database
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    // Authentication (Google OAuth for Supabase)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+
+    // Supabase
+    // Note: gotrue-kt is included in compose-auth, no need to add separately
+    implementation(libs.supabase.postgrest.kt)
+    implementation(libs.supabase.storage.kt)
+    implementation(libs.supabase.realtime.kt)
+    implementation(libs.supabase.compose.auth)
+    implementation(libs.supabase.compose.auth.ui)
+
+    // Ktor for Supabase
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.utils)
+    implementation(libs.ktor.client.okhttp) // OkHttp engine for WebSocket support
+
+    // Networking
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.okhttp.logging.interceptor)
+
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
+
+    // Serialization
+    implementation(libs.kotlinx.serialization.json)
+
+    // Image Loading
+    implementation(libs.coil.compose)
+
+    // Date Time
+    implementation(libs.kotlinx.datetime)
+
+    // Permissions
+    implementation(libs.accompanist.permissions)
+
+    // Browser for OAuth
+    implementation(libs.androidx.browser)
+
+    // Media & Audio (includes speech recognition capabilities)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.common)
+    // Date Picker
+    implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
+
+    // Custom animated bottom navigation (built in-house)
+
+// Work Manager (for background tasks)
+    implementation("androidx.work:work-runtime-ktx:2.11.0")
+    implementation("androidx.hilt:hilt-work:1.3.0")
+// Splash Screen
+    implementation(libs.androidx.core.splashscreen)
+
+
+    // Android Speech Recognition (Built-in alternative)
+    //implementation("androidx.speech:speech:1.0.0-alpha06")
+
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("app.cash.turbine:turbine:1.0.0")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:2.0.21")
+    testImplementation("com.google.truth:truth:1.4.4")
+    testImplementation("org.robolectric:robolectric:4.13")
+    testImplementation("com.google.dagger:hilt-android-testing:2.57.2")
+    kspTest("com.google.dagger:hilt-android-compiler:2.57.2")
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    androidTestImplementation("io.mockk:mockk-android:1.13.8")
+    androidTestImplementation("app.cash.turbine:turbine:1.0.0")
+    androidTestImplementation("com.google.truth:truth:1.4.4")
+    androidTestImplementation("androidx.room:room-testing:2.8.3")
+    androidTestImplementation("com.google.dagger:hilt-android-testing:2.57.2")
+    kspAndroidTest("com.google.dagger:hilt-android-compiler:2.57.2")
+
+    // Debug implementations
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
+// Performance
+    implementation ("androidx.profileinstaller:profileinstaller:1.4.1")
+// Security
+    implementation("androidx.security:security-crypto:1.1.0")
+}
