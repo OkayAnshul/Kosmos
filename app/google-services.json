@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "92726905677",
+    "project_id": "kosmos-995f2",
+    "storage_bucket": "kosmos-995f2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:92726905677:android:a459959fe387a31ab28504",
+        "android_client_info": {
+          "package_name": "com.example.kosmos"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "92726905677-b96vl93rer6q16jf3dnkaf3na3e549ts.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.kosmos",
+            "certificate_hash": "c04879fffc40366ee474f3bd0d3ffca4b14fded0"
+          }
+        },
+        {
+          "client_id": "92726905677-5k0fa1dkktsqu18b5nee70u9m5kfsm3q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqujO7XFPVj3zWCKtlCXrf9IiKF7PAV_8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "92726905677-5k0fa1dkktsqu18b5nee70u9m5kfsm3q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
