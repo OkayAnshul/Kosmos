@@ -11,19 +11,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewModelScope
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel for managing speech recognition state
  */
-class SpeechRecognitionViewModel : androidx.lifecycle.ViewModel() {
+class SpeechRecognitionViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(SpeechUiState())
     val uiState: StateFlow<SpeechUiState> = _uiState.asStateFlow()
 
@@ -44,9 +47,17 @@ class SpeechRecognitionViewModel : androidx.lifecycle.ViewModel() {
 
             _uiState.value = _uiState.value.copy(isListening = true, error = null)
 
-            helper.startListening().let { flow ->
-                // Note: In a real implementation, you'd collect this flow in a coroutine
-                // and update the state accordingly. This is simplified for the example.
+            viewModelScope.launch {
+                try {
+                    helper.startListening().collect { result ->
+                        handleSpeechResult(result)
+                    }
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(
+                        error = "Speech recognition failed: ${e.message}",
+                        isListening = false
+                    )
+                }
             }
         }
     }
@@ -96,6 +107,19 @@ class SpeechRecognitionViewModel : androidx.lifecycle.ViewModel() {
                 _uiState.value = _uiState.value.copy(audioLevel = result.rmsdB)
             }
         }
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun clearResults() {
+        _uiState.value = _uiState.value.copy(
+            finalText = "",
+            partialText = "",
+            confidence = 0f,
+            status = "Tap to start"
+        )
     }
 
     override fun onCleared() {
@@ -196,6 +220,12 @@ fun SpeechRecognitionScreen(
                     }
                 }
             }
+
+            // Clear button
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(onClick = { viewModel.clearResults() }) {
+                Text("Clear Results")
+            }
         }
 
         // Error message
@@ -208,12 +238,22 @@ fun SpeechRecognitionScreen(
                     containerColor = MaterialTheme.colorScheme.errorContainer
                 )
             ) {
-                Text(
-                    text = "Error: ${uiState.error}",
+                Row(
                     modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = uiState.error!!,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        onClick = { viewModel.clearError() }
+                    ) {
+                        Text("Dismiss", color = MaterialTheme.colorScheme.onErrorContainer)
+                    }
+                }
             }
         }
 
@@ -250,10 +290,10 @@ fun SpeechRecognitionScreen(
         }
 
         // Audio level indicator (simple progress bar)
-        if (uiState.isListening && uiState.audioLevel > 0) {
+        if (uiState.isListening && uiState.audioLevel > -40f) { // Only show if there's meaningful audio
             Spacer(modifier = Modifier.height(16.dp))
             LinearProgressIndicator(
-                progress = { (uiState.audioLevel + 10f) / 20f }, // Normalize audio level
+                progress = { ((uiState.audioLevel + 40f) / 40f).coerceIn(0f, 1f) }, // Normalize audio level
                 modifier = Modifier.fillMaxWidth()
             )
             Text(

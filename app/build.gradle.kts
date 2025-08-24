@@ -24,12 +24,19 @@ android {
     }
 
     buildTypes {
+
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Add your production API keys here
+//            buildConfigField( "String", "GOOGLE_CLOUD_API_KEY", "\"YOUR_PRODUCTION_API_KEY\"")
+//            buildConfigField( "boolean", "ENABLE_LOGGING", "false")
+
+            // Signing config for release
+            //signingConfig signingConfigs.debug // Replace with actual signing config
         }
     }
     compileOptions {
@@ -76,6 +83,7 @@ dependencies{
 
     // Dependency Injection - Hilt
     implementation(libs.hilt.android)
+    implementation(libs.androidx.foundation)
     ksp(libs.hilt.android.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
@@ -123,6 +131,14 @@ dependencies{
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.common)
+    // Date Picker
+    implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
+// Work Manager (for background tasks)
+    implementation("androidx.work:work-runtime-ktx:2.10.3")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+// Splash Screen
+    implementation(libs.androidx.core.splashscreen)
+
 
     // Android Speech Recognition (Built-in alternative)
     //implementation("androidx.speech:speech:1.0.0-alpha06")
@@ -137,4 +153,8 @@ dependencies{
     // Debug implementations
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+// Performance
+    implementation ("androidx.profileinstaller:profileinstaller:1.4.1")
+// Security
+    implementation("androidx.security:security-crypto:1.1.0")
 }

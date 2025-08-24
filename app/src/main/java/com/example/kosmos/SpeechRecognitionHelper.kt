@@ -1,46 +1,42 @@
+// Add to Services.kt or create new SpeechRecognitionHelper.kt
 package com.example.kosmos
 
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-import android.speech.RecognitionListener
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import java.util.*
 
-/**
- * A helper class for handling speech recognition using Android's built-in SpeechRecognizer
- * This avoids conflicts with Firebase and Google Cloud dependencies
- *
- * Required permissions in AndroidManifest.xml:
- * <uses-permission android:name="android.permission.RECORD_AUDIO" />
- * <uses-permission android:name="android.permission.INTERNET" />
- *
- * Optional (for better offline support):
- * <queries>
- *   <intent>
- *     <action android:name="android.speech.RecognitionService" />
- *   </intent>
- * </queries>
- */
+sealed class SpeechResult {
+    object Ready : SpeechResult()
+    object BeginningOfSpeech : SpeechResult()
+    object EndOfSpeech : SpeechResult()
+    data class PartialResult(val text: String) : SpeechResult()
+    data class Success(val text: String, val confidence: Float) : SpeechResult()
+    data class Error(val message: String) : SpeechResult()
+    data class RmsChanged(val rmsdB: Float) : SpeechResult()
+}
+
 class SpeechRecognitionHelper(private val context: Context) {
 
     private var speechRecognizer: SpeechRecognizer? = null
+    private var isListening = false
 
-    /**
-     * Check if speech recognition is available on the device
-     */
     fun isSpeechRecognitionAvailable(): Boolean {
         return SpeechRecognizer.isRecognitionAvailable(context)
     }
 
-    /**
-     * Start speech recognition and return results as a Flow
-     */
-    fun startListening(languageCode: String = Locale.getDefault().toString()): Flow<SpeechResult> = callbackFlow {
+    fun startListening(): Flow<SpeechResult> = callbackFlow {
+        if (!isSpeechRecognitionAvailable()) {
+            trySend(SpeechResult.Error("Speech recognition not available"))
+            close()
+            return@callbackFlow
+        }
+
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
 
         val recognitionListener = object : RecognitionListener {
@@ -56,12 +52,11 @@ class SpeechRecognitionHelper(private val context: Context) {
                 trySend(SpeechResult.RmsChanged(rmsdB))
             }
 
-            override fun onBufferReceived(buffer: ByteArray?) {
-                // Not used
-            }
+            override fun onBufferReceived(buffer: ByteArray?) {}
 
             override fun onEndOfSpeech() {
                 trySend(SpeechResult.EndOfSpeech)
+                isListening = false
             }
 
             override fun onError(error: Int) {
@@ -72,25 +67,24 @@ class SpeechRecognitionHelper(private val context: Context) {
                     SpeechRecognizer.ERROR_NETWORK -> "Network error"
                     SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network timeout"
                     SpeechRecognizer.ERROR_NO_MATCH -> "No match found"
-                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "RecognitionService busy"
+                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Recognition service busy"
                     SpeechRecognizer.ERROR_SERVER -> "Server error"
-                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech input"
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Speech timeout"
                     else -> "Unknown error"
                 }
                 trySend(SpeechResult.Error(errorMessage))
+                isListening = false
             }
 
             override fun onResults(results: Bundle?) {
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                val confidences = results?.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)
+                val confidenceScores = results?.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)
 
                 if (!matches.isNullOrEmpty()) {
-                    val transcription = matches[0]
-                    val confidence = confidences?.get(0) ?: 0f
-                    trySend(SpeechResult.Success(transcription, confidence))
-                } else {
-                    trySend(SpeechResult.Error("No results"))
+                    val confidence = confidenceScores?.get(0) ?: 1.0f
+                    trySend(SpeechResult.Success(matches[0], confidence))
                 }
+                isListening = false
             }
 
             override fun onPartialResults(partialResults: Bundle?) {
@@ -100,60 +94,34 @@ class SpeechRecognitionHelper(private val context: Context) {
                 }
             }
 
-            override fun onEvent(eventType: Int, params: Bundle?) {
-                // Not used
-            }
+            override fun onEvent(eventType: Int, params: Bundle?) {}
         }
 
         speechRecognizer?.setRecognitionListener(recognitionListener)
 
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageCode)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
         }
 
         speechRecognizer?.startListening(intent)
+        isListening = true
 
         awaitClose {
-            speechRecognizer?.destroy()
-            speechRecognizer = null
+            stopListening()
         }
     }
 
-    /**
-     * Stop the current speech recognition session
-     */
     fun stopListening() {
         speechRecognizer?.stopListening()
+        isListening = false
     }
 
-    /**
-     * Cancel the current speech recognition session
-     */
-    fun cancel() {
-        speechRecognizer?.cancel()
-    }
-
-    /**
-     * Clean up resources
-     */
     fun destroy() {
         speechRecognizer?.destroy()
         speechRecognizer = null
+        isListening = false
     }
-}
-
-/**
- * Sealed class representing different speech recognition states and results
- */
-sealed class SpeechResult {
-    object Ready : SpeechResult()
-    object BeginningOfSpeech : SpeechResult()
-    object EndOfSpeech : SpeechResult()
-    data class RmsChanged(val rmsdB: Float) : SpeechResult()
-    data class PartialResult(val text: String) : SpeechResult()
-    data class Success(val text: String, val confidence: Float) : SpeechResult()
-    data class Error(val message: String) : SpeechResult()
 }
