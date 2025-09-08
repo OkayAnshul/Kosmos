@@ -1,0 +1,223 @@
+package com.example.kosmos.features.chat.presentation
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
+import com.example.kosmos.shared.ui.designsystem.Tokens
+import com.example.kosmos.shared.ui.components.KosmosDialogSurface
+import com.example.kosmos.shared.ui.components.KosmosDialogDefaults
+import com.example.kosmos.shared.ui.components.SecondaryButton
+import com.example.kosmos.shared.ui.components.DestructiveButton
+/**
+ * Chat Options Bottom Sheet
+ * Shows options for managing a chat room: pin/unpin, archive/unarchive, delete
+ *
+ * This provides an alternative to swipe actions for users who prefer tap-based interaction
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ChatOptionsBottomSheet(
+    chatName: String,
+    isPinned: Boolean,
+    isArchived: Boolean,
+    onPin: () -> Unit,
+    onArchive: () -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+        containerColor = ColorTokens.ReactTheme.card
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp)
+        ) {
+            // Header
+            Text(
+                text = "Chat Options",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+            )
+
+            Text(
+                text = chatName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = ColorTokens.ReactTheme.mutedForeground,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Pin/Unpin Option
+            ChatOptionItem(
+                icon = if (isPinned) Icons.Default.PushPin else Icons.Default.PushPin,
+                label = if (isPinned) "Unpin Chat" else "Pin Chat",
+                description = if (isPinned) "Remove from pinned section" else "Keep at the top of your chat list",
+                onClick = {
+                    onPin()
+                    onDismiss()
+                }
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 24.dp),
+                color = ColorTokens.ReactTheme.border.copy(alpha = 0.3f)
+            )
+
+            // Archive/Unarchive Option
+            ChatOptionItem(
+                icon = if (isArchived) Icons.Default.Unarchive else Icons.Default.Archive,
+                label = if (isArchived) "Unarchive Chat" else "Archive Chat",
+                description = if (isArchived) "Move back to active chats" else "Hide from your chat list",
+                onClick = {
+                    onArchive()
+                    onDismiss()
+                }
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 24.dp),
+                color = ColorTokens.ReactTheme.border.copy(alpha = 0.3f)
+            )
+
+            // Delete Option (dangerous action)
+            ChatOptionItem(
+                icon = Icons.Default.Delete,
+                label = "Delete Chat",
+                description = "Permanently remove this chat and all messages",
+                onClick = {
+                    showDeleteConfirmation = true
+                },
+                isDestructive = true
+            )
+        }
+    }
+
+    // Delete Confirmation Dialog
+    if (showDeleteConfirmation) {
+        KosmosDialogSurface(
+            onDismissRequest = { showDeleteConfirmation = false }
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = "",
+                    tint = ColorTokens.ReactTheme.destructive,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+
+            Text(
+                text = "Delete Chat?",
+                style = KosmosDialogDefaults.titleStyle,
+                color = KosmosDialogDefaults.titleColor
+            )
+
+            Column(verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)) {
+                Text(
+                    text = "Are you sure you want to delete \"$chatName\"?",
+                    color = ColorTokens.ReactTheme.foreground
+                )
+                Text(
+                    text = "This action cannot be undone. All messages in this chat will be permanently deleted.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ColorTokens.ReactTheme.destructive
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+            ) {
+                SecondaryButton(
+                    text = "Cancel",
+                    onClick = { showDeleteConfirmation = false },
+                    modifier = Modifier.weight(1f)
+                )
+                DestructiveButton(
+                    text = "Delete",
+                    onClick = {
+                        onDelete()
+                        showDeleteConfirmation = false
+                        onDismiss()
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Individual option item in the bottom sheet
+ */
+@Composable
+private fun ChatOptionItem(
+    icon: ImageVector,
+    label: String,
+    description: String,
+    onClick: () -> Unit,
+    isDestructive: Boolean = false
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        color = ColorTokens.ReactTheme.card
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = "",
+                tint = if (isDestructive)
+                    ColorTokens.ReactTheme.destructive
+                else
+                    ColorTokens.ReactTheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = if (isDestructive)
+                        ColorTokens.ReactTheme.destructive
+                    else
+                        ColorTokens.ReactTheme.foreground
+                )
+
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ColorTokens.ReactTheme.mutedForeground
+                )
+            }
+        }
+    }
+}
