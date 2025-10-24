@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.parcelize)
-    alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
@@ -25,6 +24,18 @@ android {
 
     buildTypes {
 
+        debug {
+            // Add debug-specific build config fields
+            // Replace with your actual Google Cloud API key for Speech-to-Text
+            buildConfigField("String", "GOOGLE_CLOUD_API_KEY", "\"${project.findProperty("GOOGLE_CLOUD_API_KEY") ?: ""}\"")
+            buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL") ?: ""}\"")
+            buildConfigField("String", "SUPABASE_ANON_KEY", "\"${project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
+            buildConfigField("boolean", "ENABLE_LOGGING", "true")
+
+            // Enable detailed logging for debugging
+            isDebuggable = true
+        }
+
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -32,8 +43,10 @@ android {
                 "proguard-rules.pro"
             )
             // Add your production API keys here
-//            buildConfigField( "String", "GOOGLE_CLOUD_API_KEY", "\"YOUR_PRODUCTION_API_KEY\"")
-//            buildConfigField( "boolean", "ENABLE_LOGGING", "false")
+            buildConfigField("String", "GOOGLE_CLOUD_API_KEY", "\"${project.findProperty("GOOGLE_CLOUD_API_KEY_PROD") ?: project.findProperty("GOOGLE_CLOUD_API_KEY") ?: ""}\"")
+            buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL_PROD") ?: project.findProperty("SUPABASE_URL") ?: ""}\"")
+            buildConfigField("String", "SUPABASE_ANON_KEY", "\"${project.findProperty("SUPABASE_ANON_KEY_PROD") ?: project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
+            buildConfigField("boolean", "ENABLE_LOGGING", "false")
 
             // Signing config for release
             //signingConfig signingConfigs.debug // Replace with actual signing config
@@ -92,19 +105,22 @@ dependencies{
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
-    // Firebase - Using BOM for version management
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore)
-    implementation(libs.firebase.database)
-    implementation(libs.firebase.storage)
-    implementation(libs.firebase.messaging)
-    implementation(libs.firebase.analytics)
-
-    // Authentication
+    // Authentication (Google OAuth for Supabase)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
+
+    // Supabase
+    implementation(libs.supabase.postgrest.kt)
+    implementation(libs.supabase.storage.kt)
+    implementation(libs.supabase.realtime.kt)
+    implementation(libs.supabase.compose.auth)
+    implementation(libs.supabase.compose.auth.ui)
+
+    // Ktor for Supabase
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.utils)
 
     // Networking
     implementation(libs.retrofit)
@@ -126,6 +142,9 @@ dependencies{
 
     // Permissions
     implementation(libs.accompanist.permissions)
+
+    // Browser for OAuth
+    implementation(libs.androidx.browser)
 
     // Media & Audio (includes speech recognition capabilities)
     implementation(libs.androidx.media3.exoplayer)

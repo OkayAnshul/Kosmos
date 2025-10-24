@@ -9,8 +9,5 @@ class KosmosApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-
-        // Initialize Firebase settings if needed
-        // Initialize other third-party libraries
     }
 }

@@ -1,3 +1,24 @@
 <resources>
     <string name="app_name">Kosmos</string>
+
+    <!-- Notification settings -->
+    <string name="default_notification_channel_id">kosmos_messages</string>
+    <string name="default_notification_channel_name">Messages</string>
+    <string name="default_notification_channel_description">Notifications for new messages and updates</string>
+
+    <!-- Voice recording -->
+    <string name="voice_recording_permission_title">Microphone Permission Required</string>
+    <string name="voice_recording_permission_message">Kosmos needs access to your microphone to record voice messages. Please grant permission to continue.</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Error messages -->
+    <string name="error_voice_recording_failed">Voice recording failed</string>
+    <string name="error_permission_denied">Permission denied</string>
+    <string name="error_network_unavailable">Network unavailable</string>
+    <string name="error_transcription_failed">Transcription failed</string>
+
+    <!-- Success messages -->
+    <string name="voice_message_sent">Voice message sent</string>
+    <string name="transcription_complete">Transcription complete</string>
 </resources>

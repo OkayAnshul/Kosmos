@@ -17,7 +17,15 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.kosmos.ui.theme.KosmosTheme
+import com.example.kosmos.features.auth.presentation.AuthViewModel
+import com.example.kosmos.features.auth.presentation.LoginScreen
+import com.example.kosmos.features.auth.presentation.SignUpScreen
+import com.example.kosmos.features.chat.presentation.ChatListScreen
+import com.example.kosmos.features.chat.presentation.ChatScreen
+import com.example.kosmos.features.profile.presentation.ProfileScreen
+import com.example.kosmos.features.tasks.presentation.TaskBoardScreen
+import com.example.kosmos.features.voice.presentation.SpeechRecognitionScreen
+import com.example.kosmos.shared.ui.theme.KosmosTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -90,12 +98,12 @@ fun KosmosApp(
                 onNavigateToChat = { chatRoomId ->
                     navController.navigate(Screen.Chat.createRoute(chatRoomId))
                 },
-                onNavigateToProfile = {
-                    navController.navigate(Screen.Profile.route)
-                },
-                onNavigateToSettings = {
-                    navController.navigate(Screen.Settings.route)
-                },
+//                onNavigateToProfile = {
+//                    navController.navigate(Screen.Profile.route)
+//                },
+//                onNavigateToSettings = {
+//                    navController.navigate(Screen.Settings.route)
+//                },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.Login.route) {
@@ -111,9 +119,6 @@ fun KosmosApp(
                 chatRoomId = chatRoomId,
                 onNavigateBack = {
                     navController.popBackStack()
-                },
-                onNavigateToTaskBoard = {
-                    navController.navigate(Screen.TaskBoard.createRoute(chatRoomId))
                 }
             )
         }
@@ -157,6 +162,11 @@ fun KosmosApp(
     }
 }
 
+@Composable
+fun SettingsScreen(onNavigateBack: () -> Boolean, onLogout: () -> Unit) {
+    TODO("Not yet implemented")
+}
+
 sealed class Screen(val route: String) {
     object Login : Screen("login")
     object SignUp : Screen("signup")
@@ -172,20 +182,4 @@ sealed class Screen(val route: String) {
     object SpeechDemo : Screen("speechDemo")
 }
 
-// Extension function to make ChatListScreen work with updated navigation
-@Composable
-fun ChatListScreen(
-    onNavigateToChat: (String) -> Unit,
-    onNavigateToProfile: () -> Unit = {},
-    onNavigateToSettings: () -> Unit = {},
-    onLogout: () -> Unit,
-    modifier: Modifier = Modifier,
-    viewModel: ChatListViewModel = hiltViewModel()
-) {
-    ChatListScreen(
-        onNavigateToChat = onNavigateToChat,
-        onLogout = onLogout,
-        modifier = modifier,
-        viewModel = viewModel
-    )
-}
+// Note: ChatListScreen is implemented in Chat.kt

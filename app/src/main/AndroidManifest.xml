@@ -54,44 +54,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-<!--        <service-->
-<!--            android:name=".fcm.KosmosFCMService"-->
-<!--            android:exported="false">-->
-<!--            <intent-filter>-->
-<!--                <action android:name="com.google.firebase.MESSAGING_EVENT" />-->
-<!--            </intent-filter>-->
-<!--        </service>-->
 
-<!--        &lt;!&ndash; Background services &ndash;&gt;-->
-<!--        <service-->
-<!--            android:name=".services.TranscriptionWorkerService"-->
-<!--            android:exported="false" />-->
+        <!-- Background services for transcription and action detection -->
+        <service
+            android:name=".services.TranscriptionWorkerService"
+            android:exported="false" />
 
-<!--        <service-->
-<!--            android:name=".services.ActionDetectionWorkerService"-->
-<!--            android:exported="false" />-->
+        <service
+            android:name=".services.ActionDetectionWorkerService"
+            android:exported="false" />
 
-<!--        &lt;!&ndash; Providers &ndash;&gt;-->
-<!--        <provider-->
-<!--            android:name="androidx.core.content.FileProvider"-->
-<!--            android:authorities="${applicationId}.fileprovider"-->
-<!--            android:exported="false"-->
-<!--            android:grantUriPermissions="true">-->
-<!--            <meta-data-->
-<!--                android:name="android.support.FILE_PROVIDER_PATHS"-->
-<!--                android:resource="@xml/file_paths" />-->
-<!--        </provider>-->
-
-<!--        &lt;!&ndash; Firebase messaging default settings &ndash;&gt;-->
-<!--        <meta-data-->
-<!--            android:name="com.google.firebase.messaging.default_notification_icon"-->
-<!--            android:resource="@drawable/ic_notification" />-->
-<!--        <meta-data-->
-<!--            android:name="com.google.firebase.messaging.default_notification_color"-->
-<!--            android:resource="@color/notification_color" />-->
-<!--        <meta-data-->
-<!--            android:name="com.google.firebase.messaging.default_notification_channel_id"-->
-<!--            android:value="@string/default_notification_channel_id" />-->
+        <!-- File provider for sharing voice messages -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

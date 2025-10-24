@@ -2,19 +2,28 @@ package com.example.kosmos
 
 import android.content.Context
 import androidx.room.Room
-import com.example.kosmos.database.ActionItemDao
-import com.example.kosmos.database.ChatRoomDao
-import com.example.kosmos.database.KosmosDatabase
-import com.example.kosmos.database.MessageDao
-import com.example.kosmos.database.TaskDao
-import com.example.kosmos.database.UserDao
-import com.example.kosmos.database.VoiceMessageDao
+import com.example.kosmos.data.repository.AuthRepository
+import com.example.kosmos.data.repository.ChatRepository
+import com.example.kosmos.data.repository.TaskRepository
+import com.example.kosmos.data.repository.UserRepository
+import com.example.kosmos.data.repository.VoiceRepository
+import com.example.kosmos.core.database.dao.ActionItemDao
+import com.example.kosmos.core.database.dao.ChatRoomDao
+import com.example.kosmos.core.database.KosmosDatabase
+import com.example.kosmos.core.database.dao.MessageDao
+import com.example.kosmos.core.database.dao.TaskDao
+import com.example.kosmos.core.database.dao.UserDao
+import com.example.kosmos.core.database.dao.VoiceMessageDao
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.example.kosmos.features.voice.services.SpeechToTextService
+import com.example.kosmos.features.voice.services.TranscriptionService
+import com.example.kosmos.features.smart.services.ActionDetectionService
+import com.example.kosmos.features.smart.services.SmartReplyService
 
 import dagger.Module
 import dagger.Provides
@@ -140,9 +149,8 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideUserRepository(
-        userDao: UserDao,
-        firestore: FirebaseFirestore
-    ): UserRepository = UserRepository(userDao, firestore)
+        userDao: UserDao
+    ): UserRepository = com.example.kosmos.data.repository.UserRepository(userDao)
 
     @Provides
     @Singleton
@@ -150,22 +158,19 @@ object RepositoryModule {
         chatRoomDao: ChatRoomDao,
         messageDao: MessageDao,
         firestore: FirebaseFirestore
-    ): ChatRepository = ChatRepository(chatRoomDao, messageDao, firestore)
+    ): com.example.kosmos.data.repository.ChatRepository = com.example.kosmos.data.repository.ChatRepository(chatRoomDao, messageDao, firestore)
 
     @Provides
     @Singleton
     fun provideTaskRepository(
-        taskDao: TaskDao,
-        firestore: FirebaseFirestore
-    ): TaskRepository = TaskRepository(taskDao, firestore)
+        taskDao: TaskDao
+    ): com.example.kosmos.data.repository.TaskRepository = com.example.kosmos.data.repository.TaskRepository(taskDao)
 
     @Provides
     @Singleton
     fun provideVoiceRepository(
-        voiceMessageDao: VoiceMessageDao,
-        firebaseStorage: FirebaseStorage,
-        @ApplicationContext context: Context
-    ): VoiceRepository = VoiceRepository(voiceMessageDao, firebaseStorage, context)
+        voiceMessageDao: VoiceMessageDao
+    ): com.example.kosmos.data.repository.VoiceRepository = com.example.kosmos.data.repository.VoiceRepository(voiceMessageDao)
 }
 
 @Module
