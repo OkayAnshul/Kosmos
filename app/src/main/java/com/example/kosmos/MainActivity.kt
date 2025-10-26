@@ -4,9 +4,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -24,7 +36,12 @@ import com.example.kosmos.features.chat.presentation.ChatListScreen
 import com.example.kosmos.features.chat.presentation.ChatScreen
 import com.example.kosmos.features.profile.presentation.ProfileScreen
 import com.example.kosmos.features.tasks.presentation.TaskBoardScreen
-import com.example.kosmos.features.voice.presentation.SpeechRecognitionScreen
+import com.example.kosmos.features.users.presentation.UserSearchScreen
+import com.example.kosmos.features.users.presentation.UserProfileScreen
+import com.example.kosmos.features.project.presentation.ProjectListScreen
+import com.example.kosmos.features.project.presentation.ProjectDetailScreen
+// Voice features disabled for MVP - will be re-enabled in Phase 5
+// import com.example.kosmos.features.voice.presentation.SpeechRecognitionScreen
 import com.example.kosmos.shared.ui.theme.KosmosTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -58,13 +75,13 @@ fun KosmosApp(
 
     NavHost(
         navController = navController,
-        startDestination = if (authUiState.isLoggedIn) Screen.ChatList.route else Screen.Login.route,
+        startDestination = if (authUiState.isLoggedIn) Screen.ProjectList.route else Screen.Login.route,
         modifier = modifier
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = {
-                    navController.navigate(Screen.ChatList.route) {
+                    navController.navigate(Screen.ProjectList.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
@@ -80,7 +97,7 @@ fun KosmosApp(
         composable(Screen.SignUp.route) {
             SignUpScreen(
                 onSignUpSuccess = {
-                    navController.navigate(Screen.ChatList.route) {
+                    navController.navigate(Screen.ProjectList.route) {
                         popUpTo(Screen.SignUp.route) { inclusive = true }
                     }
                 },
@@ -93,17 +110,49 @@ fun KosmosApp(
             )
         }
 
-        composable(Screen.ChatList.route) {
+        composable(Screen.ProjectList.route) {
+            ProjectListScreen(
+                onProjectClick = { projectId ->
+                    navController.navigate(Screen.ProjectDetail.createRoute(projectId))
+                },
+                onSettingsClick = {
+                    navController.navigate(Screen.Settings.route)
+                },
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.ProjectDetail.route) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: return@composable
+            ProjectDetailScreen(
+                projectId = projectId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToChats = { projId ->
+                    navController.navigate(Screen.ChatList.createRoute(projId))
+                }
+            )
+        }
+
+        composable(Screen.ChatList.route) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: return@composable
             ChatListScreen(
+                projectId = projectId,
                 onNavigateToChat = { chatRoomId ->
                     navController.navigate(Screen.Chat.createRoute(chatRoomId))
                 },
-//                onNavigateToProfile = {
-//                    navController.navigate(Screen.Profile.route)
-//                },
-//                onNavigateToSettings = {
-//                    navController.navigate(Screen.Settings.route)
-//                },
+                onNavigateToUserSearch = {
+                    navController.navigate(Screen.UserSearch.route)
+                },
+                onBackToProjects = {
+                    navController.popBackStack()
+                },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.Login.route) {
@@ -141,6 +190,32 @@ fun KosmosApp(
             )
         }
 
+        composable(Screen.UserSearch.route) {
+            UserSearchScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onUserClick = { userId ->
+                    navController.navigate(Screen.UserProfile.createRoute(userId))
+                }
+            )
+        }
+
+        composable(Screen.UserProfile.route) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+            UserProfileScreen(
+                userId = userId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onStartChat = { userId ->
+                    // TODO: Implement chat creation with selected user
+                    // For now, just navigate back
+                    navController.popBackStack()
+                }
+            )
+        }
+
         composable(Screen.Settings.route) {
             SettingsScreen(
                 onNavigateBack = {
@@ -156,21 +231,71 @@ fun KosmosApp(
         }
 
         // Speech Recognition Screen (optional demo screen)
-        composable(Screen.SpeechDemo.route) {
-            SpeechRecognitionScreen()
-        }
+        // Voice features disabled for MVP - will be re-enabled in Phase 5
+        // composable(Screen.SpeechDemo.route) {
+        //     SpeechRecognitionScreen()
+        // }
     }
 }
 
 @Composable
-fun SettingsScreen(onNavigateBack: () -> Boolean, onLogout: () -> Unit) {
-    TODO("Not yet implemented")
+fun SettingsScreen(onNavigateBack: () -> Unit, onLogout: () -> Unit) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Settings") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Settings",
+                style = MaterialTheme.typography.headlineMedium
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Logout button
+            Button(
+                onClick = onLogout,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Text("Logout")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "More settings coming soon...",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")
     object SignUp : Screen("signup")
-    object ChatList : Screen("chatList")
+    object ProjectList : Screen("projectList")
+    object ProjectDetail : Screen("project/{projectId}") {
+        fun createRoute(projectId: String) = "project/$projectId"
+    }
+    object ChatList : Screen("chatList/{projectId}") {
+        fun createRoute(projectId: String) = "chatList/$projectId"
+    }
     object Chat : Screen("chat/{chatRoomId}") {
         fun createRoute(chatRoomId: String) = "chat/$chatRoomId"
     }
@@ -180,6 +305,10 @@ sealed class Screen(val route: String) {
     object Profile : Screen("profile")
     object Settings : Screen("settings")
     object SpeechDemo : Screen("speechDemo")
+    object UserSearch : Screen("userSearch")
+    object UserProfile : Screen("userProfile/{userId}") {
+        fun createRoute(userId: String) = "userProfile/$userId"
+    }
 }
 
 // Note: ChatListScreen is implemented in Chat.kt

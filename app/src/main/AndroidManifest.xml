@@ -55,7 +55,9 @@
             </intent-filter>
         </activity>
 
-        <!-- Background services for transcription and action detection -->
+        <!-- Background services disabled for MVP - will be re-enabled in Phase 5 -->
+        <!-- Voice transcription and action detection services moved to /extras folder -->
+        <!--
         <service
             android:name=".services.TranscriptionWorkerService"
             android:exported="false" />
@@ -63,6 +65,7 @@
         <service
             android:name=".services.ActionDetectionWorkerService"
             android:exported="false" />
+        -->
 
         <!-- File provider for sharing voice messages -->
         <provider

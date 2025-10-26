@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.kosmos.data.repository.AuthRepository
 import com.example.kosmos.data.repository.ChatRepository
+import com.example.kosmos.data.repository.ProjectRepository
 import com.example.kosmos.data.repository.TaskRepository
 import com.example.kosmos.data.repository.UserRepository
 import com.example.kosmos.data.repository.VoiceRepository
@@ -11,17 +12,21 @@ import com.example.kosmos.core.database.dao.ActionItemDao
 import com.example.kosmos.core.database.dao.ChatRoomDao
 import com.example.kosmos.core.database.KosmosDatabase
 import com.example.kosmos.core.database.dao.MessageDao
+import com.example.kosmos.core.database.dao.ProjectDao
+import com.example.kosmos.core.database.dao.ProjectMemberDao
 import com.example.kosmos.core.database.dao.TaskDao
 import com.example.kosmos.core.database.dao.UserDao
 import com.example.kosmos.core.database.dao.VoiceMessageDao
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.messaging.FirebaseMessaging
-import com.google.firebase.storage.FirebaseStorage
+import com.example.kosmos.data.datasource.SupabaseProjectDataSource
+import com.example.kosmos.data.datasource.SupabaseProjectMemberDataSource
+// Firebase imports removed - migrated to Supabase
+import com.example.kosmos.core.config.SupabaseConfig
+import io.github.jan.supabase.SupabaseClient
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.example.kosmos.features.voice.services.SpeechToTextService
-import com.example.kosmos.features.voice.services.TranscriptionService
+// Voice services disabled for MVP - will be re-enabled in Phase 5
+// import com.example.kosmos.features.voice.services.SpeechToTextService
+// import com.example.kosmos.features.voice.services.TranscriptionService
 import com.example.kosmos.features.smart.services.ActionDetectionService
 import com.example.kosmos.features.smart.services.SmartReplyService
 
@@ -48,7 +53,11 @@ object DatabaseModule {
             context,
             KosmosDatabase::class.java,
             KosmosDatabase.DATABASE_NAME
-        ).build()
+        )
+        // Allow destructive migration for development
+        // TODO: Implement proper migrations for production
+        .fallbackToDestructiveMigration()
+        .build()
     }
 
     @Provides
@@ -68,27 +77,71 @@ object DatabaseModule {
 
     @Provides
     fun provideActionItemDao(database: KosmosDatabase): ActionItemDao = database.actionItemDao()
+
+    @Provides
+    fun provideProjectDao(database: KosmosDatabase): ProjectDao = database.projectDao()
+
+    @Provides
+    fun provideProjectMemberDao(database: KosmosDatabase): ProjectMemberDao = database.projectMemberDao()
 }
+
+// FirebaseModule removed - migrated to Supabase
+// All Firebase services (Auth, Firestore, Storage, Messaging) replaced with Supabase equivalents
 
 @Module
 @InstallIn(SingletonComponent::class)
-object FirebaseModule {
+object SupabaseModule {
 
     @Provides
     @Singleton
-    fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+    fun provideSupabaseClient(): SupabaseClient {
+        return SupabaseConfig.client
+    }
 
     @Provides
     @Singleton
-    fun provideFirebaseFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
+    fun provideSupabaseProjectDataSource(supabase: SupabaseClient): SupabaseProjectDataSource {
+        return SupabaseProjectDataSource(supabase)
+    }
 
     @Provides
     @Singleton
-    fun provideFirebaseStorage(): FirebaseStorage = FirebaseStorage.getInstance()
+    fun provideSupabaseProjectMemberDataSource(supabase: SupabaseClient): SupabaseProjectMemberDataSource {
+        return SupabaseProjectMemberDataSource(supabase)
+    }
 
     @Provides
     @Singleton
-    fun provideFirebaseMessaging(): FirebaseMessaging = FirebaseMessaging.getInstance()
+    fun provideSupabaseUserDataSource(supabase: SupabaseClient): com.example.kosmos.data.datasource.SupabaseUserDataSource {
+        return com.example.kosmos.data.datasource.SupabaseUserDataSource(supabase)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSupabaseMessageDataSource(supabase: SupabaseClient): com.example.kosmos.data.datasource.SupabaseMessageDataSource {
+        return com.example.kosmos.data.datasource.SupabaseMessageDataSource(supabase)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSupabaseTaskDataSource(supabase: SupabaseClient): com.example.kosmos.data.datasource.SupabaseTaskDataSource {
+        return com.example.kosmos.data.datasource.SupabaseTaskDataSource(supabase)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSupabaseChatDataSource(supabase: SupabaseClient): com.example.kosmos.data.datasource.SupabaseChatDataSource {
+        return com.example.kosmos.data.datasource.SupabaseChatDataSource(supabase)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSupabaseRealtimeManager(
+        supabase: SupabaseClient,
+        messageDao: MessageDao
+    ): com.example.kosmos.data.realtime.SupabaseRealtimeManager {
+        return com.example.kosmos.data.realtime.SupabaseRealtimeManager(supabase, messageDao)
+    }
 }
 
 @Module
@@ -98,7 +151,6 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideGson(): Gson = GsonBuilder()
-        .setLenient()
         .create()
 
     @Provides
@@ -129,10 +181,11 @@ object NetworkModule {
         .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
 
-    @Provides
-    @Singleton
-    fun provideSpeechToTextService(retrofit: Retrofit): SpeechToTextService =
-        retrofit.create(SpeechToTextService::class.java)
+    // Voice services disabled for MVP - will be re-enabled in Phase 5
+    // @Provides
+    // @Singleton
+    // fun provideSpeechToTextService(retrofit: Retrofit): SpeechToTextService =
+    //     retrofit.create(SpeechToTextService::class.java)
 }
 
 @Module
@@ -142,48 +195,70 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideAuthRepository(
-        firebaseAuth: FirebaseAuth,
-        firestore: FirebaseFirestore
-    ): AuthRepository = AuthRepository(firebaseAuth, firestore)
+        supabase: SupabaseClient,
+        userDao: UserDao
+    ): AuthRepository = AuthRepository(supabase, userDao)
 
     @Provides
     @Singleton
     fun provideUserRepository(
-        userDao: UserDao
-    ): UserRepository = com.example.kosmos.data.repository.UserRepository(userDao)
+        userDao: UserDao,
+        supabase: SupabaseClient,
+        supabaseUserDataSource: com.example.kosmos.data.datasource.SupabaseUserDataSource
+    ): UserRepository = UserRepository(userDao, supabase, supabaseUserDataSource)
 
     @Provides
     @Singleton
     fun provideChatRepository(
         chatRoomDao: ChatRoomDao,
         messageDao: MessageDao,
-        firestore: FirebaseFirestore
-    ): com.example.kosmos.data.repository.ChatRepository = com.example.kosmos.data.repository.ChatRepository(chatRoomDao, messageDao, firestore)
+        supabase: SupabaseClient,
+        supabaseMessageDataSource: com.example.kosmos.data.datasource.SupabaseMessageDataSource,
+        supabaseChatDataSource: com.example.kosmos.data.datasource.SupabaseChatDataSource,
+        realtimeManager: com.example.kosmos.data.realtime.SupabaseRealtimeManager
+    ): ChatRepository = ChatRepository(chatRoomDao, messageDao, supabase, supabaseMessageDataSource, supabaseChatDataSource, realtimeManager)
+
+    @Provides
+    @Singleton
+    fun provideProjectRepository(
+        projectDao: ProjectDao,
+        projectMemberDao: ProjectMemberDao,
+        supabaseProjectDataSource: SupabaseProjectDataSource,
+        supabaseProjectMemberDataSource: SupabaseProjectMemberDataSource
+    ): ProjectRepository = ProjectRepository(
+        projectDao,
+        projectMemberDao,
+        supabaseProjectDataSource,
+        supabaseProjectMemberDataSource
+    )
 
     @Provides
     @Singleton
     fun provideTaskRepository(
-        taskDao: TaskDao
-    ): com.example.kosmos.data.repository.TaskRepository = com.example.kosmos.data.repository.TaskRepository(taskDao)
+        taskDao: TaskDao,
+        projectMemberDao: ProjectMemberDao,
+        supabaseTaskDataSource: com.example.kosmos.data.datasource.SupabaseTaskDataSource
+    ): TaskRepository = TaskRepository(taskDao, projectMemberDao, supabaseTaskDataSource)
 
     @Provides
     @Singleton
     fun provideVoiceRepository(
         voiceMessageDao: VoiceMessageDao
-    ): com.example.kosmos.data.repository.VoiceRepository = com.example.kosmos.data.repository.VoiceRepository(voiceMessageDao)
+    ): VoiceRepository = VoiceRepository(voiceMessageDao)
 }
 
 @Module
 @InstallIn(SingletonComponent::class)
 object ServiceModule {
 
-    @Provides
-    @Singleton
-    fun provideTranscriptionService(
-        speechToTextService: SpeechToTextService,
-        voiceMessageDao: VoiceMessageDao,
-        @ApplicationContext context: Context
-    ): TranscriptionService = TranscriptionService(speechToTextService, voiceMessageDao, context)
+    // Voice services disabled for MVP - will be re-enabled in Phase 5
+    // @Provides
+    // @Singleton
+    // fun provideTranscriptionService(
+    //     speechToTextService: SpeechToTextService,
+    //     voiceMessageDao: VoiceMessageDao,
+    //     @ApplicationContext context: Context
+    // ): TranscriptionService = TranscriptionService(speechToTextService, voiceMessageDao, context)
 
     @Provides
     @Singleton

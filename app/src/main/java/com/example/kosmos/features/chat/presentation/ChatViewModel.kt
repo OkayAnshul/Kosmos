@@ -12,9 +12,10 @@ import com.example.kosmos.core.models.ChatRoom
 import com.example.kosmos.core.models.Message
 import com.example.kosmos.core.models.MessageType
 import com.example.kosmos.core.models.VoiceMessage
-import com.example.kosmos.services.TranscriptionWorkerService
-import com.example.kosmos.features.voice.services.VoiceRecordingHelper
-import com.example.kosmos.features.voice.services.VoiceRecordingState
+// Voice features disabled for MVP - will be re-enabled in Phase 5
+// import com.example.kosmos.services.TranscriptionWorkerService
+// import com.example.kosmos.features.voice.services.VoiceRecordingHelper
+// import com.example.kosmos.features.voice.services.VoiceRecordingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
@@ -41,22 +42,32 @@ class ChatViewModel @Inject constructor(
     val currentUser = authRepository.getCurrentUser()
     private var currentChatRoomId: String = ""
 
-    // Voice recording components
-    private var voiceRecordingHelper: VoiceRecordingHelper? = null
-    private var currentRecordingJob: Job? = null
+    // Track flow collection jobs for proper cleanup
+    private var chatRoomJob: Job? = null
+    private var messagesJob: Job? = null
+    private var messageEventsJob: Job? = null
+    private var typingEventsJob: Job? = null
 
-    init {
-        voiceRecordingHelper = VoiceRecordingHelper(context)
-    }
+    // Voice recording components - disabled for MVP (Phase 5)
+    // private var voiceRecordingHelper: VoiceRecordingHelper? = null
+    // private var currentRecordingJob: Job? = null
+
+    // init {
+    //     voiceRecordingHelper = VoiceRecordingHelper(context)
+    // }
 
     fun loadChat(chatRoomId: String) {
         currentChatRoomId = chatRoomId
         loadChatRoom(chatRoomId)
         loadMessages(chatRoomId)
+        startRealtimeSubscription(chatRoomId)
     }
 
     private fun loadChatRoom(chatRoomId: String) {
-        viewModelScope.launch {
+        // Cancel previous job if any
+        chatRoomJob?.cancel()
+
+        chatRoomJob = viewModelScope.launch {
             try {
                 chatRepository.getChatRoomByIdFlow(chatRoomId).collect { chatRoom ->
                     if (chatRoom != null) {
@@ -76,7 +87,10 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun loadMessages(chatRoomId: String) {
-        viewModelScope.launch {
+        // Cancel previous job if any
+        messagesJob?.cancel()
+
+        messagesJob = viewModelScope.launch {
             try {
                 chatRepository.getMessagesFlow(chatRoomId).collect { messages ->
                     _uiState.value = _uiState.value.copy(
@@ -101,7 +115,7 @@ class ChatViewModel @Inject constructor(
                 val message = Message(
                     id = UUID.randomUUID().toString(),
                     chatRoomId = currentChatRoomId,
-                    senderId = currentUser.uid,
+                    senderId = currentUser.id,
                     senderName = currentUser.displayName ?: "Unknown",
                     senderPhotoUrl = currentUser.photoUrl?.toString(),
                     content = content,
@@ -147,7 +161,7 @@ class ChatViewModel @Inject constructor(
                         val message = Message(
                             id = messageId,
                             chatRoomId = currentChatRoomId,
-                            senderId = currentUser.uid,
+                            senderId = currentUser.id,
                             senderName = currentUser.displayName ?: "Unknown",
                             senderPhotoUrl = currentUser.photoUrl?.toString(),
                             content = "🎤 Voice message",
@@ -158,8 +172,8 @@ class ChatViewModel @Inject constructor(
 
                         chatRepository.sendMessage(message)
 
-                        // Start background transcription
-                        TranscriptionWorkerService.startService(context)
+                        // Start background transcription - disabled for MVP (Phase 5)
+                        // TranscriptionWorkerService.startService(context)
 
                         Log.d("ChatViewModel", "Voice message sent successfully")
                     },
@@ -191,78 +205,40 @@ class ChatViewModel @Inject constructor(
 
     fun updateMessageText(text: String) {
         _uiState.value = _uiState.value.copy(messageText = text)
+
+        // Send typing indicator when user types
+        if (currentUser != null && currentChatRoomId.isNotEmpty()) {
+            val isTyping = text.isNotEmpty()
+            chatRepository.sendTypingIndicator(currentChatRoomId, currentUser.id, isTyping)
+        }
     }
 
+    // Voice recording methods - disabled for MVP (Phase 5)
+    // TODO: Re-enable in Phase 5 when voice features are restored
     fun startVoiceRecording() {
-        _uiState.value = _uiState.value.copy(isRecording = true, error = null)
-        Log.d("ChatViewModel", "Starting voice recording")
-
-        currentRecordingJob = viewModelScope.launch {
-            try {
-                voiceRecordingHelper?.startRecording()?.collect { state ->
-                    when (state) {
-                        is VoiceRecordingState.Recording -> {
-                            Log.d("ChatViewModel", "Recording started: ${state.outputFile.absolutePath}")
-                        }
-                        is VoiceRecordingState.Completed -> {
-                            handleVoiceRecordingCompleted(state.audioFile)
-                        }
-                        is VoiceRecordingState.Error -> {
-                            _uiState.value = _uiState.value.copy(
-                                error = "Voice recording failed: ${state.message}",
-                                isRecording = false
-                            )
-                            Log.e("ChatViewModel", "Recording error: ${state.message}")
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = "Failed to start recording: ${e.message}",
-                    isRecording = false
-                )
-                Log.e("ChatViewModel", "Failed to start recording", e)
-            }
-        }
+        _uiState.value = _uiState.value.copy(error = "Voice recording not available in MVP")
+        Log.d("ChatViewModel", "Voice recording disabled for MVP")
     }
 
     fun stopVoiceRecording() {
-        Log.d("ChatViewModel", "Stopping voice recording")
-        currentRecordingJob?.cancel()
-
-        val result = voiceRecordingHelper?.stopRecording()
-        when (result) {
-            is VoiceRecordingState.Completed -> {
-                handleVoiceRecordingCompleted(result.audioFile)
-            }
-            is VoiceRecordingState.Error -> {
-                _uiState.value = _uiState.value.copy(
-                    error = "Failed to stop recording: ${result.message}",
-                    isRecording = false
-                )
-                Log.e("ChatViewModel", "Stop recording error: ${result.message}")
-            }
-            else -> {
-                _uiState.value = _uiState.value.copy(isRecording = false)
-            }
-        }
+        Log.d("ChatViewModel", "Voice recording disabled for MVP")
     }
 
-    private fun handleVoiceRecordingCompleted(audioFile: File) {
-        _uiState.value = _uiState.value.copy(isRecording = false)
-        Log.d("ChatViewModel", "Voice recording completed: ${audioFile.absolutePath}, size: ${audioFile.length()}")
-
-        if (!audioFile.exists() || audioFile.length() == 0L) {
-            _uiState.value = _uiState.value.copy(error = "Recording failed: Empty or missing audio file")
-            return
-        }
-
-        // Calculate approximate duration (rough estimate: file_size_bytes / 1000 for minimum 1 second)
-        val estimatedDuration = (audioFile.length() / 1000).coerceAtLeast(1000)
-
-        // Send voice message
-        sendVoiceMessage(audioFile, estimatedDuration)
-    }
+    // private fun handleVoiceRecordingCompleted(audioFile: File) {
+    //     _uiState.value = _uiState.value.copy(isRecording = false)
+    //     Log.d("ChatViewModel", "Voice recording completed: ${audioFile.absolutePath}, size: ${audioFile.length()}")
+    //
+    //     if (!audioFile.exists() || audioFile.length() == 0L) {
+    //         _uiState.value = _uiState.value.copy(error = "Recording failed: Empty or missing audio file")
+    //         return
+    //     }
+    //
+    //     // Calculate approximate duration (rough estimate: file_size_bytes / 1000 for minimum 1 second)
+    //     val estimatedDuration = (audioFile.length() / 1000).coerceAtLeast(1000)
+    //
+    //     // Send voice message
+    //     sendVoiceMessage(audioFile, estimatedDuration)
+    // }
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
@@ -297,9 +273,9 @@ class ChatViewModel @Inject constructor(
             viewModelScope.launch {
                 try {
                     _uiState.value.messages
-                        .filter { it.senderId != user.uid && user.uid !in it.readBy }
+                        .filter { it.senderId != user.id && user.id !in it.readBy }
                         .forEach { message ->
-                            chatRepository.markMessageAsRead(message.id, user.uid)
+                            chatRepository.markMessageAsRead(message.id, user.id)
                         }
                 } catch (e: Exception) {
                     // Handle silently
@@ -308,11 +284,212 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    // Message action methods
+    fun showMessageContextMenu(message: Message) {
+        _uiState.value = _uiState.value.copy(
+            selectedMessage = message,
+            showMessageContextMenu = true
+        )
+    }
+
+    fun hideMessageContextMenu() {
+        _uiState.value = _uiState.value.copy(
+            showMessageContextMenu = false
+        )
+    }
+
+    fun showEditDialog() {
+        _uiState.value = _uiState.value.copy(
+            showMessageContextMenu = false,
+            showEditDialog = true
+        )
+    }
+
+    fun hideEditDialog() {
+        _uiState.value = _uiState.value.copy(
+            showEditDialog = false,
+            selectedMessage = null
+        )
+    }
+
+    fun showDeleteDialog() {
+        _uiState.value = _uiState.value.copy(
+            showMessageContextMenu = false,
+            showDeleteDialog = true
+        )
+    }
+
+    fun hideDeleteDialog() {
+        _uiState.value = _uiState.value.copy(
+            showDeleteDialog = false,
+            selectedMessage = null
+        )
+    }
+
+    fun showReactionPicker() {
+        _uiState.value = _uiState.value.copy(
+            showMessageContextMenu = false,
+            showReactionPicker = true
+        )
+    }
+
+    fun hideReactionPicker() {
+        _uiState.value = _uiState.value.copy(
+            showReactionPicker = false,
+            selectedMessage = null
+        )
+    }
+
+    fun editMessage(newContent: String) {
+        val messageId = _uiState.value.selectedMessage?.id ?: return
+
+        viewModelScope.launch {
+            try {
+                val result = chatRepository.editMessage(messageId, newContent)
+                result.fold(
+                    onSuccess = {
+                        Log.d("ChatViewModel", "Message edited successfully")
+                        hideEditDialog()
+                    },
+                    onFailure = { exception ->
+                        Log.e("ChatViewModel", "Failed to edit message", exception)
+                        _uiState.value = _uiState.value.copy(
+                            error = "Failed to edit message: ${exception.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "Error editing message", e)
+                _uiState.value = _uiState.value.copy(
+                    error = "Failed to edit message: ${e.message}"
+                )
+            }
+        }
+    }
+
+    fun deleteMessage() {
+        val messageId = _uiState.value.selectedMessage?.id ?: return
+
+        viewModelScope.launch {
+            try {
+                val result = chatRepository.deleteMessage(messageId)
+                result.fold(
+                    onSuccess = {
+                        Log.d("ChatViewModel", "Message deleted successfully")
+                        hideDeleteDialog()
+                    },
+                    onFailure = { exception ->
+                        Log.e("ChatViewModel", "Failed to delete message", exception)
+                        _uiState.value = _uiState.value.copy(
+                            error = "Failed to delete message: ${exception.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "Error deleting message", e)
+                _uiState.value = _uiState.value.copy(
+                    error = "Failed to delete message: ${e.message}"
+                )
+            }
+        }
+    }
+
+    fun toggleReaction(messageId: String, emoji: String) {
+        val userId = currentUser?.id ?: return
+
+        viewModelScope.launch {
+            try {
+                val result = chatRepository.toggleReaction(messageId, userId, emoji)
+                result.fold(
+                    onSuccess = {
+                        Log.d("ChatViewModel", "Reaction toggled successfully")
+                    },
+                    onFailure = { exception ->
+                        Log.e("ChatViewModel", "Failed to toggle reaction", exception)
+                        _uiState.value = _uiState.value.copy(
+                            error = "Failed to react to message: ${exception.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "Error toggling reaction", e)
+                _uiState.value = _uiState.value.copy(
+                    error = "Failed to react to message: ${e.message}"
+                )
+            }
+        }
+    }
+
+    // Real-time subscription methods
+
+    private fun startRealtimeSubscription(chatRoomId: String) {
+        // Cancel previous subscriptions
+        messageEventsJob?.cancel()
+        typingEventsJob?.cancel()
+
+        // Start realtime subscriptions
+        chatRepository.startRealtimeSubscription(chatRoomId)
+
+        // Listen for realtime message events
+        messageEventsJob = viewModelScope.launch {
+            chatRepository.getMessageEvents().collect { event ->
+                when (event) {
+                    is com.example.kosmos.data.realtime.MessageEvent.Insert -> {
+                        Log.d("ChatViewModel", "Realtime: New message received")
+                        // Message is already inserted into Room by RealtimeManager
+                        // The getMessagesFlow will automatically update the UI
+                    }
+                    is com.example.kosmos.data.realtime.MessageEvent.Update -> {
+                        Log.d("ChatViewModel", "Realtime: Message updated")
+                        // Message is already updated in Room by RealtimeManager
+                    }
+                    is com.example.kosmos.data.realtime.MessageEvent.Delete -> {
+                        Log.d("ChatViewModel", "Realtime: Message deleted")
+                        // Message is already deleted from Room by RealtimeManager
+                    }
+                }
+            }
+        }
+
+        // Listen for typing indicator events
+        typingEventsJob = viewModelScope.launch {
+            chatRepository.getTypingEvents().collect { event ->
+                if (event.chatRoomId == chatRoomId && event.userId != currentUser?.id) {
+                    Log.d("ChatViewModel", "User ${event.userId} is typing: ${event.isTyping}")
+                    updateTypingIndicator(event.userId, event.isTyping)
+                }
+            }
+        }
+    }
+
+    private fun updateTypingIndicator(userId: String, isTyping: Boolean) {
+        _uiState.value = _uiState.value.copy(
+            typingUsers = if (isTyping) {
+                _uiState.value.typingUsers + userId
+            } else {
+                _uiState.value.typingUsers - userId
+            }
+        )
+    }
+
     override fun onCleared() {
         super.onCleared()
-        voiceRecordingHelper?.cancelRecording()
-        currentRecordingJob?.cancel()
-        Log.d("ChatViewModel", "ViewModel cleared, voice recording cleaned up")
+
+        // Cancel all flow collection jobs
+        chatRoomJob?.cancel()
+        messagesJob?.cancel()
+        messageEventsJob?.cancel()
+        typingEventsJob?.cancel()
+
+        // Stop realtime subscriptions
+        if (currentChatRoomId.isNotEmpty()) {
+            chatRepository.stopRealtimeSubscription(currentChatRoomId)
+        }
+
+        // Voice recording cleanup disabled for MVP (Phase 5)
+        // voiceRecordingHelper?.cancelRecording()
+        // currentRecordingJob?.cancel()
+        Log.d("ChatViewModel", "ViewModel cleared")
     }
 }
 
@@ -325,5 +502,13 @@ data class ChatUiState(
     val isSendingVoice: Boolean = false,
     val isLoadingMore: Boolean = false,
     val hasMoreMessages: Boolean = true,
-    val error: String? = null
+    val error: String? = null,
+    // Message actions
+    val selectedMessage: Message? = null,
+    val showMessageContextMenu: Boolean = false,
+    val showEditDialog: Boolean = false,
+    val showDeleteDialog: Boolean = false,
+    val showReactionPicker: Boolean = false,
+    // Typing indicators
+    val typingUsers: Set<String> = emptySet()
 )

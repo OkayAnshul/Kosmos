@@ -3,8 +3,8 @@ package com.example.kosmos.core.config
 import com.example.kosmos.BuildConfig
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.gotrue.Auth
-import io.github.jan.supabase.gotrue.auth
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.realtime.Realtime
@@ -20,6 +20,9 @@ import io.github.jan.supabase.storage.storage
  * - Postgrest for database operations
  * - Storage for file uploads
  * - Realtime for live subscriptions
+ *
+ * Note: HTTP timeout is set to default 10 seconds. For slow networks,
+ * the AuthRepository provides user-friendly timeout error messages.
  */
 object SupabaseConfig {
 

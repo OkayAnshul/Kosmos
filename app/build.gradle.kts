@@ -56,12 +56,14 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-        freeCompilerArgs += listOf(
-            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
-        )
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+            freeCompilerArgs.addAll(
+                "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
+            )
+        }
     }
     buildFeatures {
         compose = true
@@ -76,7 +78,7 @@ android {
     }
 }
 
-dependencies{
+dependencies {
     // AndroidX Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -111,6 +113,7 @@ dependencies{
     implementation(libs.googleid)
 
     // Supabase
+    // Note: gotrue-kt is included in compose-auth, no need to add separately
     implementation(libs.supabase.postgrest.kt)
     implementation(libs.supabase.storage.kt)
     implementation(libs.supabase.realtime.kt)
@@ -153,8 +156,8 @@ dependencies{
     // Date Picker
     implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
 // Work Manager (for background tasks)
-    implementation("androidx.work:work-runtime-ktx:2.10.3")
-    implementation("androidx.hilt:hilt-work:1.2.0")
+    implementation("androidx.work:work-runtime-ktx:2.11.0")
+    implementation("androidx.hilt:hilt-work:1.3.0")
 // Splash Screen
     implementation(libs.androidx.core.splashscreen)
 

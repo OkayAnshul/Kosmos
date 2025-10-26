@@ -13,9 +13,11 @@ import com.example.kosmos.core.models.*
         Message::class,
         VoiceMessage::class,
         Task::class,
-        ActionItem::class
+        ActionItem::class,
+        Project::class,
+        ProjectMember::class
     ],
-    version = 1,
+    version = 2,  // Incremented for RBAC changes
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -27,6 +29,8 @@ abstract class KosmosDatabase : RoomDatabase() {
     abstract fun voiceMessageDao(): VoiceMessageDao
     abstract fun taskDao(): TaskDao
     abstract fun actionItemDao(): ActionItemDao
+    abstract fun projectDao(): ProjectDao
+    abstract fun projectMemberDao(): ProjectMemberDao
 
     companion object {
         const val DATABASE_NAME = "kosmos_database"

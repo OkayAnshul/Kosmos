@@ -12,6 +12,9 @@ interface MessageDao {
     @Query("SELECT * FROM messages WHERE chatRoomId = :chatRoomId ORDER BY timestamp DESC")
     fun getMessagesForChatRoomFlow(chatRoomId: String): Flow<List<Message>>
 
+    @Query("SELECT * FROM messages WHERE chatRoomId = :chatRoomId ORDER BY timestamp DESC")
+    suspend fun getMessagesForChatRoom(chatRoomId: String): List<Message>
+
     @Query("SELECT * FROM messages WHERE chatRoomId = :chatRoomId ORDER BY timestamp DESC LIMIT :limit")
     suspend fun getRecentMessages(chatRoomId: String, limit: Int): List<Message>
 

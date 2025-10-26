@@ -37,7 +37,7 @@ class ChatListViewModel @Inject constructor(
         currentUser?.let { firebaseUser ->
             viewModelScope.launch {
                 try {
-                    val user = userRepository.getUserById(firebaseUser.uid)
+                    val user = userRepository.getUserById(firebaseUser.id)
                     _uiState.value = _uiState.value.copy(currentUser = user)
                 } catch (e: Exception) {
                     _uiState.value = _uiState.value.copy(
@@ -48,13 +48,24 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    private fun loadChatRooms() {
+    /**
+     * Load chat rooms for a specific project
+     * @param projectId Project ID to filter chat rooms
+     */
+    fun loadChatRooms(projectId: String? = null) {
         currentUser?.let { firebaseUser ->
             viewModelScope.launch {
                 try {
-                    chatRepository.getChatRoomsFlow(firebaseUser.uid).collect { chatRooms ->
+                    chatRepository.getChatRoomsFlow(firebaseUser.id).collect { chatRooms ->
+                        // Filter by projectId if provided
+                        val filteredRooms = if (projectId != null) {
+                            chatRooms.filter { it.projectId == projectId }
+                        } else {
+                            chatRooms
+                        }
+
                         _uiState.value = _uiState.value.copy(
-                            chatRooms = chatRooms,
+                            chatRooms = filteredRooms,
                             isLoading = false
                         )
                     }
@@ -68,18 +79,24 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    fun createNewChatRoom(name: String, description: String, selectedUserIds: List<String>) {
+    fun createNewChatRoom(
+        name: String,
+        description: String,
+        selectedUserIds: List<String>,
+        projectId: String
+    ) {
         currentUser?.let { firebaseUser ->
             viewModelScope.launch {
                 try {
                     _uiState.value = _uiState.value.copy(isCreatingChat = true)
 
-                    val participantIds = selectedUserIds + firebaseUser.uid
+                    val participantIds = selectedUserIds + firebaseUser.id
                     val chatRoom = ChatRoom(
+                        projectId = projectId,
                         name = name,
                         description = description,
                         participantIds = participantIds,
-                        createdBy = firebaseUser.uid,
+                        createdBy = firebaseUser.id,
                         createdAt = System.currentTimeMillis()
                     )
 

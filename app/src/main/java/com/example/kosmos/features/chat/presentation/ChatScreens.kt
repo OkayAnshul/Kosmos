@@ -2,8 +2,11 @@ package com.example.kosmos.features.chat.presentation
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
@@ -40,15 +45,19 @@ import java.util.UUID
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatListScreen(
+    projectId: String,
     onNavigateToChat: (String) -> Unit,
     onLogout: () -> Unit,
+    onBackToProjects: () -> Unit,
     modifier: Modifier = Modifier,
+    onNavigateToUserSearch: () -> Unit = {},
     viewModel: ChatListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        // Any initialization logic if needed
+    // Load chat rooms for this project
+    LaunchedEffect(projectId) {
+        viewModel.loadChatRooms(projectId)
     }
 
     Column(
@@ -58,11 +67,22 @@ fun ChatListScreen(
         TopAppBar(
             title = {
                 Text(
-                    text = "Kosmos",
+                    text = "Project Chats",
                     fontWeight = FontWeight.Bold
                 )
             },
+            navigationIcon = {
+                IconButton(onClick = onBackToProjects) {
+                    Icon(Icons.Default.ArrowBack, "Back to Projects")
+                }
+            },
             actions = {
+                // User Search Button
+                IconButton(onClick = onNavigateToUserSearch) {
+                    Icon(Icons.Default.Search, contentDescription = "Find Users")
+                }
+
+                // Create Chat Button
                 IconButton(onClick = { viewModel.showCreateChatDialog() }) {
                     Icon(Icons.Default.Add, contentDescription = "Create Chat")
                 }
@@ -159,7 +179,7 @@ fun ChatListScreen(
         CreateChatDialog(
             onDismiss = { viewModel.hideCreateChatDialog() },
             onCreate = { name, description, selectedUserIds ->
-                viewModel.createNewChatRoom(name, description, selectedUserIds)
+                viewModel.createNewChatRoom(name, description, selectedUserIds, projectId)
             },
             searchResults = uiState.searchResults,
             onSearchUsers = { query -> viewModel.searchUsers(query) },
@@ -231,7 +251,25 @@ fun ChatScreen(
                     EmptyMessagesContent()
                 }
                 else -> {
+                    val listState = rememberLazyListState()
+
+                    // Detect when user scrolls to top to load more messages
+                    LaunchedEffect(listState) {
+                        snapshotFlow { listState.layoutInfo.visibleItemsInfo }
+                            .collect { visibleItems ->
+                                val lastVisibleItem = visibleItems.lastOrNull()
+                                if (lastVisibleItem != null &&
+                                    lastVisibleItem.index >= uiState.messages.size - 1 &&
+                                    uiState.hasMoreMessages &&
+                                    !uiState.isLoadingMore
+                                ) {
+                                    viewModel.loadOlderMessages()
+                                }
+                            }
+                    }
+
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -240,12 +278,40 @@ fun ChatScreen(
                         items(uiState.messages.reversed()) { message ->
                             MessageBubble(
                                 message = message,
-                                isCurrentUser = message.senderId == viewModel.currentUser?.uid
+                                isCurrentUser = message.senderId == viewModel.currentUser?.id,
+                                currentUserId = viewModel.currentUser?.id ?: "",
+                                onLongPress = { viewModel.showMessageContextMenu(message) },
+                                onReactionClick = { emoji ->
+                                    viewModel.toggleReaction(message.id, emoji)
+                                }
                             )
+                        }
+
+                        // Loading indicator at the top when loading more messages
+                        if (uiState.isLoadingMore) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
+        }
+
+        // Typing Indicator
+        if (uiState.typingUsers.isNotEmpty()) {
+            TypingIndicator(
+                typingCount = uiState.typingUsers.size
+            )
         }
 
         // Message Input
@@ -258,6 +324,50 @@ fun ChatScreen(
             onStopRecording = viewModel::stopVoiceRecording,
             isSendingVoice = uiState.isSendingVoice
         )
+    }
+
+    // Message Context Menu Bottom Sheet
+    uiState.selectedMessage?.let { selectedMessage ->
+        if (uiState.showMessageContextMenu) {
+            MessageContextMenuBottomSheet(
+                message = selectedMessage,
+                isCurrentUser = selectedMessage.senderId == viewModel.currentUser?.id,
+                onDismiss = { viewModel.hideMessageContextMenu() },
+                onEdit = { viewModel.showEditDialog() },
+                onDelete = { viewModel.showDeleteDialog() },
+                onReact = { viewModel.showReactionPicker() }
+            )
+        }
+
+        // Edit Message Dialog
+        if (uiState.showEditDialog) {
+            EditMessageDialog(
+                message = selectedMessage,
+                onDismiss = { viewModel.hideEditDialog() },
+                onConfirm = { newContent ->
+                    viewModel.editMessage(newContent)
+                }
+            )
+        }
+
+        // Delete Message Dialog
+        if (uiState.showDeleteDialog) {
+            DeleteMessageDialog(
+                onDismiss = { viewModel.hideDeleteDialog() },
+                onConfirm = { viewModel.deleteMessage() }
+            )
+        }
+
+        // Reaction Picker Dialog
+        if (uiState.showReactionPicker) {
+            ReactionPickerDialog(
+                onDismiss = { viewModel.hideReactionPicker() },
+                onReactionSelected = { emoji ->
+                    viewModel.toggleReaction(selectedMessage.id, emoji)
+                    viewModel.hideReactionPicker()
+                }
+            )
+        }
     }
 
     // Error handling
@@ -365,53 +475,290 @@ private fun CreateChatDialog(
     onSearchUsers: (String) -> Unit,
     isCreating: Boolean
 ) {
-    // TODO: Implement create chat dialog
+    var chatName by remember { mutableStateOf("") }
+    var chatDescription by remember { mutableStateOf("") }
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedUsers by remember { mutableStateOf<List<User>>(emptyList()) }
+    var roomType by remember { mutableStateOf("GENERAL") }
+    var nameError by remember { mutableStateOf(false) }
+
     AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Create New Chat") },
-        text = { Text("Create chat dialog implementation needed") },
+        onDismissRequest = { if (!isCreating) onDismiss() },
+        title = { Text("Create New Chat Room") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Chat name input
+                OutlinedTextField(
+                    value = chatName,
+                    onValueChange = {
+                        chatName = it
+                        nameError = false
+                    },
+                    label = { Text("Room Name *") },
+                    placeholder = { Text("e.g., General Discussion") },
+                    isError = nameError,
+                    supportingText = if (nameError) {
+                        { Text("Room name is required") }
+                    } else null,
+                    enabled = !isCreating,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Description input
+                OutlinedTextField(
+                    value = chatDescription,
+                    onValueChange = { chatDescription = it },
+                    label = { Text("Description") },
+                    placeholder = { Text("What is this room for?") },
+                    enabled = !isCreating,
+                    minLines = 2,
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Room type selector
+                Text(
+                    text = "Room Type:",
+                    style = MaterialTheme.typography.labelMedium
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("GENERAL", "CHANNEL", "ANNOUNCEMENTS").forEach { type ->
+                        FilterChip(
+                            selected = roomType == type,
+                            onClick = { if (!isCreating) roomType = type },
+                            label = {
+                                Text(
+                                    text = type.lowercase().replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        )
+                    }
+                }
+
+                // User search for participants
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = {
+                        searchQuery = it
+                        if (it.length >= 2) {
+                            onSearchUsers(it)
+                        }
+                    },
+                    label = { Text("Add Participants") },
+                    placeholder = { Text("Search users...") },
+                    enabled = !isCreating,
+                    singleLine = true,
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, "Search")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Search results
+                if (searchResults.isNotEmpty() && searchQuery.length >= 2) {
+                    Text(
+                        text = "Select users:",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Column(
+                        modifier = Modifier.heightIn(max = 150.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        searchResults.take(5).forEach { user ->
+                            val isSelected = selectedUsers.any { it.id == user.id }
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    selectedUsers = if (isSelected) {
+                                        selectedUsers.filter { it.id != user.id }
+                                    } else {
+                                        selectedUsers + user
+                                    }
+                                },
+                                label = { Text(user.displayName) },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
+                // Selected users
+                if (selectedUsers.isNotEmpty()) {
+                    Text(
+                        text = "Selected (${selectedUsers.size}):",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        selectedUsers.forEach { user ->
+                            AssistChip(
+                                onClick = {
+                                    selectedUsers = selectedUsers.filter { it.id != user.id }
+                                },
+                                label = { Text(user.displayName, style = MaterialTheme.typography.bodySmall) },
+                                trailingIcon = {
+                                    Icon(Icons.Default.Close, "Remove", modifier = Modifier.size(16.dp))
+                                }
+                            )
+                        }
+                    }
+                }
+
+                if (isCreating) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+            }
+        },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = {
+                    if (chatName.isBlank()) {
+                        nameError = true
+                    } else {
+                        val participantIds = selectedUsers.map { it.id }
+                        onCreate(chatName.trim(), chatDescription.trim(), participantIds)
+                    }
+                },
+                enabled = !isCreating && chatName.isNotBlank()
+            ) {
+                Text("Create")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isCreating
+            ) {
                 Text("Cancel")
             }
         }
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MessageBubble(
     message: Message,
-    isCurrentUser: Boolean
+    isCurrentUser: Boolean,
+    currentUserId: String,
+    onLongPress: () -> Unit = {},
+    onReactionClick: (String) -> Unit = {}
 ) {
-    // TODO: Implement message bubble with proper styling
-    Card(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = if (isCurrentUser) 32.dp else 0.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isCurrentUser)
-                MaterialTheme.colorScheme.primary
-            else
-                MaterialTheme.colorScheme.surfaceVariant
-        )
+            .padding(horizontal = 8.dp),
+        horizontalAlignment = if (isCurrentUser) Alignment.End else Alignment.Start
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
-        ) {
-            if (!isCurrentUser) {
-                Text(
-                    text = message.senderName,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            Text(
-                text = message.content,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isCurrentUser)
-                    MaterialTheme.colorScheme.onPrimary
+        Card(
+            modifier = Modifier
+                .widthIn(max = 300.dp)
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = onLongPress
+                ),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isCurrentUser)
+                    MaterialTheme.colorScheme.primary
                 else
-                    MaterialTheme.colorScheme.onSurfaceVariant
+                    MaterialTheme.colorScheme.surfaceVariant
+            ),
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                topEnd = 16.dp,
+                bottomStart = if (isCurrentUser) 16.dp else 4.dp,
+                bottomEnd = if (isCurrentUser) 4.dp else 16.dp
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp)
+            ) {
+                if (!isCurrentUser) {
+                    Text(
+                        text = message.senderName,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+
+                Text(
+                    text = message.content,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isCurrentUser)
+                        MaterialTheme.colorScheme.onPrimary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Show metadata (timestamp, edited, read receipts)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Edited indicator
+                    if (message.isEdited) {
+                        Text(
+                            text = "Edited",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isCurrentUser)
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
+
+                    // Read receipts (only for current user's messages)
+                    if (isCurrentUser) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                                    .format(java.util.Date(message.timestamp)),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            ReadReceiptIndicator(
+                                isSent = true,
+                                isDelivered = message.readBy.isNotEmpty(),
+                                isRead = message.readBy.isNotEmpty(),
+                                tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Reaction bar
+        if (message.reactions.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(4.dp))
+            ReactionBar(
+                reactions = message.reactions,
+                currentUserId = currentUserId,
+                onReactionClick = onReactionClick,
+                modifier = Modifier.align(if (isCurrentUser) Alignment.End else Alignment.Start)
             )
         }
     }
@@ -499,6 +846,361 @@ private fun EmptyMessagesContent() {
                 text = "Start the conversation by sending a message",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+// Message Context Menu Bottom Sheet
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MessageContextMenuBottomSheet(
+    message: Message,
+    isCurrentUser: Boolean,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onReact: () -> Unit
+) {
+    var showSheet by remember { mutableStateOf(true) }
+
+    if (showSheet) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showSheet = false
+                onDismiss()
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+            ) {
+                // React option (available for all messages)
+                ListItem(
+                    headlineContent = { Text("React") },
+                    leadingContent = {
+                        Icon(Icons.Default.EmojiEmotions, contentDescription = null)
+                    },
+                    modifier = Modifier.clickable {
+                        showSheet = false
+                        onReact()
+                    }
+                )
+
+                // Edit option (only for own messages)
+                if (isCurrentUser && message.type == MessageType.TEXT) {
+                    ListItem(
+                        headlineContent = { Text("Edit") },
+                        leadingContent = {
+                            Icon(Icons.Default.Edit, contentDescription = null)
+                        },
+                        modifier = Modifier.clickable {
+                            showSheet = false
+                            onEdit()
+                        }
+                    )
+                }
+
+                // Delete option (only for own messages)
+                if (isCurrentUser) {
+                    ListItem(
+                        headlineContent = { Text("Delete") },
+                        leadingContent = {
+                            Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                        },
+                        modifier = Modifier.clickable {
+                            showSheet = false
+                            onDelete()
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+}
+
+// Edit Message Dialog
+@Composable
+private fun EditMessageDialog(
+    message: Message,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var editedText by remember { mutableStateOf(message.content) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Message") },
+        text = {
+            OutlinedTextField(
+                value = editedText,
+                onValueChange = { editedText = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Type your message...") },
+                maxLines = 5
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (editedText.isNotBlank() && editedText != message.content) {
+                        onConfirm(editedText)
+                        onDismiss()
+                    }
+                },
+                enabled = editedText.isNotBlank() && editedText != message.content
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+// Delete Message Dialog
+@Composable
+private fun DeleteMessageDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.Default.Warning,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error
+            )
+        },
+        title = { Text("Delete Message?") },
+        text = { Text("This message will be permanently deleted. This action cannot be undone.") },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm()
+                    onDismiss()
+                },
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Delete")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+// Reaction Picker Dialog
+@Composable
+private fun ReactionPickerDialog(
+    onDismiss: () -> Unit,
+    onReactionSelected: (String) -> Unit
+) {
+    val commonEmojis = listOf(
+        "👍", "❤️", "😂", "😮", "😢", "🙏",
+        "🎉", "🔥", "👏", "💯", "🤔", "😍"
+    )
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "React to message",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Emoji grid
+                val rows = commonEmojis.chunked(6)
+                rows.forEach { rowEmojis ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        rowEmojis.forEach { emoji ->
+                            TextButton(
+                                onClick = {
+                                    onReactionSelected(emoji)
+                                },
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Text(
+                                    text = emoji,
+                                    style = MaterialTheme.typography.headlineMedium
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Cancel button
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Cancel")
+                }
+            }
+        }
+    }
+}
+
+// Reaction Bar Component
+@Composable
+private fun ReactionBar(
+    reactions: Map<String, String>,
+    currentUserId: String,
+    onReactionClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Group reactions by emoji
+    val reactionGroups = reactions.values.groupingBy { it }.eachCount()
+
+    Row(
+        modifier = modifier
+            .padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        reactionGroups.forEach { (emoji, count) ->
+            val isCurrentUserReaction = reactions[currentUserId] == emoji
+
+            Surface(
+                modifier = Modifier.clickable { onReactionClick(emoji) },
+                shape = RoundedCornerShape(12.dp),
+                color = if (isCurrentUserReaction)
+                    MaterialTheme.colorScheme.primaryContainer
+                else
+                    MaterialTheme.colorScheme.surfaceVariant,
+                border = if (isCurrentUserReaction)
+                    androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                else
+                    null
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = emoji,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    if (count > 1) {
+                        Text(
+                            text = count.toString(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isCurrentUserReaction)
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Read Receipt Indicator Component
+@Composable
+private fun ReadReceiptIndicator(
+    isSent: Boolean,
+    isDelivered: Boolean,
+    isRead: Boolean,
+    tint: Color = MaterialTheme.colorScheme.onSurfaceVariant
+) {
+    val icon = when {
+        isRead -> "✓✓"  // Double check - read
+        isDelivered -> "✓✓"  // Double check - delivered
+        isSent -> "✓"  // Single check - sent
+        else -> ""
+    }
+
+    val color = when {
+        isRead -> MaterialTheme.colorScheme.primary  // Blue for read
+        else -> tint  // Gray for sent/delivered
+    }
+
+    if (icon.isNotEmpty()) {
+        Text(
+            text = icon,
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            fontWeight = if (isRead) FontWeight.Bold else FontWeight.Normal
+        )
+    }
+}
+
+// Typing Indicator Component
+@Composable
+private fun TypingIndicator(
+    typingCount: Int
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Animated typing dots
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                repeat(3) { index ->
+                    val infiniteTransition = rememberInfiniteTransition(label = "typing")
+                    val alpha by infiniteTransition.animateFloat(
+                        initialValue = 0.3f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(600, delayMillis = index * 200),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "dot_alpha_$index"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(
+                                MaterialTheme.colorScheme.primary.copy(alpha = alpha),
+                                CircleShape
+                            )
+                    )
+                }
+            }
+
+            Text(
+                text = if (typingCount == 1) "Someone is typing..." else "$typingCount people are typing...",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
             )
         }
     }

@@ -109,4 +109,11 @@ class Converters {
     @TypeConverter
     fun toActionType(value: String): ActionType =
         try { ActionType.valueOf(value) } catch (e: Exception) { ActionType.TASK }
+
+    @TypeConverter
+    fun fromProjectRole(value: ProjectRole): String = value.name
+
+    @TypeConverter
+    fun toProjectRole(value: String): ProjectRole =
+        try { ProjectRole.valueOf(value) } catch (e: Exception) { ProjectRole.MEMBER }
 }

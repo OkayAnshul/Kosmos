@@ -6,15 +6,23 @@ import com.example.kosmos.core.config.SupabaseConfig
 import com.example.kosmos.core.database.dao.UserDao
 import com.example.kosmos.core.models.User
 import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.gotrue.Auth
-import io.github.jan.supabase.gotrue.providers.Google
-import io.github.jan.supabase.gotrue.providers.builtin.Email
-import io.github.jan.supabase.gotrue.user.UserInfo
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.exception.AuthRestException
+import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Columns
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -27,7 +35,7 @@ class AuthRepository @Inject constructor(
     private val supabase: SupabaseClient,
     private val userDao: UserDao
 ) {
-    private val auth: Auth = supabase.auth
+    private val auth = supabase.auth
 
     // Current authenticated user state
     private val _currentUser = MutableStateFlow<User?>(null)
@@ -42,24 +50,20 @@ class AuthRepository @Inject constructor(
 
     init {
         // Check for existing session on initialization
-        checkExistingSession()
-    }
-
-    /**
-     * Check if there's an existing valid session
-     */
-    private fun checkExistingSession() {
-        try {
-            val session = auth.currentSessionOrNull()
-            if (session != null) {
-                val userInfo = auth.currentUserOrNull()
-                if (userInfo != null) {
-                    // Load user from database
-                    loadUserProfile(userInfo.id)
+        val currentUserInfo = auth.currentUserOrNull()
+        if (currentUserInfo != null) {
+            // Session exists, load user profile in background
+            CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+                try {
+                    val user = getUserFromDatabase(currentUserInfo.id)
+                    if (user != null) {
+                        _currentUser.value = user
+                        updateUserOnlineStatus(user.id, true)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to restore session", e)
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error checking existing session", e)
         }
     }
 
@@ -92,8 +96,28 @@ class AuthRepository @Inject constructor(
 
             Result.success(user)
         } catch (e: Exception) {
+            // Provide user-friendly error messages based on exception type
+            val errorMessage = when {
+                e is HttpRequestTimeoutException ->
+                    "Connection timeout. Please check your internet connection and try again."
+
+                e is AuthRestException && e.message?.contains("Invalid login credentials") == true ->
+                    "Invalid email or password. Please try again."
+
+                e is AuthRestException && e.message?.contains("Email not confirmed") == true ->
+                    "Please verify your email address before signing in."
+
+                e.message?.contains("Invalid email") == true ->
+                    "Please enter a valid email address."
+
+                e.message?.contains("network") == true || e.message?.contains("connection") == true ->
+                    "Network error. Please check your internet connection."
+
+                else -> "Sign in failed: ${e.message ?: "Unknown error. Please try again."}"
+            }
+
             Log.e(TAG, "Sign in error", e)
-            Result.failure(e)
+            Result.failure(Exception(errorMessage))
         }
     }
 
@@ -114,7 +138,8 @@ class AuthRepository @Inject constructor(
             auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
-                data = mapOf("display_name" to displayName)
+                // Note: User metadata can be set via Supabase dashboard or Edge Functions
+                // For now, we'll set displayName after user creation
             }
 
             // Get user info
@@ -129,8 +154,31 @@ class AuthRepository @Inject constructor(
 
             Result.success(user)
         } catch (e: Exception) {
-            Log.e(TAG, "Sign up error", e)
-            Result.failure(e)
+            // Provide user-friendly error messages based on exception type
+            val errorMessage = when {
+                e is HttpRequestTimeoutException ->
+                    "Connection timeout. Please check your internet connection and try again."
+
+                e is AuthRestException && e.message?.contains("over_email_send_rate_limit") == true ->
+                    "Too many sign-up attempts. Please wait 60 seconds before trying again."
+
+                e is AuthRestException && e.message?.contains("User already registered") == true ->
+                    "This email is already registered. Please try logging in instead."
+
+                e.message?.contains("Invalid email") == true ->
+                    "Please enter a valid email address."
+
+                e.message?.contains("Password") == true ->
+                    "Password must be at least 6 characters long."
+
+                e.message?.contains("email") == true && e.message?.contains("invalid") == true ->
+                    "Please enter a valid email address."
+
+                else -> "Sign up failed: ${e.message ?: "Unknown error. Please try again."}"
+            }
+
+            Log.e(TAG, "Sign up error (Ask Gemini)", e)
+            Result.failure(Exception(errorMessage))
         }
     }
 
@@ -210,8 +258,7 @@ class AuthRepository @Inject constructor(
             // Clear current user state
             _currentUser.value = null
 
-            // Clear local cache
-            userDao.deleteAll()
+            // Clear local cache (if needed, implement deleteAll in DAO or clear specific user)
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -252,12 +299,14 @@ class AuthRepository @Inject constructor(
         return try {
             // Update in Supabase
             supabase.from("users")
-                .update(user)
-                .eq("id", user.id)
-                .execute()
+                .update(user) {
+                    filter {
+                        eq("id", user.id)
+                    }
+                }
 
             // Update in local database
-            userDao.insert(user)
+            userDao.insertUser(user)
 
             // Update current user state
             _currentUser.value = user
@@ -276,15 +325,15 @@ class AuthRepository @Inject constructor(
      */
     private suspend fun updateUserOnlineStatus(userId: String, isOnline: Boolean): Result<Unit> {
         return try {
-            val updates = mapOf(
-                "is_online" to isOnline,
-                "last_seen" to System.currentTimeMillis()
-            )
-
             supabase.from("users")
-                .update(updates)
-                .eq("id", userId)
-                .execute()
+                .update({
+                    set("is_online", isOnline)
+                    set("last_seen", System.currentTimeMillis())
+                }) {
+                    filter {
+                        eq("id", userId)
+                    }
+                }
 
             // Also update local cache
             val currentUser = _currentUser.value
@@ -293,7 +342,7 @@ class AuthRepository @Inject constructor(
                     isOnline = isOnline,
                     lastSeen = System.currentTimeMillis()
                 )
-                userDao.insert(updatedUser)
+                userDao.insertUser(updatedUser)
                 _currentUser.value = updatedUser
             }
 
@@ -307,13 +356,13 @@ class AuthRepository @Inject constructor(
     /**
      * Load user profile from database and update state
      */
-    private suspend fun loadUserProfile(userId: String) {
+    suspend fun loadUserProfile(userId: String) {
         try {
             val user = getUserFromDatabase(userId)
             if (user != null) {
                 _currentUser.value = user
                 // Update local cache
-                userDao.insert(user)
+                userDao.insertUser(user)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error loading user profile", e)
@@ -370,14 +419,13 @@ class AuthRepository @Inject constructor(
         try {
             supabase.from("users")
                 .insert(user)
-                .execute()
         } catch (e: Exception) {
             Log.e(TAG, "Error creating user profile", e)
             // Continue anyway, user might already exist
         }
 
         // Save to local cache
-        userDao.insert(user)
+        userDao.insertUser(user)
 
         return user
     }
