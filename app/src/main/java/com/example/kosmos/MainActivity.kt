@@ -4,22 +4,19 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material3.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -148,7 +145,13 @@ fun KosmosApp(
                     navController.navigate(Screen.Chat.createRoute(chatRoomId))
                 },
                 onNavigateToUserSearch = {
-                    navController.navigate(Screen.UserSearch.route)
+                    navController.navigate(Screen.UserSearch.createRoute(projectId))
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Screen.Profile.route)
+                },
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
                 },
                 onBackToProjects = {
                     navController.popBackStack()
@@ -168,6 +171,9 @@ fun KosmosApp(
                 chatRoomId = chatRoomId,
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                onNavigateToTasks = {
+                    navController.navigate(Screen.TaskBoard.createRoute(chatRoomId))
                 }
             )
         }
@@ -190,28 +196,33 @@ fun KosmosApp(
             )
         }
 
-        composable(Screen.UserSearch.route) {
+        composable(Screen.UserSearch.route) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: return@composable
             UserSearchScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
                 onUserClick = { userId ->
-                    navController.navigate(Screen.UserProfile.createRoute(userId))
+                    navController.navigate(Screen.UserProfile.createRoute(userId, projectId))
                 }
             )
         }
 
         composable(Screen.UserProfile.route) { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: return@composable
             UserProfileScreen(
                 userId = userId,
+                projectId = projectId,
                 onNavigateBack = {
                     navController.popBackStack()
                 },
-                onStartChat = { userId ->
-                    // TODO: Implement chat creation with selected user
-                    // For now, just navigate back
-                    navController.popBackStack()
+                onStartChat = { targetUserId, chatRoomId ->
+                    // Navigate to the chat room
+                    navController.navigate(Screen.Chat.createRoute(chatRoomId)) {
+                        // Pop back to chat list
+                        popUpTo(Screen.ChatList.createRoute(projectId)) { inclusive = false }
+                    }
                 }
             )
         }
@@ -240,6 +251,8 @@ fun KosmosApp(
 
 @Composable
 fun SettingsScreen(onNavigateBack: () -> Unit, onLogout: () -> Unit) {
+    var showClearCacheDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -255,34 +268,195 @@ fun SettingsScreen(onNavigateBack: () -> Unit, onLogout: () -> Unit) {
             )
         }
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
+                .padding(padding),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = "Settings",
-                style = MaterialTheme.typography.headlineMedium
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+            // App Information Section
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "App Information",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
 
-            // Logout button
-            Button(
-                onClick = onLogout,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Text("Logout")
+                        InfoRow("App Name", "Kosmos")
+                        InfoRow("Version", "1.0.0 (MVP)")
+                        InfoRow("Build Type", if (BuildConfig.DEBUG) "Debug" else "Release")
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            // Preferences Section
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Preferences",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "More settings coming soon...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        Text(
+                            text = "Coming soon: Theme, Notifications, Online Status",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // Storage Section
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Storage",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        InfoRow("Cache Size", "~0 MB")
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            onClick = { showClearCacheDialog = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Clear Cache")
+                        }
+                    }
+                }
+            }
+
+            // About Section
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "About",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "Kosmos is a project management and team communication app with real-time messaging, task management, and role-based access control.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "Built with: Jetpack Compose, Supabase, Room Database",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // Logout Section
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Button(
+                            onClick = onLogout,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Icon(Icons.Default.ExitToApp, "Logout")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Logout")
+                        }
+                    }
+                }
+            }
+
+            // Bottom Spacing
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+
+        // Clear Cache Dialog
+        if (showClearCacheDialog) {
+            AlertDialog(
+                onDismissRequest = { showClearCacheDialog = false },
+                title = { Text("Clear Cache?") },
+                text = { Text("This will clear all cached data. The app will need to re-download data from the server.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            // TODO: Implement cache clearing
+                            showClearCacheDialog = false
+                        }
+                    ) {
+                        Text("Clear")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showClearCacheDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
             )
         }
+    }
+}
+
+@Composable
+private fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 
@@ -305,9 +479,11 @@ sealed class Screen(val route: String) {
     object Profile : Screen("profile")
     object Settings : Screen("settings")
     object SpeechDemo : Screen("speechDemo")
-    object UserSearch : Screen("userSearch")
-    object UserProfile : Screen("userProfile/{userId}") {
-        fun createRoute(userId: String) = "userProfile/$userId"
+    object UserSearch : Screen("userSearch/{projectId}") {
+        fun createRoute(projectId: String) = "userSearch/$projectId"
+    }
+    object UserProfile : Screen("userProfile/{userId}/{projectId}") {
+        fun createRoute(userId: String, projectId: String) = "userProfile/$userId/$projectId"
     }
 }
 

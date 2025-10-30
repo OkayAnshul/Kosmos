@@ -116,14 +116,13 @@ class ProjectRepository @Inject constructor(
 
     /**
      * Get all projects for a user (where they are a member)
+     * Includes both owned projects and projects where user is a member
      *
      * @param userId User ID
      * @return Flow of projects
      */
     fun getUserProjectsFlow(userId: String): Flow<List<Project>> {
-        // TODO: Join with project_members to get all projects where user is a member
-        // For now, return projects owned by user
-        return projectDao.getProjectsByOwner(userId)
+        return projectDao.getProjectsByUserMembership(userId)
     }
 
     /**
@@ -504,5 +503,16 @@ class ProjectRepository @Inject constructor(
     ): Boolean {
         val member = getMember(projectId, userId) ?: return false
         return PermissionChecker.hasPermission(member, permission).isGranted()
+    }
+
+    /**
+     * Get count of shared projects between two users
+     *
+     * @param userId1 First user ID
+     * @param userId2 Second user ID
+     * @return Number of projects both users are members of
+     */
+    suspend fun getSharedProjectCount(userId1: String, userId2: String): Int {
+        return projectMemberDao.getSharedProjectCount(userId1, userId2)
     }
 }

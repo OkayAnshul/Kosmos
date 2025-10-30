@@ -57,4 +57,13 @@ interface ProjectMemberDao {
 
     @Query("UPDATE project_members SET lastActivityAt = :timestamp WHERE projectId = :projectId AND userId = :userId")
     suspend fun updateLastActivity(projectId: String, userId: String, timestamp: Long)
+
+    @Query("""
+        SELECT COUNT(DISTINCT pm1.projectId)
+        FROM project_members pm1
+        INNER JOIN project_members pm2 ON pm1.projectId = pm2.projectId
+        WHERE pm1.userId = :userId1 AND pm2.userId = :userId2
+        AND pm1.isActive = 1 AND pm2.isActive = 1
+    """)
+    suspend fun getSharedProjectCount(userId1: String, userId2: String): Int
 }

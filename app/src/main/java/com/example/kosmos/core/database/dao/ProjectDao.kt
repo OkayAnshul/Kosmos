@@ -16,6 +16,14 @@ interface ProjectDao {
     @Query("SELECT * FROM projects WHERE ownerId = :userId ORDER BY createdAt DESC")
     fun getProjectsByOwner(userId: String): Flow<List<Project>>
 
+    @Query("""
+        SELECT DISTINCT p.* FROM projects p
+        LEFT JOIN project_members pm ON p.id = pm.projectId
+        WHERE p.ownerId = :userId OR pm.userId = :userId
+        ORDER BY p.updatedAt DESC
+    """)
+    fun getProjectsByUserMembership(userId: String): Flow<List<Project>>
+
     @Query("SELECT * FROM projects WHERE status = :status ORDER BY updatedAt DESC")
     fun getProjectsByStatus(status: ProjectStatus): Flow<List<Project>>
 

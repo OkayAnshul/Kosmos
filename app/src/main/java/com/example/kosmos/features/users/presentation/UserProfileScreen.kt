@@ -27,8 +27,9 @@ import com.example.kosmos.features.users.presentation.components.UserAvatar
 @Composable
 fun UserProfileScreen(
     userId: String,
+    projectId: String,
     onNavigateBack: () -> Unit,
-    onStartChat: (String) -> Unit, // Navigate to chat with userId
+    onStartChat: (String, String) -> Unit, // Navigate to chat with (userId, chatRoomId)
     modifier: Modifier = Modifier,
     viewModel: UserProfileViewModel = hiltViewModel()
 ) {
@@ -36,6 +37,13 @@ fun UserProfileScreen(
 
     LaunchedEffect(userId) {
         viewModel.loadUser(userId)
+    }
+
+    // Navigate to chat when created
+    LaunchedEffect(uiState.createdChatRoomId) {
+        uiState.createdChatRoomId?.let { chatRoomId ->
+            onStartChat(userId, chatRoomId)
+        }
     }
 
     Scaffold(
@@ -67,7 +75,14 @@ fun UserProfileScreen(
             uiState.user != null -> {
                 ProfileContent(
                     user = uiState.user!!,
-                    onStartChat = { onStartChat(userId) },
+                    projectId = projectId,
+                    sharedProjectCount = uiState.sharedProjectCount,
+                    onStartChat = { chatRoomId ->
+                        onStartChat(userId, chatRoomId)
+                    },
+                    onCreateOrGetChat = { targetUserId ->
+                        viewModel.createOrGetDirectChat(projectId, targetUserId)
+                    },
                     modifier = Modifier.padding(paddingValues)
                 )
             }
@@ -81,7 +96,10 @@ fun UserProfileScreen(
 @Composable
 private fun ProfileContent(
     user: User,
-    onStartChat: () -> Unit,
+    projectId: String,
+    sharedProjectCount: Int,
+    onStartChat: (String) -> Unit, // chatRoomId
+    onCreateOrGetChat: (String) -> Unit, // targetUserId
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -133,7 +151,7 @@ private fun ProfileContent(
         ) {
             // Start Chat Button
             Button(
-                onClick = onStartChat,
+                onClick = { onCreateOrGetChat(user.id) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
@@ -156,7 +174,7 @@ private fun ProfileContent(
         }
 
         // Additional Info Section (optional)
-        ProfileInfoCard(user = user)
+        ProfileInfoCard(user = user, sharedProjectCount = sharedProjectCount)
     }
 }
 
@@ -227,6 +245,7 @@ private fun OnlineStatusCard(
 @Composable
 private fun ProfileInfoCard(
     user: User,
+    sharedProjectCount: Int,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -256,10 +275,10 @@ private fun ProfileInfoCard(
                 value = formatMemberSince(user.createdAt)
             )
 
-            // Projects in Common (placeholder)
+            // Projects in Common
             InfoRow(
                 label = "Projects in common",
-                value = "0" // TODO: Calculate from ProjectMember table
+                value = sharedProjectCount.toString()
             )
         }
     }

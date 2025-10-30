@@ -51,6 +51,8 @@ fun ChatListScreen(
     onBackToProjects: () -> Unit,
     modifier: Modifier = Modifier,
     onNavigateToUserSearch: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     viewModel: ChatListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -117,7 +119,7 @@ fun ChatListScreen(
                             text = { Text("Profile") },
                             onClick = {
                                 showUserMenu = false
-                                // TODO: Navigate to profile
+                                onNavigateToProfile()
                             },
                             leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
                         )
@@ -125,7 +127,7 @@ fun ChatListScreen(
                             text = { Text("Settings") },
                             onClick = {
                                 showUserMenu = false
-                                // TODO: Navigate to settings
+                                onNavigateToSettings()
                             },
                             leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
                         )
@@ -201,6 +203,7 @@ fun ChatListScreen(
 fun ChatScreen(
     chatRoomId: String,
     onNavigateBack: () -> Unit,
+    onNavigateToTasks: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ChatViewModel = hiltViewModel()
 ) {
@@ -230,6 +233,10 @@ fun ChatScreen(
                 }
             },
             actions = {
+                // Navigate to Task Board
+                IconButton(onClick = onNavigateToTasks) {
+                    Icon(Icons.Default.Task, contentDescription = "View Tasks")
+                }
                 IconButton(onClick = { /* TODO: Open chat settings */ }) {
                     Icon(Icons.Default.MoreVert, contentDescription = "More")
                 }
