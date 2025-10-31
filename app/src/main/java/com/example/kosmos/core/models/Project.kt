@@ -2,6 +2,7 @@ package com.example.kosmos.core.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
@@ -22,19 +23,23 @@ data class Project(
     /**
      * User ID of the project owner (typically has ADMIN role)
      */
+    @SerialName("owner_id")
     val ownerId: String,
 
     val status: ProjectStatus = ProjectStatus.ACTIVE,
 
     val visibility: ProjectVisibility = ProjectVisibility.PRIVATE,
 
+    @SerialName("created_at")
     val createdAt: Long = System.currentTimeMillis(),
 
+    @SerialName("updated_at")
     val updatedAt: Long = System.currentTimeMillis(),
 
     /**
      * Optional cover image URL for the project
      */
+    @SerialName("image_url")
     val imageUrl: String? = null,
 
     /**

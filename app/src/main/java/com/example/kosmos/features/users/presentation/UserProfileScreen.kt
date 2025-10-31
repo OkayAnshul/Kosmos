@@ -3,14 +3,15 @@ package com.example.kosmos.features.users.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -130,6 +131,22 @@ private fun ProfileContent(
             textAlign = TextAlign.Center
         )
 
+        // Username
+        if (user.username.isNotEmpty()) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                Text(
+                    text = "@${user.username}",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        }
+
         // Email
         Text(
             text = user.email,
@@ -173,8 +190,16 @@ private fun ProfileContent(
             }
         }
 
-        // Additional Info Section (optional)
+        // Additional Info Sections
         ProfileInfoCard(user = user, sharedProjectCount = sharedProjectCount)
+
+        // Bio Section
+        if (!user.bio.isNullOrBlank()) {
+            BioSection(bio = user.bio)
+        }
+
+        // Social Links Section
+        SocialLinksSection(user = user)
     }
 }
 
@@ -269,6 +294,30 @@ private fun ProfileInfoCard(
 
             HorizontalDivider()
 
+            // Age
+            if (user.age != null && user.age > 0) {
+                InfoRow(
+                    label = "Age",
+                    value = user.age.toString()
+                )
+            }
+
+            // Role/Title
+            if (!user.role.isNullOrBlank()) {
+                InfoRow(
+                    label = "Role",
+                    value = user.role
+                )
+            }
+
+            // Location
+            if (!user.location.isNullOrBlank()) {
+                InfoRow(
+                    label = "Location",
+                    value = user.location
+                )
+            }
+
             // Member Since
             InfoRow(
                 label = "Member since",
@@ -355,6 +404,122 @@ private fun ErrorState(
             )
             Button(onClick = onRetry) {
                 Text("Retry")
+            }
+        }
+    }
+}
+
+/**
+ * Bio Section
+ */
+@Composable
+private fun BioSection(
+    bio: String,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "About",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Text(
+                text = bio,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/**
+ * Social Links Section
+ */
+@Composable
+private fun SocialLinksSection(
+    user: User,
+    modifier: Modifier = Modifier
+) {
+    val uriHandler = LocalUriHandler.current
+
+    // Build list of available social links
+    val socialLinks = buildList {
+        user.githubUrl?.takeIf { it.isNotBlank() }?.let {
+            add(Triple("GitHub", Icons.Default.Code, it))
+        }
+        user.twitterUrl?.takeIf { it.isNotBlank() }?.let {
+            add(Triple("Twitter", Icons.Default.Tag, it))
+        }
+        user.linkedinUrl?.takeIf { it.isNotBlank() }?.let {
+            add(Triple("LinkedIn", Icons.Default.Business, it))
+        }
+        user.websiteUrl?.takeIf { it.isNotBlank() }?.let {
+            add(Triple("Website", Icons.Default.Language, it))
+        }
+        user.portfolioUrl?.takeIf { it.isNotBlank() }?.let {
+            add(Triple("Portfolio", Icons.Default.Folder, it))
+        }
+    }
+
+    if (socialLinks.isNotEmpty()) {
+        Card(
+            modifier = modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Social Links",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    socialLinks.forEach { (name, icon, url) ->
+                        FilledTonalIconButton(
+                            onClick = {
+                                try {
+                                    val formattedUrl = if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                                        "https://$url"
+                                    } else {
+                                        url
+                                    }
+                                    uriHandler.openUri(formattedUrl)
+                                } catch (e: Exception) {
+                                    // Handle URL error gracefully
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = name
+                            )
+                        }
+                    }
+                }
             }
         }
     }

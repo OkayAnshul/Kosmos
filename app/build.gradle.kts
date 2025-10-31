@@ -124,6 +124,7 @@ dependencies {
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.utils)
+    implementation(libs.ktor.client.okhttp) // OkHttp engine for WebSocket support
 
     // Networking
     implementation(libs.retrofit)

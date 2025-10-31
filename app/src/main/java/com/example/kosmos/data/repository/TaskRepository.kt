@@ -111,11 +111,16 @@ class TaskRepository @Inject constructor(
             try {
                 val supabaseResult = supabaseTaskDataSource.insertTask(taskWithId)
                 if (supabaseResult.isFailure) {
-                    Log.w(TAG, "Failed to sync task to Supabase: ${supabaseResult.exceptionOrNull()?.message}")
+                    val error = supabaseResult.exceptionOrNull()
+                    Log.e(TAG, "❌ SUPABASE SYNC FAILED for task", error)
+                    Log.e(TAG, "Possible causes: RLS policies blocking insert, network error, auth token expired")
+                    Log.e(TAG, "Task saved locally only. Check Supabase RLS policies and network connection.")
                     // Continue anyway - task is saved locally
+                } else {
+                    Log.d(TAG, "✅ Task synced to Supabase successfully: $taskId")
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Error syncing task to Supabase (offline mode active)", e)
+                Log.e(TAG, "❌ Error syncing task to Supabase (possible offline mode)", e)
                 // Continue anyway - task is saved locally
             }
 

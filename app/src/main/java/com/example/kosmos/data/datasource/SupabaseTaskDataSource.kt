@@ -48,27 +48,26 @@ class SupabaseTaskDataSource @Inject constructor(
      */
     suspend fun updateTask(task: Task): Result<Unit> {
         return try {
-            val updates = mapOf(
-                "title" to task.title,
-                "description" to task.description,
-                "status" to task.status.name,
-                "priority" to task.priority.name,
-                "assigned_to_id" to task.assignedToId,
-                "assigned_to_name" to task.assignedToName,
-                "assigned_to_role" to task.assignedToRole?.name,
-                "due_date" to task.dueDate,
-                "tags" to task.tags,
-                "updated_at" to task.updatedAt,
-                "estimated_hours" to task.estimatedHours,
-                "actual_hours" to task.actualHours
-            )
-
-            supabase.from(TABLE_NAME)
-                .update(updates) {
-                    filter {
-                        eq("id", task.id)
-                    }
+            // Use UpdateBuilder DSL to avoid "Serializer for class 'Any'" error
+            // Each field is explicitly typed, preventing type inference issues
+            supabase.from(TABLE_NAME).update({
+                set("title", task.title)
+                set("description", task.description)
+                set("status", task.status.name)
+                set("priority", task.priority.name)
+                set("assigned_to_id", task.assignedToId)
+                set("assigned_to_name", task.assignedToName)
+                set("assigned_to_role", task.assignedToRole?.name)
+                set("due_date", task.dueDate)
+                set("tags", task.tags)
+                set("updated_at", task.updatedAt)
+                set("estimated_hours", task.estimatedHours)
+                set("actual_hours", task.actualHours)
+            }) {
+                filter {
+                    eq("id", task.id)
                 }
+            }
 
             Log.d(TAG, "Task updated successfully: id=${task.id}")
             Result.success(Unit)
@@ -92,17 +91,15 @@ class SupabaseTaskDataSource @Inject constructor(
         updatedAt: Long
     ): Result<Unit> {
         return try {
-            val updates = mapOf(
-                "status" to status.name,
-                "updated_at" to updatedAt
-            )
-
-            supabase.from(TABLE_NAME)
-                .update(updates) {
-                    filter {
-                        eq("id", taskId)
-                    }
+            // Use UpdateBuilder DSL for type safety
+            supabase.from(TABLE_NAME).update({
+                set("status", status.name)
+                set("updated_at", updatedAt)
+            }) {
+                filter {
+                    eq("id", taskId)
                 }
+            }
 
             Log.d(TAG, "Task status updated: id=$taskId, status=${status.name}")
             Result.success(Unit)

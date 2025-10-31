@@ -105,6 +105,28 @@ class SupabaseUserDataSource @Inject constructor(
     }
 
     /**
+     * Get a user by username
+     * @param username Username to search for (case-insensitive)
+     * @return Result with User or error (null if not found)
+     */
+    suspend fun getByUsername(username: String): Result<User?> {
+        return try {
+            val user = supabase.from(TABLE_NAME)
+                .select() {
+                    filter {
+                        ilike("username", username)
+                    }
+                }
+                .decodeSingleOrNull<User>()
+
+            Result.success(user)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching user by username: $username", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
      * Get all users
      * @return Result with list of users or error
      */
@@ -141,35 +163,46 @@ class SupabaseUserDataSource @Inject constructor(
             }
 
             // Server-side filtering using Supabase ilike (case-insensitive LIKE)
-            // Search in both display_name and email fields
+            // Search in username, display_name, and email fields
             val searchPattern = "%${query.trim()}%"
 
             // Note: Supabase Postgrest doesn't support complex NOT IN filters easily
             // So we'll fetch and filter client-side for excludeIds
-            val users = supabase.from(TABLE_NAME)
-                .select() {
-                    filter {
-                        // Match on display_name OR email
-                        or {
-                            ilike("display_name", searchPattern)
-                            ilike("email", searchPattern)
+            val users = try {
+                supabase.from(TABLE_NAME)
+                    .select() {
+                        filter {
+                            // Match on username OR display_name OR email
+                            or {
+                                ilike("username", searchPattern)
+                                ilike("display_name", searchPattern)
+                                ilike("email", searchPattern)
+                            }
                         }
+                        // Limit results for performance
+                        limit(limit.toLong())
                     }
-                    // Limit results for performance
-                    limit(limit.toLong())
-                }
-                .decodeList<User>()
-
-            // Client-side filtering for excludeIds
-            val filtered = if (excludeIds.isNotEmpty()) {
-                users.filter { !excludeIds.contains(it.id) }
-            } else {
-                users
+                    .decodeList<User>()
+            } catch (e: Exception) {
+                Log.e(TAG, "JSON deserialization error during search. This may be due to NULL username fields.", e)
+                Log.e(TAG, "Run SQL script to populate username: UPDATE users SET username = LOWER(REPLACE(display_name, ' ', '_')) WHERE username IS NULL")
+                // Return empty list instead of crashing
+                emptyList()
             }
+
+            // Client-side filtering for excludeIds and additional null safety
+            val filtered = users
+                .filter { user ->
+                    // Ensure username is not empty/blank
+                    val hasValidUsername = user.username.isNotBlank()
+                    val notExcluded = !excludeIds.contains(user.id)
+                    hasValidUsername && notExcluded
+                }
 
             // Client-side sorting by display name
             val sorted = filtered.sortedBy { it.displayName }
 
+            Log.d(TAG, "Search completed: query='$query', found ${sorted.size} users")
             Result.success(sorted)
         } catch (e: Exception) {
             Log.e(TAG, "Error searching users: query='$query'", e)

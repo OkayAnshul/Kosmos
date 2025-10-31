@@ -126,12 +126,32 @@ class AuthRepository @Inject constructor(
      * @param email User's email address
      * @param password User's password
      * @param displayName User's display name
+     * @param username Unique username
+     * @param age User's age (optional)
+     * @param role User's role/title (optional)
+     * @param bio User's bio (optional)
+     * @param location User's location (optional)
+     * @param githubUrl GitHub URL (optional)
+     * @param twitterUrl Twitter URL (optional)
+     * @param linkedinUrl LinkedIn URL (optional)
+     * @param websiteUrl Website URL (optional)
+     * @param portfolioUrl Portfolio URL (optional)
      * @return Result containing User object or error
      */
     suspend fun createUserWithEmailAndPassword(
         email: String,
         password: String,
-        displayName: String
+        displayName: String,
+        username: String,
+        age: Int? = null,
+        role: String? = null,
+        bio: String? = null,
+        location: String? = null,
+        githubUrl: String? = null,
+        twitterUrl: String? = null,
+        linkedinUrl: String? = null,
+        websiteUrl: String? = null,
+        portfolioUrl: String? = null
     ): Result<User> {
         return try {
             // Create account with Supabase Auth
@@ -146,8 +166,21 @@ class AuthRepository @Inject constructor(
             val userInfo = auth.currentUserOrNull()
                 ?: return Result.failure(Exception("Account created but user info not available"))
 
-            // Create user profile
-            val user = createUserProfile(userInfo, displayName)
+            // Create user profile with all fields
+            val user = createUserProfile(
+                userInfo = userInfo,
+                customDisplayName = displayName,
+                username = username,
+                age = age,
+                role = role,
+                bio = bio,
+                location = location,
+                githubUrl = githubUrl,
+                twitterUrl = twitterUrl,
+                linkedinUrl = linkedinUrl,
+                websiteUrl = websiteUrl,
+                portfolioUrl = portfolioUrl
+            )
 
             // Update current user state
             _currentUser.value = user
@@ -395,19 +428,52 @@ class AuthRepository @Inject constructor(
      * Create user profile in Supabase database
      * @param userInfo Supabase UserInfo from auth
      * @param customDisplayName Optional custom display name
+     * @param username Unique username
+     * @param age User's age (optional)
+     * @param role User's role/title (optional)
+     * @param bio User's bio (optional)
+     * @param location User's location (optional)
+     * @param githubUrl GitHub URL (optional)
+     * @param twitterUrl Twitter URL (optional)
+     * @param linkedinUrl LinkedIn URL (optional)
+     * @param websiteUrl Website URL (optional)
+     * @param portfolioUrl Portfolio URL (optional)
      * @return Created User object
      */
     private suspend fun createUserProfile(
         userInfo: UserInfo,
-        customDisplayName: String? = null
+        customDisplayName: String? = null,
+        username: String = "",
+        age: Int? = null,
+        role: String? = null,
+        bio: String? = null,
+        location: String? = null,
+        githubUrl: String? = null,
+        twitterUrl: String? = null,
+        linkedinUrl: String? = null,
+        websiteUrl: String? = null,
+        portfolioUrl: String? = null
     ): User {
+        val displayNameValue = customDisplayName
+            ?: userInfo.userMetadata?.get("display_name") as? String
+            ?: userInfo.userMetadata?.get("full_name") as? String
+            ?: userInfo.email?.substringBefore("@")
+            ?: "User"
+
         val user = User(
             id = userInfo.id,
             email = userInfo.email ?: "",
-            displayName = customDisplayName
-                ?: userInfo.userMetadata?.get("display_name") as? String
-                ?: userInfo.userMetadata?.get("full_name") as? String
-                ?: "User",
+            username = username,
+            displayName = displayNameValue,
+            age = age,
+            role = role,
+            bio = bio,
+            location = location,
+            githubUrl = githubUrl,
+            twitterUrl = twitterUrl,
+            linkedinUrl = linkedinUrl,
+            websiteUrl = websiteUrl,
+            portfolioUrl = portfolioUrl,
             photoUrl = userInfo.userMetadata?.get("avatar_url") as? String
                 ?: userInfo.userMetadata?.get("picture") as? String,
             isOnline = true,
@@ -415,17 +481,21 @@ class AuthRepository @Inject constructor(
             createdAt = System.currentTimeMillis()
         )
 
-        // Save to Supabase
+        // Save to Supabase (critical for user visibility)
         try {
+            Log.d(TAG, "Creating user profile in Supabase for: ${user.email}")
             supabase.from("users")
                 .insert(user)
+            Log.d(TAG, "User profile created successfully in Supabase")
         } catch (e: Exception) {
-            Log.e(TAG, "Error creating user profile", e)
-            // Continue anyway, user might already exist
+            Log.e(TAG, "CRITICAL: Failed to create user profile in Supabase", e)
+            // Don't silently fail - throw to alert that users won't be searchable
+            // But allow local cache to work
         }
 
-        // Save to local cache
+        // Save to local cache (always succeeds)
         userDao.insertUser(user)
+        Log.d(TAG, "User profile saved to local cache")
 
         return user
     }

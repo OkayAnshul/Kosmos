@@ -11,6 +11,9 @@ import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.realtime.realtime
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.storage
+import io.github.jan.supabase.serializer.KotlinXSerializer
+import io.ktor.client.engine.okhttp.OkHttp
+import kotlinx.serialization.json.Json
 
 /**
  * Supabase configuration and client initialization
@@ -35,14 +38,27 @@ object SupabaseConfig {
             supabaseUrl = BuildConfig.SUPABASE_URL,
             supabaseKey = BuildConfig.SUPABASE_ANON_KEY
         ) {
+            // Use OkHttp engine for WebSocket support (required for Realtime)
+            httpEngine = OkHttp.create()
+
             install(Auth) {
                 // OAuth configuration
                 scheme = "kosmos" // Deep link scheme for OAuth callback
                 host = "auth-callback" // Deep link host for OAuth callback
+
+                // Session persistence - keeps users logged in
+                alwaysAutoRefresh = true // Auto-refresh expired tokens
+                autoLoadFromStorage = true // Auto-restore session on app start
+                autoSaveToStorage = true // Auto-save session after login
             }
 
             install(Postgrest) {
-                // Automatically converts responses to/from Kotlin objects
+                // Custom JSON serialization with null handling
+                serializer = KotlinXSerializer(Json {
+                    ignoreUnknownKeys = true        // Ignore fields not in model
+                    coerceInputValues = true        // Convert NULL to default values
+                    encodeDefaults = true           // Include default values in serialization
+                })
             }
 
             install(Storage) {

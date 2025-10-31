@@ -223,12 +223,27 @@ class UserRepository @Inject constructor(
             // Step 1: Search local Room cache first (fast, offline-capable)
             val localUsers = userDao.getAllUsers()
                 .filter { user ->
-                    val matchesQuery = user.displayName.contains(trimmedQuery, ignoreCase = true) ||
+                    val matchesQuery = user.username.contains(trimmedQuery, ignoreCase = true) ||
+                                     user.displayName.contains(trimmedQuery, ignoreCase = true) ||
                                      user.email.contains(trimmedQuery, ignoreCase = true)
                     val notExcluded = !excludeIds.contains(user.id)
                     matchesQuery && notExcluded
                 }
-                .sortedBy { it.displayName }
+                .sortedWith(
+                    compareByDescending<User> {
+                        it.username.equals(trimmedQuery, ignoreCase = true) // Exact username match
+                    }.thenByDescending {
+                        it.username.startsWith(trimmedQuery, ignoreCase = true) // Username starts with
+                    }.thenByDescending {
+                        it.username.contains(trimmedQuery, ignoreCase = true) // Username contains
+                    }.thenByDescending {
+                        it.displayName.startsWith(trimmedQuery, ignoreCase = true) // Name starts with
+                    }.thenByDescending {
+                        it.displayName.contains(trimmedQuery, ignoreCase = true) // Name contains
+                    }.thenBy {
+                        it.displayName // Alphabetical fallback
+                    }
+                )
                 .take(limit)
 
             // Emit local results immediately (fast response)
@@ -244,13 +259,30 @@ class UserRepository @Inject constructor(
             if (supabaseResult.isSuccess) {
                 val supabaseUsers = supabaseResult.getOrNull() ?: emptyList()
 
+                // Sort Supabase results with username priority
+                val sortedSupabaseUsers = supabaseUsers.sortedWith(
+                    compareByDescending<User> {
+                        it.username.equals(trimmedQuery, ignoreCase = true) // Exact username match
+                    }.thenByDescending {
+                        it.username.startsWith(trimmedQuery, ignoreCase = true) // Username starts with
+                    }.thenByDescending {
+                        it.username.contains(trimmedQuery, ignoreCase = true) // Username contains
+                    }.thenByDescending {
+                        it.displayName.startsWith(trimmedQuery, ignoreCase = true) // Name starts with
+                    }.thenByDescending {
+                        it.displayName.contains(trimmedQuery, ignoreCase = true) // Name contains
+                    }.thenBy {
+                        it.displayName // Alphabetical fallback
+                    }
+                )
+
                 // Step 3: Cache Supabase results in Room
-                if (supabaseUsers.isNotEmpty()) {
-                    userDao.insertUsers(supabaseUsers)
+                if (sortedSupabaseUsers.isNotEmpty()) {
+                    userDao.insertUsers(sortedSupabaseUsers)
                 }
 
-                // Emit fresh results from Supabase
-                emit(Result.success(supabaseUsers))
+                // Emit fresh sorted results from Supabase
+                emit(Result.success(sortedSupabaseUsers))
             } else {
                 // If Supabase fetch fails (e.g., no internet), local cache was already emitted
                 // Optionally emit error, but don't fail the whole flow
@@ -292,6 +324,23 @@ class UserRepository @Inject constructor(
             }
         } catch (e: Exception) {
             emit(Result.failure(e))
+        }
+    }
+
+    /**
+     * Check if username exists in Supabase
+     * Used for username availability validation during registration
+     *
+     * @param username Username to check
+     * @return True if username exists, false otherwise
+     */
+    suspend fun checkUsernameExists(username: String): Boolean {
+        return try {
+            val result = supabaseUserDataSource.getByUsername(username)
+            result.isSuccess && result.getOrNull() != null
+        } catch (e: Exception) {
+            // In case of error, assume username is taken to be safe
+            true
         }
     }
 }

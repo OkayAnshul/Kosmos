@@ -251,7 +251,14 @@ private fun ProjectInfoCard(project: com.example.kosmos.core.models.Project?) {
 }
 
 @Composable
-private fun MemberCardSimple(member: ProjectMember) {
+private fun MemberCardSimple(member: ProjectMember, viewModel: ProjectViewModel = hiltViewModel()) {
+    // Load user data for this member
+    var user by remember { mutableStateOf<User?>(null) }
+
+    LaunchedEffect(member.userId) {
+        user = viewModel.getUserById(member.userId)
+    }
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -266,12 +273,12 @@ private fun MemberCardSimple(member: ProjectMember) {
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(
-                    text = member.userId,
+                    text = user?.displayName ?: user?.email?.substringBefore("@") ?: "Loading...",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = member.role.name,
+                    text = "${member.role.name}${user?.email?.let { " · $it" } ?: ""}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )

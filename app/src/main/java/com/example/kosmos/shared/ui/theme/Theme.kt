@@ -781,10 +781,10 @@ fun TaskCard(
                 )
             }
 
-            if (!isCompact && task.description.isNotBlank()) {
+            if (!isCompact && !task.description.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = task.description,
+                    text = task.description ?: "",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     maxLines = 2,

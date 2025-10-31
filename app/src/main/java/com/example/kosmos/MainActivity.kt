@@ -103,7 +103,7 @@ fun KosmosApp(
                 },
                 uiState = authUiState,
                 onSignUp = authViewModel::signUp,
-                onClearError = authViewModel::clearError
+                onCheckUsernameAvailability = authViewModel::checkUsernameAvailability
             )
         }
 

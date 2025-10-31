@@ -128,7 +128,7 @@ private fun SearchBar(
         value = query,
         onValueChange = onQueryChange,
         modifier = modifier,
-        placeholder = { Text("Search by name or email") },
+        placeholder = { Text("Search by name, @username, or email") },
         leadingIcon = {
             Icon(
                 Icons.Default.Search,

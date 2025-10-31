@@ -28,7 +28,7 @@ class ChatListViewModel @Inject constructor(
 
     init {
         if (currentUser != null) {
-            loadChatRooms()
+            // loadChatRooms() will be called from ChatListScreen with projectId
             loadCurrentUser()
         }
     }
@@ -52,20 +52,14 @@ class ChatListViewModel @Inject constructor(
      * Load chat rooms for a specific project
      * @param projectId Project ID to filter chat rooms
      */
-    fun loadChatRooms(projectId: String? = null) {
+    fun loadChatRooms(projectId: String) {
         currentUser?.let { firebaseUser ->
             viewModelScope.launch {
                 try {
-                    chatRepository.getChatRoomsFlow(firebaseUser.id).collect { chatRooms ->
-                        // Filter by projectId if provided
-                        val filteredRooms = if (projectId != null) {
-                            chatRooms.filter { it.projectId == projectId }
-                        } else {
-                            chatRooms
-                        }
-
+                    // Use the new method that filters by projectId at repository level
+                    chatRepository.getChatRoomsForProject(firebaseUser.id, projectId).collect { chatRooms ->
                         _uiState.value = _uiState.value.copy(
-                            chatRooms = filteredRooms,
+                            chatRooms = chatRooms,
                             isLoading = false
                         )
                     }

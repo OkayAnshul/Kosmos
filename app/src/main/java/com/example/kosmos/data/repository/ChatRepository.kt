@@ -28,10 +28,26 @@ class ChatRepository @Inject constructor(
 ) {
 
     /**
-     * Get all chat rooms for a user with real-time updates
+     * Get chat rooms for a specific project with real-time updates
+     * Filters by both userId (participant) and projectId
+     * @param userId User ID (must be a participant)
+     * @param projectId Project ID (shows only rooms in this project)
+     * @return Flow of chat room list for the project
+     */
+    fun getChatRoomsForProject(userId: String, projectId: String): Flow<List<ChatRoom>> {
+        return chatRoomDao.getAllChatRoomsFlow().map { rooms ->
+            rooms.filter { room ->
+                room.participantIds.contains(userId) && room.projectId == projectId
+            }
+        }
+    }
+
+    /**
+     * Get all chat rooms for a user across all projects (legacy method)
      * @param userId User ID
      * @return Flow of chat room list
      */
+    @Deprecated("Use getChatRoomsForProject() to avoid showing all chats in every project")
     fun getChatRoomsFlow(userId: String): Flow<List<ChatRoom>> {
         return chatRoomDao.getAllChatRoomsFlow().map { rooms ->
             rooms.filter { room -> room.participantIds.contains(userId) }
@@ -78,8 +94,16 @@ class ChatRepository @Inject constructor(
             // Step 2: Send to Supabase (async sync)
             val supabaseResult = supabaseMessageDataSource.insertMessage(messageWithId)
             if (supabaseResult.isFailure) {
-                // Log error but don't fail - message is saved locally
-                android.util.Log.e("ChatRepository", "Failed to sync message to Supabase", supabaseResult.exceptionOrNull())
+                // Log detailed error for debugging
+                val error = supabaseResult.exceptionOrNull()
+                android.util.Log.e("ChatRepository", "❌ SUPABASE SYNC FAILED for message", error)
+                android.util.Log.e("ChatRepository", "Possible causes: RLS policies blocking insert, network error, auth token expired")
+                android.util.Log.e("ChatRepository", "Message saved locally only. Check Supabase RLS policies and network connection.")
+
+                // Message is still saved locally, so we don't fail the operation
+                // But we could add a flag to indicate sync status if needed
+            } else {
+                android.util.Log.d("ChatRepository", "✅ Message synced to Supabase successfully: $messageId")
             }
 
             // Step 3: Update chat room last message timestamp
@@ -90,10 +114,17 @@ class ChatRepository @Inject constructor(
                     lastMessage = message.content.take(100)
                 )
                 chatRoomDao.updateChatRoom(updatedRoom)
+
+                // Try to sync chat room update as well
+                val chatRoomSyncResult = supabaseChatDataSource.updateChatRoom(updatedRoom)
+                if (chatRoomSyncResult.isFailure) {
+                    android.util.Log.e("ChatRepository", "❌ Failed to sync chat room update to Supabase", chatRoomSyncResult.exceptionOrNull())
+                }
             }
 
             Result.success(messageId)
         } catch (e: Exception) {
+            android.util.Log.e("ChatRepository", "❌ CRITICAL: Failed to save message", e)
             Result.failure(e)
         }
     }
@@ -123,11 +154,17 @@ class ChatRepository @Inject constructor(
             // Sync to Supabase
             val supabaseResult = supabaseChatDataSource.insertChatRoom(chatRoomWithId)
             if (supabaseResult.isFailure) {
-                android.util.Log.w("ChatRepository", "Failed to sync chat room to Supabase", supabaseResult.exceptionOrNull())
+                val error = supabaseResult.exceptionOrNull()
+                android.util.Log.e("ChatRepository", "❌ SUPABASE SYNC FAILED for chat room", error)
+                android.util.Log.e("ChatRepository", "Possible causes: RLS policies blocking insert, network error, auth token expired")
+                android.util.Log.e("ChatRepository", "Chat room saved locally only. Check Supabase RLS policies.")
+            } else {
+                android.util.Log.d("ChatRepository", "✅ Chat room synced to Supabase successfully: $chatRoomId")
             }
 
             Result.success(chatRoomId)
         } catch (e: Exception) {
+            android.util.Log.e("ChatRepository", "❌ CRITICAL: Failed to create chat room", e)
             Result.failure(e)
         }
     }

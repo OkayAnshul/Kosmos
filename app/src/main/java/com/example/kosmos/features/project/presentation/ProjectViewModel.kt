@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.kosmos.core.models.Project
 import com.example.kosmos.core.models.ProjectMember
 import com.example.kosmos.core.models.ProjectRole
+import com.example.kosmos.core.models.User
 import com.example.kosmos.data.repository.AuthRepository
 import com.example.kosmos.data.repository.ProjectRepository
+import com.example.kosmos.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,7 +23,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ProjectViewModel @Inject constructor(
     private val projectRepository: ProjectRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProjectUiState())
@@ -221,6 +224,21 @@ class ProjectViewModel @Inject constructor(
                     )
                 }
             }
+        }
+    }
+
+    /**
+     * Get user by ID
+     * Used to load user data for project members
+     * @param userId User ID
+     * @return User object or null if not found
+     */
+    suspend fun getUserById(userId: String): User? {
+        return try {
+            userRepository.getUserById(userId)
+        } catch (e: Exception) {
+            android.util.Log.e("ProjectViewModel", "Failed to load user: ${e.message}")
+            null
         }
     }
 

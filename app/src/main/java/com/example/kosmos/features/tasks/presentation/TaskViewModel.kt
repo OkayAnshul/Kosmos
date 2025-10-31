@@ -214,7 +214,7 @@ class TaskViewModel @Inject constructor(
             showEditTaskDialog = true,
             editingTask = task,
             createTaskTitle = task.title,
-            createTaskDescription = task.description,
+            createTaskDescription = task.description ?: "",
             createTaskPriority = task.priority,
             createTaskDueDate = task.dueDate,
             createTaskTags = task.tags,

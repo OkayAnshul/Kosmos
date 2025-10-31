@@ -2,6 +2,7 @@ package com.example.kosmos.core.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
@@ -18,11 +19,13 @@ data class ProjectMember(
     /**
      * Project ID this membership belongs to
      */
+    @SerialName("project_id")
     val projectId: String,
 
     /**
      * User ID of the member
      */
+    @SerialName("user_id")
     val userId: String,
 
     /**
@@ -33,27 +36,32 @@ data class ProjectMember(
     /**
      * When the member joined the project
      */
+    @SerialName("joined_at")
     val joinedAt: Long = System.currentTimeMillis(),
 
     /**
      * Who invited/added this member
      */
+    @SerialName("invited_by")
     val invitedBy: String? = null,
 
     /**
      * Is this member active in the project
      */
+    @SerialName("is_active")
     val isActive: Boolean = true,
 
     /**
      * Last activity timestamp
      */
+    @SerialName("last_activity_at")
     val lastActivityAt: Long = System.currentTimeMillis(),
 
     /**
      * Custom permissions override (JSON array of Permission enum names)
      * If null, uses default permissions for the role
      */
+    @SerialName("custom_permissions")
     val customPermissions: String? = null
 )
 

@@ -53,10 +53,21 @@ fun UserListItem(
                     overflow = TextOverflow.Ellipsis
                 )
 
+                // Username
+                if (user.username.isNotEmpty()) {
+                    Text(
+                        text = "@${user.username}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
                 // Email
                 Text(
                     text = user.email,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis

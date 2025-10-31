@@ -904,10 +904,10 @@ private fun TaskCard(
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    if (task.description.isNotBlank()) {
+                    if (!task.description.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = task.description,
+                            text = task.description ?: "",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             maxLines = 2,
