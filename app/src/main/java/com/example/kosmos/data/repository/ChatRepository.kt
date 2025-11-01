@@ -6,6 +6,7 @@ import com.example.kosmos.core.models.ChatRoom
 import com.example.kosmos.core.models.Message
 import com.example.kosmos.data.datasource.SupabaseMessageDataSource
 import com.example.kosmos.data.realtime.SupabaseRealtimeManager
+import com.example.kosmos.data.sync.SyncRetryHelper
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -91,14 +92,22 @@ class ChatRepository @Inject constructor(
             // Step 1: Save locally first (optimistic update)
             messageDao.insertMessage(messageWithId)
 
-            // Step 2: Send to Supabase (async sync)
-            val supabaseResult = supabaseMessageDataSource.insertMessage(messageWithId)
+            // Step 2: Send to Supabase (async sync) with retry on FK violation
+            val supabaseResult = SyncRetryHelper.retryOnForeignKeyViolation(
+                maxRetries = 3,
+                initialDelayMs = 1000,
+                entityName = "message"
+            ) {
+                supabaseMessageDataSource.insertMessage(messageWithId)
+            }
+
             if (supabaseResult.isFailure) {
-                // Log detailed error for debugging
                 val error = supabaseResult.exceptionOrNull()
-                android.util.Log.e("ChatRepository", "❌ SUPABASE SYNC FAILED for message", error)
-                android.util.Log.e("ChatRepository", "Possible causes: RLS policies blocking insert, network error, auth token expired")
-                android.util.Log.e("ChatRepository", "Message saved locally only. Check Supabase RLS policies and network connection.")
+
+                // Use diagnostic message for better error reporting
+                val diagnosticMessage = SyncRetryHelper.getDiagnosticMessage(error, "message")
+                android.util.Log.e("ChatRepository", "❌ SUPABASE SYNC FAILED for message")
+                android.util.Log.e("ChatRepository", diagnosticMessage, error)
 
                 // Message is still saved locally, so we don't fail the operation
                 // But we could add a flag to indicate sync status if needed
@@ -151,13 +160,20 @@ class ChatRepository @Inject constructor(
             // Save locally
             chatRoomDao.insertChatRoom(chatRoomWithId)
 
-            // Sync to Supabase
-            val supabaseResult = supabaseChatDataSource.insertChatRoom(chatRoomWithId)
+            // Sync to Supabase with retry on FK violation (in case project not synced yet)
+            val supabaseResult = SyncRetryHelper.retryOnForeignKeyViolation(
+                maxRetries = 3,
+                initialDelayMs = 1000,
+                entityName = "chat_room"
+            ) {
+                supabaseChatDataSource.insertChatRoom(chatRoomWithId)
+            }
+
             if (supabaseResult.isFailure) {
                 val error = supabaseResult.exceptionOrNull()
-                android.util.Log.e("ChatRepository", "❌ SUPABASE SYNC FAILED for chat room", error)
-                android.util.Log.e("ChatRepository", "Possible causes: RLS policies blocking insert, network error, auth token expired")
-                android.util.Log.e("ChatRepository", "Chat room saved locally only. Check Supabase RLS policies.")
+                val diagnosticMessage = SyncRetryHelper.getDiagnosticMessage(error, "chat room")
+                android.util.Log.e("ChatRepository", "❌ SUPABASE SYNC FAILED for chat room")
+                android.util.Log.e("ChatRepository", diagnosticMessage, error)
             } else {
                 android.util.Log.d("ChatRepository", "✅ Chat room synced to Supabase successfully: $chatRoomId")
             }

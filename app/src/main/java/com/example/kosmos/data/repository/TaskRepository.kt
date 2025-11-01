@@ -9,6 +9,7 @@ import com.example.kosmos.core.models.TaskStatus
 import com.example.kosmos.core.validators.PermissionChecker
 import com.example.kosmos.core.validators.RoleValidator
 import com.example.kosmos.data.datasource.SupabaseTaskDataSource
+import com.example.kosmos.data.sync.SyncRetryHelper
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -107,14 +108,21 @@ class TaskRepository @Inject constructor(
             // HYBRID PATTERN: Save to Room first (instant UI update)
             taskDao.insertTask(taskWithId)
 
-            // Sync to Supabase in background (don't block UI)
+            // Sync to Supabase in background with retry on FK violation (don't block UI)
             try {
-                val supabaseResult = supabaseTaskDataSource.insertTask(taskWithId)
+                val supabaseResult = SyncRetryHelper.retryOnForeignKeyViolation(
+                    maxRetries = 3,
+                    initialDelayMs = 1000,
+                    entityName = "task"
+                ) {
+                    supabaseTaskDataSource.insertTask(taskWithId)
+                }
+
                 if (supabaseResult.isFailure) {
                     val error = supabaseResult.exceptionOrNull()
-                    Log.e(TAG, "❌ SUPABASE SYNC FAILED for task", error)
-                    Log.e(TAG, "Possible causes: RLS policies blocking insert, network error, auth token expired")
-                    Log.e(TAG, "Task saved locally only. Check Supabase RLS policies and network connection.")
+                    val diagnosticMessage = SyncRetryHelper.getDiagnosticMessage(error, "task")
+                    Log.e(TAG, "❌ SUPABASE SYNC FAILED for task")
+                    Log.e(TAG, diagnosticMessage, error)
                     // Continue anyway - task is saved locally
                 } else {
                     Log.d(TAG, "✅ Task synced to Supabase successfully: $taskId")

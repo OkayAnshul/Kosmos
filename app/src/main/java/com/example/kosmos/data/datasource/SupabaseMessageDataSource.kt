@@ -49,14 +49,14 @@ class SupabaseMessageDataSource @Inject constructor(
         editedAt: Long
     ): Result<Unit> {
         return try {
-            val updates = mapOf(
-                "content" to content,
-                "is_edited" to true,
-                "edited_at" to editedAt
-            )
-
+            // Use UpdateBuilder DSL to avoid "Serializer for class 'Any'" error
+            // Mixed types (String, Boolean, Long) require explicit type safety
             supabase.from(TABLE_NAME)
-                .update(updates) {
+                .update({
+                    set("content", content)
+                    set("is_edited", true)
+                    set("edited_at", editedAt)
+                }) {
                     filter {
                         eq("id", messageId)
                     }
