@@ -3,8 +3,6 @@ package com.example.kosmos.features.profile.presentation
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,17 +11,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.kosmos.features.auth.presentation.AuthViewModel
+import com.example.kosmos.shared.ui.components.*
+import com.example.kosmos.shared.ui.designsystem.IconSet
+import com.example.kosmos.shared.ui.designsystem.Tokens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onNavigateBack: () -> Unit,
+    onEditProfileClick: () -> Unit = {},
+    onPrivacySettingsClick: () -> Unit = {},
+    onNotificationSettingsClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
@@ -35,22 +38,25 @@ fun ProfileScreen(
         TopAppBar(
             title = { Text("Profile") },
             navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                }
+                IconButtonStandard(
+                    icon = IconSet.Navigation.back,
+                    onClick = onNavigateBack,
+                    contentDescription = "Back"
+                )
             }
         )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(Tokens.Spacing.md),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.lg)
         ) {
             // Profile Picture
             Box(
                 modifier = Modifier
-                    .size(120.dp)
+                    .size(Tokens.Size.avatarXXLarge)
                     .clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
@@ -61,7 +67,7 @@ fun ProfileScreen(
                             .data(currentUser.photoUrl)
                             .crossfade(true)
                             .build(),
-                        contentDescription = null,
+                        contentDescription = "Profile picture",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -82,73 +88,99 @@ fun ProfileScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
             // User Info
-            Card(
+            StandardCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.md)
                 ) {
-                    Text(
-                        text = "Display Name",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                    Text(
-                        text = uiState.currentUser?.displayName ?: "Unknown",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Column {
+                        Text(
+                            text = "Display Name",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Text(
+                            text = uiState.currentUser?.displayName ?: "Unknown",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Email",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                    Text(
-                        text = uiState.currentUser?.email ?: "Unknown",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Column {
+                        Text(
+                            text = "Email",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Text(
+                            text = uiState.currentUser?.email ?: "Unknown",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
             // Profile Actions
-            Card(
+            StandardCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column {
-                    ListItem(
-                        headlineContent = { Text("Edit Profile") },
-                        leadingContent = { Icon(Icons.Default.Edit, contentDescription = null) },
-                        trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) },
-                        modifier = Modifier.clickable { /* TODO: Implement edit profile */ }
-                    )
+                ListItem(
+                    headlineContent = { Text("Edit Profile") },
+                    leadingContent = {
+                        Icon(
+                            imageVector = IconSet.Action.edit,
+                            contentDescription = "Edit profile"
+                        )
+                    },
+                    trailingContent = {
+                        Icon(
+                            imageVector = IconSet.Navigation.forward,
+                            contentDescription = null
+                        )
+                    },
+                    modifier = Modifier.clickable { onEditProfileClick() }
+                )
 
-                    HorizontalDivider()
+                ListDivider()
 
-                    ListItem(
-                        headlineContent = { Text("Privacy Settings") },
-                        leadingContent = { Icon(Icons.Default.Lock, contentDescription = null) },
-                        trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) },
-                        modifier = Modifier.clickable { /* TODO: Implement privacy settings */ }
-                    )
+                ListItem(
+                    headlineContent = { Text("Privacy Settings") },
+                    leadingContent = {
+                        Icon(
+                            imageVector = IconSet.Settings.privacy,
+                            contentDescription = "Privacy settings"
+                        )
+                    },
+                    trailingContent = {
+                        Icon(
+                            imageVector = IconSet.Navigation.forward,
+                            contentDescription = null
+                        )
+                    },
+                    modifier = Modifier.clickable { onPrivacySettingsClick() }
+                )
 
-                    HorizontalDivider()
+                ListDivider()
 
-                    ListItem(
-                        headlineContent = { Text("Notifications") },
-                        leadingContent = { Icon(Icons.Default.Notifications, contentDescription = null) },
-                        trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) },
-                        modifier = Modifier.clickable { /* TODO: Implement notifications */ }
-                    )
-                }
+                ListItem(
+                    headlineContent = { Text("Notifications") },
+                    leadingContent = {
+                        Icon(
+                            imageVector = IconSet.Settings.notifications,
+                            contentDescription = "Notification settings"
+                        )
+                    },
+                    trailingContent = {
+                        Icon(
+                            imageVector = IconSet.Navigation.forward,
+                            contentDescription = null
+                        )
+                    },
+                    modifier = Modifier.clickable { onNotificationSettingsClick() }
+                )
             }
         }
     }

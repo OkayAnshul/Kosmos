@@ -28,6 +28,9 @@ interface ProjectMemberDao {
     @Query("SELECT COUNT(*) FROM project_members WHERE projectId = :projectId AND isActive = 1")
     suspend fun getActiveMemberCount(projectId: String): Int
 
+    @Query("SELECT COUNT(*) FROM project_members WHERE projectId = :projectId AND isActive = 1")
+    fun getActiveMemberCountFlow(projectId: String): Flow<Int>
+
     @Query("SELECT COUNT(*) FROM project_members WHERE projectId = :projectId AND role = :role AND isActive = 1")
     suspend fun getMemberCountByRole(projectId: String, role: ProjectRole): Int
 

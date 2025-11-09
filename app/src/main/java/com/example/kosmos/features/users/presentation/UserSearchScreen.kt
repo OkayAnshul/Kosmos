@@ -3,20 +3,18 @@ package com.example.kosmos.features.users.presentation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kosmos.core.models.User
 import com.example.kosmos.features.users.presentation.components.UserListItem
+import com.example.kosmos.shared.ui.components.*
+import com.example.kosmos.shared.ui.designsystem.IconSet
+import com.example.kosmos.shared.ui.designsystem.Tokens
 
 /**
  * User Search Screen
@@ -38,9 +36,11 @@ fun UserSearchScreen(
             TopAppBar(
                 title = { Text("Find Users") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
+                    IconButtonStandard(
+                        icon = IconSet.Navigation.back,
+                        onClick = onNavigateBack,
+                        contentDescription = "Back"
+                    )
                 }
             )
         },
@@ -52,13 +52,13 @@ fun UserSearchScreen(
                 .padding(paddingValues)
         ) {
             // Search Bar
-            SearchBar(
+            SearchBarStandard(
                 query = searchQuery,
                 onQueryChange = viewModel::onSearchQueryChange,
-                onClearClick = viewModel::clearSearch,
+                placeholder = "Search by name, @username, or email",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(Tokens.Spacing.md)
             )
 
             // Content
@@ -71,9 +71,9 @@ fun UserSearchScreen(
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
                         ) {
-                            CircularProgressIndicator()
+                            LoadingIndicator()
                             Text(
                                 text = "Searching...",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -85,10 +85,12 @@ fun UserSearchScreen(
 
                 uiState.error != null -> {
                     // Error state
-                    ErrorState(
-                        error = uiState.error!!,
-                        onRetry = viewModel::retrySearch
-                    )
+                    uiState.error?.let { error ->
+                        ErrorState(
+                            error = error,
+                            onRetry = viewModel::retrySearch
+                        )
+                    }
                 }
 
                 uiState.users.isEmpty() && searchQuery.isBlank() -> {
@@ -115,44 +117,6 @@ fun UserSearchScreen(
 }
 
 /**
- * Search Bar Component
- */
-@Composable
-private fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onClearClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        modifier = modifier,
-        placeholder = { Text("Search by name, @username, or email") },
-        leadingIcon = {
-            Icon(
-                Icons.Default.Search,
-                contentDescription = "Search",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        },
-        trailingIcon = {
-            if (query.isNotEmpty()) {
-                IconButton(onClick = onClearClick) {
-                    Icon(
-                        Icons.Default.Clear,
-                        contentDescription = "Clear",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        },
-        singleLine = true,
-        shape = MaterialTheme.shapes.large
-    )
-}
-
-/**
  * User Results List
  */
 @Composable
@@ -169,14 +133,14 @@ private fun UserResultsList(
                 text = "${users.size} user${if (users.size != 1) "s" else ""} found",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                modifier = Modifier.padding(horizontal = Tokens.Spacing.md, vertical = Tokens.Spacing.xs)
             )
         }
 
         // User list
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(vertical = 8.dp)
+            contentPadding = PaddingValues(vertical = Tokens.Spacing.xs)
         ) {
             items(
                 items = users,
@@ -197,34 +161,12 @@ private fun UserResultsList(
  */
 @Composable
 private fun EmptySearchPrompt(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(32.dp)
-        ) {
-            Icon(
-                Icons.Default.Search,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
-            Text(
-                text = "Search for users",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "Enter a name or email to find other users",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center
-            )
-        }
-    }
+    EmptyState(
+        icon = IconSet.Action.search,
+        title = "Search for users",
+        message = "Enter a name or email to find other users",
+        modifier = modifier
+    )
 }
 
 /**
@@ -235,32 +177,16 @@ private fun NoResultsFound(
     query: String,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(32.dp)
-        ) {
-            Text(
-                text = "No users found",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "No results for \"$query\"",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center
-            )
-        }
-    }
+    EmptyState(
+        icon = IconSet.Action.search,
+        title = "No users found",
+        message = "No results for \"$query\"",
+        modifier = modifier
+    )
 }
 
 /**
- * Error State
+ * Error State - Use design system component
  */
 @Composable
 private fun ErrorState(
@@ -268,29 +194,10 @@ private fun ErrorState(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(32.dp)
-        ) {
-            Text(
-                text = "Search failed",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.error
-            )
-            Text(
-                text = error,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            Button(onClick = onRetry) {
-                Text("Retry")
-            }
-        }
-    }
+    com.example.kosmos.shared.ui.components.ErrorState(
+        title = "Search failed",
+        message = error,
+        onRetry = onRetry,
+        modifier = modifier
+    )
 }

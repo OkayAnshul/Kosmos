@@ -1,6 +1,7 @@
 package com.example.kosmos
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,12 +13,13 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -26,24 +28,31 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.kosmos.data.sync.InitialSyncManager
 import com.example.kosmos.features.auth.presentation.AuthViewModel
 import com.example.kosmos.features.auth.presentation.LoginScreen
 import com.example.kosmos.features.auth.presentation.SignUpScreen
-import com.example.kosmos.features.chat.presentation.ChatListScreen
-import com.example.kosmos.features.chat.presentation.ChatScreen
 import com.example.kosmos.features.profile.presentation.ProfileScreen
+import com.example.kosmos.features.profile.presentation.EditProfileScreen
+import com.example.kosmos.features.profile.presentation.PrivacySettingsScreen
+import com.example.kosmos.features.profile.presentation.NotificationSettingsScreen
 import com.example.kosmos.features.tasks.presentation.TaskBoardScreen
 import com.example.kosmos.features.users.presentation.UserSearchScreen
 import com.example.kosmos.features.users.presentation.UserProfileScreen
-import com.example.kosmos.features.project.presentation.ProjectListScreen
-import com.example.kosmos.features.project.presentation.ProjectDetailScreen
+import com.example.kosmos.features.users.presentation.InviteMembersScreen
+import com.example.kosmos.features.projects.presentation.MembersListScreen
 // Voice features disabled for MVP - will be re-enabled in Phase 5
 // import com.example.kosmos.features.voice.presentation.SpeechRecognitionScreen
 import com.example.kosmos.shared.ui.theme.KosmosTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var initialSyncManager: InitialSyncManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -54,7 +63,8 @@ class MainActivity : ComponentActivity() {
             KosmosTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     KosmosApp(
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding(innerPadding),
+                        initialSyncManager = initialSyncManager
                     )
                 }
             }
@@ -66,9 +76,34 @@ class MainActivity : ComponentActivity() {
 fun KosmosApp(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    authViewModel: AuthViewModel = hiltViewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    initialSyncManager: InitialSyncManager
 ) {
     val authUiState by authViewModel.uiState.collectAsStateWithLifecycle()
+
+    // Trigger initial sync when user logs in
+    LaunchedEffect(authUiState.isLoggedIn, authUiState.currentUser?.id) {
+        val currentUser = authUiState.currentUser
+        if (authUiState.isLoggedIn && currentUser != null) {
+            val userId = currentUser.id
+            Log.d("KosmosApp", "User logged in, starting initial sync...")
+
+            try {
+                val progress = initialSyncManager.syncAllData(userId)
+
+                if (progress.isComplete && !progress.hasErrors) {
+                    Log.d("KosmosApp", "✅ Initial sync successful")
+                } else if (progress.hasErrors) {
+                    Log.w("KosmosApp", "⚠️ Initial sync completed with errors")
+                } else {
+                    Log.w("KosmosApp", "⚠️ Initial sync incomplete")
+                }
+            } catch (e: Exception) {
+                Log.e("KosmosApp", "❌ Initial sync failed", e)
+                // Continue anyway - app will work with cached data
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -108,79 +143,96 @@ fun KosmosApp(
         }
 
         composable(Screen.ProjectList.route) {
-            ProjectListScreen(
+            com.example.kosmos.features.projects.presentation.redesign.ProjectListScreenWrapper(
                 onProjectClick = { projectId ->
                     navController.navigate(Screen.ProjectDetail.createRoute(projectId))
                 },
-                onSettingsClick = {
-                    navController.navigate(Screen.Settings.route)
+                onCreateProject = {
+                    // TODO: Navigate to create project screen
                 },
-                onLogout = {
-                    authViewModel.logout()
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
+                onBackClick = {
+                    // Project list is root, so back should exit app or show menu
                 }
             )
         }
 
         composable(Screen.ProjectDetail.route) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId") ?: return@composable
-            ProjectDetailScreen(
+            com.example.kosmos.features.projects.presentation.redesign.ProjectDetailsScreenWrapper(
                 projectId = projectId,
-                onNavigateBack = {
-                    navController.popBackStack()
+                onViewAllChats = {
+                    navController.navigate(Screen.ChatList.createRoute(projectId))
                 },
-                onNavigateToChats = { projId ->
-                    navController.navigate(Screen.ChatList.createRoute(projId))
+                onViewAllTasks = {
+                    navController.navigate(Screen.TaskBoard.createRoute(projectId))
+                },
+                onViewAllMembers = {
+                    navController.navigate(Screen.MembersList.createRoute(projectId))
+                },
+                onCreateChat = {
+                    navController.navigate(Screen.UserSearch.createRoute(projectId))
+                },
+                onCreateTask = {
+                    // TODO: Open quick task creation sheet
+                },
+                onInviteMember = {
+                    navController.navigate(Screen.InviteMembers.createRoute(projectId))
+                },
+                onEditProject = {
+                    // TODO: Navigate to edit project screen
+                },
+                onBackClick = {
+                    navController.popBackStack()
                 }
             )
         }
 
         composable(Screen.ChatList.route) { backStackEntry ->
             val projectId = backStackEntry.arguments?.getString("projectId") ?: return@composable
-            ChatListScreen(
+            com.example.kosmos.features.chat.presentation.redesign.EnhancedChatListScreenWrapper(
                 projectId = projectId,
-                onNavigateToChat = { chatRoomId ->
+                onChatClick = { chatRoomId ->
                     navController.navigate(Screen.Chat.createRoute(chatRoomId))
                 },
-                onNavigateToUserSearch = {
+                onCreateChat = {
                     navController.navigate(Screen.UserSearch.createRoute(projectId))
                 },
-                onNavigateToProfile = {
+                onSearchClick = {
+                    // TODO: Implement search functionality
+                },
+                onProfileClick = {
                     navController.navigate(Screen.Profile.route)
                 },
-                onNavigateToSettings = {
+                onSettingsClick = {
                     navController.navigate(Screen.Settings.route)
                 },
-                onBackToProjects = {
-                    navController.popBackStack()
-                },
-                onLogout = {
+                onLogoutClick = {
                     authViewModel.logout()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
+                },
+                onBackClick = {
+                    navController.popBackStack()
                 }
             )
         }
 
         composable(Screen.Chat.route) { backStackEntry ->
             val chatRoomId = backStackEntry.arguments?.getString("chatRoomId") ?: return@composable
-            ChatScreen(
+            com.example.kosmos.features.chat.presentation.redesign.EnhancedChatScreenWrapper(
                 chatRoomId = chatRoomId,
-                onNavigateBack = {
+                onBackClick = {
                     navController.popBackStack()
-                },
-                onNavigateToTasks = {
-                    navController.navigate(Screen.TaskBoard.createRoute(chatRoomId))
                 }
             )
         }
 
         composable(Screen.TaskBoard.route) { backStackEntry ->
-            val chatRoomId = backStackEntry.arguments?.getString("chatRoomId") ?: return@composable
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: return@composable
+            val chatRoomId = backStackEntry.arguments?.getString("chatRoomId")
             TaskBoardScreen(
+                projectId = projectId,
                 chatRoomId = chatRoomId,
                 onNavigateBack = {
                     navController.popBackStack()
@@ -191,6 +243,39 @@ fun KosmosApp(
         composable(Screen.Profile.route) {
             ProfileScreen(
                 onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onEditProfileClick = {
+                    navController.navigate(Screen.EditProfile.route)
+                },
+                onPrivacySettingsClick = {
+                    navController.navigate(Screen.PrivacySettings.route)
+                },
+                onNotificationSettingsClick = {
+                    navController.navigate(Screen.NotificationSettings.route)
+                }
+            )
+        }
+
+        composable(Screen.EditProfile.route) {
+            EditProfileScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Screen.PrivacySettings.route) {
+            PrivacySettingsScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Screen.NotificationSettings.route) {
+            NotificationSettingsScreen(
+                onBackClick = {
                     navController.popBackStack()
                 }
             )
@@ -204,6 +289,34 @@ fun KosmosApp(
                 },
                 onUserClick = { userId ->
                     navController.navigate(Screen.UserProfile.createRoute(userId, projectId))
+                }
+            )
+        }
+
+        composable(Screen.InviteMembers.route) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: return@composable
+            com.example.kosmos.features.users.presentation.InviteMembersScreen(
+                projectId = projectId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Screen.MembersList.route) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId") ?: return@composable
+            // We need to get the current user's role in this project
+            // For now, we'll use a placeholder and let the screen handle it
+            MembersListScreen(
+                projectId = projectId,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onUserClick = { userId ->
+                    navController.navigate(Screen.UserProfile.createRoute(userId, projectId))
+                },
+                onAddMembersClick = {
+                    navController.navigate(Screen.InviteMembers.createRoute(projectId))
                 }
             )
         }
@@ -473,14 +586,28 @@ sealed class Screen(val route: String) {
     object Chat : Screen("chat/{chatRoomId}") {
         fun createRoute(chatRoomId: String) = "chat/$chatRoomId"
     }
-    object TaskBoard : Screen("taskBoard/{chatRoomId}") {
-        fun createRoute(chatRoomId: String) = "taskBoard/$chatRoomId"
+    object TaskBoard : Screen("taskBoard/{projectId}?chatRoomId={chatRoomId}") {
+        fun createRoute(projectId: String, chatRoomId: String? = null) =
+            if (chatRoomId != null) {
+                "taskBoard/$projectId?chatRoomId=$chatRoomId"
+            } else {
+                "taskBoard/$projectId"
+            }
     }
     object Profile : Screen("profile")
+    object EditProfile : Screen("editProfile")
     object Settings : Screen("settings")
+    object PrivacySettings : Screen("privacySettings")
+    object NotificationSettings : Screen("notificationSettings")
     object SpeechDemo : Screen("speechDemo")
     object UserSearch : Screen("userSearch/{projectId}") {
         fun createRoute(projectId: String) = "userSearch/$projectId"
+    }
+    object InviteMembers : Screen("inviteMembers/{projectId}") {
+        fun createRoute(projectId: String) = "inviteMembers/$projectId"
+    }
+    object MembersList : Screen("membersList/{projectId}") {
+        fun createRoute(projectId: String) = "membersList/$projectId"
     }
     object UserProfile : Screen("userProfile/{userId}/{projectId}") {
         fun createRoute(userId: String, projectId: String) = "userProfile/$userId/$projectId"

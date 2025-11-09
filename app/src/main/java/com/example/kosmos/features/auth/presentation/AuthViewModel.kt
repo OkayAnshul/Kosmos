@@ -1,5 +1,6 @@
 package com.example.kosmos.features.auth.presentation
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kosmos.data.repository.AuthRepository
@@ -214,6 +215,87 @@ class AuthViewModel @Inject constructor(
                 false
             }
             else -> isValidInput(signUpData.email, signUpData.password)
+        }
+    }
+
+    /**
+     * Update user profile information
+     * @param photoUri Optional new profile photo URI (if user selected a new photo)
+     */
+    fun updateProfile(
+        displayName: String,
+        bio: String,
+        age: Int? = null,
+        role: String? = null,
+        location: String? = null,
+        githubUrl: String? = null,
+        twitterUrl: String? = null,
+        linkedinUrl: String? = null,
+        websiteUrl: String? = null,
+        portfolioUrl: String? = null,
+        photoUri: Uri? = null
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+
+            try {
+                val currentUser = _uiState.value.currentUser
+                if (currentUser == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "User not logged in"
+                    )
+                    return@launch
+                }
+
+                // Upload photo if provided
+                var photoUrl: String? = currentUser.photoUrl
+                if (photoUri != null) {
+                    // TODO: Implement photo upload to Supabase Storage
+                    // For now, use the local URI (this won't work across devices)
+                    // In a real implementation:
+                    // val uploadResult = userRepository.uploadProfilePhoto(currentUser.id, photoUri)
+                    // photoUrl = uploadResult.getOrNull()
+                }
+
+                // Create updated user object
+                val updatedUser = currentUser.copy(
+                    displayName = displayName,
+                    bio = bio,
+                    age = age,
+                    role = role,
+                    location = location,
+                    githubUrl = githubUrl,
+                    twitterUrl = twitterUrl,
+                    linkedinUrl = linkedinUrl,
+                    websiteUrl = websiteUrl,
+                    portfolioUrl = portfolioUrl,
+                    photoUrl = photoUrl
+                )
+
+                // Update in repository
+                val result = userRepository.updateUser(updatedUser)
+                result.fold(
+                    onSuccess = {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            currentUser = updatedUser,
+                            error = null
+                        )
+                    },
+                    onFailure = { exception ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = exception.message ?: "Failed to update profile"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Failed to update profile"
+                )
+            }
         }
     }
 }

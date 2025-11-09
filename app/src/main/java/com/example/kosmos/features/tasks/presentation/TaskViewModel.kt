@@ -54,6 +54,12 @@ class TaskViewModel @Inject constructor(
                     if (chatRoom != null && currentProjectId != chatRoom.projectId) {
                         currentProjectId = chatRoom.projectId
 
+                        // Update UI state with current context
+                        _uiState.value = _uiState.value.copy(
+                            currentProjectId = chatRoom.projectId,
+                            currentChatRoomId = chatRoomId
+                        )
+
                         // Load project members for assignment
                         if (chatRoom.projectId.isNotEmpty()) {
                             loadUsersForAssignment(chatRoom.projectId)
@@ -94,25 +100,103 @@ class TaskViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Load all tasks for a project (project-level view)
+     * Tasks are independent entities within a project, not nested in chats
+     */
+    fun loadTasksForProject(projectId: String) {
+        // Cancel previous jobs
+        chatRoomFlowJob?.cancel()
+        tasksFlowJob?.cancel()
+
+        currentProjectId = projectId
+
+        // Update UI state with current context
+        _uiState.value = _uiState.value.copy(
+            currentProjectId = projectId,
+            currentChatRoomId = null,  // No chat context in project view
+            isLoading = true
+        )
+
+        // Load project members for assignment
+        loadUsersForAssignment(projectId)
+
+        // Trigger Supabase sync in background
+        viewModelScope.launch {
+            try {
+                taskRepository.loadMoreTasks(projectId)
+            } catch (e: Exception) {
+                android.util.Log.w("TaskViewModel", "Failed to sync tasks from Supabase", e)
+            }
+        }
+
+        // Collect from Room Flow (will update when sync completes)
+        tasksFlowJob = viewModelScope.launch {
+            try {
+                taskRepository.getTasksForProjectFlow(projectId).collect { tasks ->
+                    _uiState.value = _uiState.value.copy(
+                        tasks = tasks,
+                        isLoading = false,
+                        error = null
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Failed to load tasks: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Create a new task in a project
+     * @param projectId The project ID (REQUIRED) - tasks MUST belong to a project
+     * @param chatRoomId Optional chat room reference
+     * @param title Task title
+     * @param description Task description
+     * @param priority Task priority
+     * @param assignedToId User ID to assign task to
+     * @param dueDate Due date timestamp
+     * @param tags Task tags
+     */
     fun createTask(
-        chatRoomId: String,
+        projectId: String,
+        chatRoomId: String? = null,
         title: String,
         description: String,
         priority: TaskPriority = TaskPriority.MEDIUM,
         assignedToId: String? = null,
         dueDate: Long? = null,
-        tags: List<String> = emptyList()
+        tags: List<String> = emptyList(),
+        estimatedHours: Float? = null,
+        actualHours: Float? = null,
+        parentTaskId: String? = null
     ) {
         if (title.isBlank()) {
-            _uiState.value = _uiState.value.copy(error = "Task title cannot be empty")
+            _uiState.value = _uiState.value.copy(
+                isCreatingTask = false,
+                error = "Task title cannot be empty"
+            )
+            return
+        }
+
+        if (projectId.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                isCreatingTask = false,
+                error = "Project ID is required to create a task"
+            )
             return
         }
 
         viewModelScope.launch {
             try {
+                // Set loading state
+                _uiState.value = _uiState.value.copy(isCreatingTask = true, error = null)
+
                 currentUser?.let { user ->
                     val task = Task(
-                        projectId = currentProjectId ?: "",
+                        projectId = projectId,
                         chatRoomId = chatRoomId,
                         title = title.trim(),
                         description = description.trim(),
@@ -123,24 +207,31 @@ class TaskViewModel @Inject constructor(
                         createdByName = user.displayName ?: "Current User",
                         status = TaskStatus.TODO,
                         dueDate = dueDate,
-                        tags = tags
+                        tags = tags,
+                        estimatedHours = estimatedHours,
+                        actualHours = actualHours,
+                        parentTaskId = parentTaskId
                     )
 
                     val result = taskRepository.createTask(task, user.id)
                     if (result.isSuccess) {
                         _uiState.value = _uiState.value.copy(
                             showCreateTaskDialog = false,
+                            lastCreatedTaskId = task.id,
+                            isCreatingTask = false,
                             error = null
                         )
                         clearCreateTaskForm()
                     } else {
                         _uiState.value = _uiState.value.copy(
+                            isCreatingTask = false,
                             error = "Failed to create task: ${result.exceptionOrNull()?.message}"
                         )
                     }
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
+                    isCreatingTask = false,
                     error = "Failed to create task: ${e.message}"
                 )
             }
@@ -216,8 +307,12 @@ class TaskViewModel @Inject constructor(
             createTaskTitle = task.title,
             createTaskDescription = task.description ?: "",
             createTaskPriority = task.priority,
+            createTaskStatus = task.status,
             createTaskDueDate = task.dueDate,
             createTaskTags = task.tags,
+            createTaskEstimatedHours = task.estimatedHours,
+            createTaskActualHours = task.actualHours,
+            createTaskParentTaskId = task.parentTaskId,
             createTaskAssignedTo = task.assignedToId?.let { id ->
                 _uiState.value.availableUsersForAssignment.find { it.id == id }
             }
@@ -280,9 +375,13 @@ class TaskViewModel @Inject constructor(
         title: String,
         description: String,
         priority: TaskPriority,
+        status: TaskStatus,
         assignedToId: String?,
         dueDate: Long?,
-        tags: List<String>
+        tags: List<String>,
+        estimatedHours: Float? = null,
+        actualHours: Float? = null,
+        parentTaskId: String? = null
     ) {
         if (title.isBlank()) {
             _uiState.value = _uiState.value.copy(error = "Task title cannot be empty")
@@ -298,10 +397,14 @@ class TaskViewModel @Inject constructor(
                         title = title.trim(),
                         description = description.trim(),
                         priority = priority,
+                        status = status,
                         assignedToId = assignedToId,
                         assignedToName = assignedToId?.let { getUserDisplayName(it) },
                         dueDate = dueDate,
-                        tags = tags
+                        tags = tags,
+                        estimatedHours = estimatedHours,
+                        actualHours = actualHours,
+                        parentTaskId = parentTaskId
                     )
 
                     val result = taskRepository.updateTask(updatedTask)
@@ -338,6 +441,10 @@ class TaskViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(createTaskPriority = priority)
     }
 
+    fun updateCreateTaskStatus(status: TaskStatus) {
+        _uiState.value = _uiState.value.copy(createTaskStatus = status)
+    }
+
     fun updateCreateTaskDueDate(dueDate: Long?) {
         _uiState.value = _uiState.value.copy(createTaskDueDate = dueDate)
     }
@@ -357,6 +464,18 @@ class TaskViewModel @Inject constructor(
     fun removeCreateTaskTag(tag: String) {
         val updatedTags = _uiState.value.createTaskTags - tag
         _uiState.value = _uiState.value.copy(createTaskTags = updatedTags)
+    }
+
+    fun updateCreateTaskEstimatedHours(hours: Float?) {
+        _uiState.value = _uiState.value.copy(createTaskEstimatedHours = hours)
+    }
+
+    fun updateCreateTaskActualHours(hours: Float?) {
+        _uiState.value = _uiState.value.copy(createTaskActualHours = hours)
+    }
+
+    fun updateCreateTaskParentTaskId(parentId: String?) {
+        _uiState.value = _uiState.value.copy(createTaskParentTaskId = parentId)
     }
 
     fun loadUsersForAssignment(projectId: String) {
@@ -406,8 +525,20 @@ class TaskViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(showOnlyMyTasks = !_uiState.value.showOnlyMyTasks)
     }
 
+    fun setError(message: String) {
+        _uiState.value = _uiState.value.copy(error = message)
+    }
+
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    /**
+     * Clear the last created task ID after it has been consumed
+     * Used by QuickTaskCreationSheet to track successful creation
+     */
+    fun clearLastCreatedTask() {
+        _uiState.value = _uiState.value.copy(lastCreatedTaskId = null)
     }
 
     private fun clearCreateTaskForm() {
@@ -417,7 +548,10 @@ class TaskViewModel @Inject constructor(
             createTaskPriority = TaskPriority.MEDIUM,
             createTaskDueDate = null,
             createTaskAssignedTo = null,
-            createTaskTags = emptyList()
+            createTaskTags = emptyList(),
+            createTaskEstimatedHours = null,
+            createTaskActualHours = null,
+            createTaskParentTaskId = null
         )
     }
 
@@ -489,6 +623,35 @@ class TaskViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * Load all tasks assigned to the current user across all projects
+     * Used for MyTasksScreen cross-project view
+     */
+    fun loadAllUserTasks() {
+        currentUser?.let { user ->
+            tasksFlowJob?.cancel()
+
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            tasksFlowJob = viewModelScope.launch {
+                try {
+                    taskRepository.getAllUserTasksFlow(user.id).collect { tasks ->
+                        _uiState.value = _uiState.value.copy(
+                            tasks = tasks,
+                            isLoading = false,
+                            error = null
+                        )
+                    }
+                } catch (e: Exception) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "Failed to load tasks: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
 }
 
 data class TaskUiState(
@@ -503,12 +666,20 @@ data class TaskUiState(
     val createTaskTitle: String = "",
     val createTaskDescription: String = "",
     val createTaskPriority: TaskPriority = TaskPriority.MEDIUM,
+    val createTaskStatus: TaskStatus = TaskStatus.TODO,
     val createTaskDueDate: Long? = null,
     val createTaskAssignedTo: User? = null,
     val createTaskTags: List<String> = emptyList(),
+    val createTaskEstimatedHours: Float? = null,
+    val createTaskActualHours: Float? = null,
+    val createTaskParentTaskId: String? = null,
     val availableUsersForAssignment: List<User> = emptyList(),
     val projectMembers: List<ProjectMember> = emptyList(),
     val selectedStatusFilter: TaskStatus? = null,
     val showOnlyMyTasks: Boolean = false,
-    val currentUserId: String? = null
+    val currentUserId: String? = null,
+    val lastCreatedTaskId: String? = null,
+    val isCreatingTask: Boolean = false,
+    val currentProjectId: String? = null,  // Current project context for task creation
+    val currentChatRoomId: String? = null  // Current chat room context
 )

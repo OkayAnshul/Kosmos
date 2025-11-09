@@ -212,11 +212,12 @@ object RepositoryModule {
     fun provideChatRepository(
         chatRoomDao: ChatRoomDao,
         messageDao: MessageDao,
+        projectDao: ProjectDao,
         supabase: SupabaseClient,
         supabaseMessageDataSource: com.example.kosmos.data.datasource.SupabaseMessageDataSource,
         supabaseChatDataSource: com.example.kosmos.data.datasource.SupabaseChatDataSource,
         realtimeManager: com.example.kosmos.data.realtime.SupabaseRealtimeManager
-    ): ChatRepository = ChatRepository(chatRoomDao, messageDao, supabase, supabaseMessageDataSource, supabaseChatDataSource, realtimeManager)
+    ): ChatRepository = ChatRepository(chatRoomDao, messageDao, projectDao, supabase, supabaseMessageDataSource, supabaseChatDataSource, realtimeManager)
 
     @Provides
     @Singleton
@@ -224,21 +225,26 @@ object RepositoryModule {
         projectDao: ProjectDao,
         projectMemberDao: ProjectMemberDao,
         supabaseProjectDataSource: SupabaseProjectDataSource,
-        supabaseProjectMemberDataSource: SupabaseProjectMemberDataSource
+        supabaseProjectMemberDataSource: SupabaseProjectMemberDataSource,
+        chatRoomDao: ChatRoomDao,
+        taskDao: TaskDao
     ): ProjectRepository = ProjectRepository(
         projectDao,
         projectMemberDao,
         supabaseProjectDataSource,
-        supabaseProjectMemberDataSource
+        supabaseProjectMemberDataSource,
+        chatRoomDao,
+        taskDao
     )
 
     @Provides
     @Singleton
     fun provideTaskRepository(
         taskDao: TaskDao,
+        projectDao: ProjectDao,
         projectMemberDao: ProjectMemberDao,
         supabaseTaskDataSource: com.example.kosmos.data.datasource.SupabaseTaskDataSource
-    ): TaskRepository = TaskRepository(taskDao, projectMemberDao, supabaseTaskDataSource)
+    ): TaskRepository = TaskRepository(taskDao, projectDao, projectMemberDao, supabaseTaskDataSource)
 
     @Provides
     @Singleton

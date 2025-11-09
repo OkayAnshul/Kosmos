@@ -22,6 +22,7 @@ import javax.inject.Singleton
 @Singleton
 class TaskRepository @Inject constructor(
     private val taskDao: TaskDao,
+    private val projectDao: com.example.kosmos.core.database.dao.ProjectDao,
     private val projectMemberDao: ProjectMemberDao,
     private val supabaseTaskDataSource: SupabaseTaskDataSource
 ) {
@@ -50,6 +51,26 @@ class TaskRepository @Inject constructor(
     }
 
     /**
+     * Get all tasks for a project (project-level view)
+     * Tasks are independent entities within a project, not nested in chats
+     * @param projectId Project ID
+     * @return Flow of all project tasks
+     */
+    fun getTasksForProjectFlow(projectId: String): Flow<List<Task>> {
+        return taskDao.getTasksForProjectFlow(projectId)
+    }
+
+    /**
+     * Get tasks by status for a project
+     * @param projectId Project ID
+     * @param status Task status to filter by
+     * @return Flow of filtered task list
+     */
+    fun getProjectTasksByStatusFlow(projectId: String, status: TaskStatus): Flow<List<Task>> {
+        return taskDao.getProjectTasksByStatusFlow(projectId, status)
+    }
+
+    /**
      * Get active tasks assigned to a user
      * @param userId User ID
      * @return Flow of user's active tasks
@@ -65,6 +86,79 @@ class TaskRepository @Inject constructor(
      */
     fun getTaskByIdFlow(taskId: String): Flow<Task?> {
         return taskDao.getTaskByIdFlow(taskId)
+    }
+
+    /**
+     * Sync tasks for a user from Supabase to local cache
+     * Fetches all active tasks assigned to the user across all their projects
+     *
+     * CRITICAL: This fixes the bug where tasks are never fetched from Supabase.
+     * Call this on app startup, login, or pull-to-refresh.
+     *
+     * @param userId User ID
+     * @return Result indicating success or failure
+     */
+    suspend fun syncUserTasks(userId: String): Result<Unit> {
+        return try {
+            Log.d(TAG, "Starting task sync for user: $userId")
+
+            // Fetch user's active tasks from Supabase
+            val tasksResult = supabaseTaskDataSource.getMyActiveTasks(userId)
+
+            if (tasksResult.isFailure) {
+                Log.w(TAG, "Failed to fetch tasks from Supabase", tasksResult.exceptionOrNull())
+                return tasksResult.map { }  // Convert to Result<Unit>
+            }
+
+            val tasks = tasksResult.getOrNull() ?: emptyList()
+
+            // Update local cache
+            tasks.forEach { task ->
+                taskDao.insertTask(task)
+            }
+
+            Log.d(TAG, "✅ Synced ${tasks.size} tasks from Supabase")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Critical error in task sync", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Sync all tasks for a specific project from Supabase
+     * Useful when entering a project to ensure all tasks are up-to-date
+     *
+     * @param projectId Project ID
+     * @return Result indicating success or failure
+     */
+    suspend fun syncProjectTasks(projectId: String): Result<Unit> {
+        return try {
+            Log.d(TAG, "Starting task sync for project: $projectId")
+
+            // Fetch all tasks for the project from Supabase
+            val tasksResult = supabaseTaskDataSource.getTasks(
+                projectId = projectId,
+                limit = 500,  // Reasonable limit for most projects
+                before = null
+            )
+
+            if (tasksResult.isFailure) {
+                Log.w(TAG, "Failed to fetch project tasks from Supabase", tasksResult.exceptionOrNull())
+                return tasksResult.map { }
+            }
+
+            val tasks = tasksResult.getOrNull() ?: emptyList()
+
+            // Update local cache
+            taskDao.insertTasks(tasks)
+
+            Log.d(TAG, "✅ Synced ${tasks.size} tasks for project $projectId")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error syncing project tasks", e)
+            Result.failure(e)
+        }
     }
 
     /**
@@ -107,6 +201,9 @@ class TaskRepository @Inject constructor(
 
             // HYBRID PATTERN: Save to Room first (instant UI update)
             taskDao.insertTask(taskWithId)
+
+            // Update project task count
+            projectDao.incrementTaskCount(task.projectId)
 
             // Sync to Supabase in background with retry on FK violation (don't block UI)
             try {
@@ -414,5 +511,16 @@ class TaskRepository @Inject constructor(
             Log.e(TAG, "Error getting task by ID", e)
             Result.failure(e)
         }
+    }
+
+    /**
+     * Get all tasks assigned to a user across all projects
+     * Used for MyTasksScreen cross-project view
+     *
+     * @param userId User ID
+     * @return Flow of all user tasks from all projects
+     */
+    fun getAllUserTasksFlow(userId: String): Flow<List<Task>> {
+        return taskDao.getAllTasksByUserFlow(userId)
     }
 }

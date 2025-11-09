@@ -156,6 +156,10 @@ dependencies {
     implementation(libs.androidx.media3.common)
     // Date Picker
     implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
+
+    // Animated Navigation Bar - Using custom implementation with Compose animations
+    // The Exyte library is not available on Maven Central, so we'll implement custom animations
+
 // Work Manager (for background tasks)
     implementation("androidx.work:work-runtime-ktx:2.11.0")
     implementation("androidx.hilt:hilt-work:1.3.0")

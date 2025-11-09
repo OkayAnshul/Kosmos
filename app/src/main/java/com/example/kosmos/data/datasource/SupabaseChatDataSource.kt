@@ -290,4 +290,52 @@ class SupabaseChatDataSource @Inject constructor(
             Result.failure(e)
         }
     }
+
+    /**
+     * Archive or unarchive a chat room
+     * @param chatRoomId Chat room ID
+     * @param isArchived Whether to archive (true) or unarchive (false)
+     * @return Result with Unit or error
+     */
+    suspend fun archiveChatRoom(chatRoomId: String, isArchived: Boolean): Result<Unit> {
+        return try {
+            supabase.from(CHAT_ROOMS_TABLE)
+                .update({
+                    set("is_archived", isArchived)
+                }) {
+                    filter {
+                        eq("id", chatRoomId)
+                    }
+                }
+            Log.d(TAG, "Chat room ${if (isArchived) "archived" else "unarchived"}: $chatRoomId")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error archiving chat room", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Pin or unpin a chat room
+     * @param chatRoomId Chat room ID
+     * @param isPinned Whether to pin (true) or unpin (false)
+     * @return Result with Unit or error
+     */
+    suspend fun pinChatRoom(chatRoomId: String, isPinned: Boolean): Result<Unit> {
+        return try {
+            supabase.from(CHAT_ROOMS_TABLE)
+                .update({
+                    set("is_pinned", isPinned)
+                }) {
+                    filter {
+                        eq("id", chatRoomId)
+                    }
+                }
+            Log.d(TAG, "Chat room ${if (isPinned) "pinned" else "unpinned"}: $chatRoomId")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error pinning chat room", e)
+            Result.failure(e)
+        }
+    }
 }

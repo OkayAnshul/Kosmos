@@ -3,6 +3,7 @@ package com.example.kosmos.features.users.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,11 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kosmos.core.models.User
+import com.example.kosmos.features.users.presentation.components.AddToProjectDialog
 import com.example.kosmos.features.users.presentation.components.UserAvatar
+import com.example.kosmos.shared.ui.components.*
+import com.example.kosmos.shared.ui.designsystem.IconSet
+import com.example.kosmos.shared.ui.designsystem.Tokens
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
 
 /**
  * User Profile Screen
@@ -52,9 +57,11 @@ fun UserProfileScreen(
             TopAppBar(
                 title = { Text("Profile") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
+                    IconButtonStandard(
+                        icon = IconSet.Navigation.back,
+                        onClick = onNavigateBack,
+                        contentDescription = "Back"
+                    )
                 }
             )
         },
@@ -62,20 +69,29 @@ fun UserProfileScreen(
     ) { paddingValues ->
         when {
             uiState.isLoading -> {
-                LoadingState(modifier = Modifier.padding(paddingValues))
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LoadingIndicator()
+                }
             }
 
             uiState.error != null -> {
-                ErrorState(
-                    error = uiState.error!!,
-                    onRetry = { viewModel.loadUser(userId) },
-                    modifier = Modifier.padding(paddingValues)
-                )
+                uiState.error?.let { error ->
+                    ErrorState(
+                        title = "Failed to load profile",
+                        message = error,
+                        onRetry = { viewModel.loadUser(userId) },
+                        modifier = Modifier.padding(paddingValues)
+                    )
+                }
             }
 
             uiState.user != null -> {
-                ProfileContent(
-                    user = uiState.user!!,
+                uiState.user?.let { user ->
+                    ProfileContent(
+                        user = user,
                     projectId = projectId,
                     sharedProjectCount = uiState.sharedProjectCount,
                     onStartChat = { chatRoomId ->
@@ -84,8 +100,35 @@ fun UserProfileScreen(
                     onCreateOrGetChat = { targetUserId ->
                         viewModel.createOrGetDirectChat(projectId, targetUserId)
                     },
+                    onAddToProjectClick = {
+                        viewModel.setShowAddToProjectDialog(true)
+                    },
                     modifier = Modifier.padding(paddingValues)
                 )
+                }
+            }
+        }
+
+        // Add to Project Dialog
+        if (uiState.showAddToProjectDialog) {
+            AddToProjectDialog(
+                projects = uiState.myProjects,
+                isLoading = uiState.isLoadingProjects || uiState.isAddingToProject,
+                error = uiState.projectsError ?: uiState.addToProjectError,
+                onDismiss = {
+                    viewModel.setShowAddToProjectDialog(false)
+                },
+                onAddToProject = { projectId, role ->
+                    viewModel.addUserToProject(projectId, userId, role)
+                }
+            )
+        }
+
+        // Success Snackbar
+        if (uiState.addToProjectSuccess) {
+            LaunchedEffect(Unit) {
+                // Show success message (you can add a SnackbarHost if needed)
+                viewModel.clearAddToProjectSuccess()
             }
         }
     }
@@ -101,24 +144,25 @@ private fun ProfileContent(
     sharedProjectCount: Int,
     onStartChat: (String) -> Unit, // chatRoomId
     onCreateOrGetChat: (String) -> Unit, // targetUserId
+    onAddToProjectClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(Tokens.Spacing.lg),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.lg)
     ) {
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Tokens.Spacing.xs))
 
         // Large Avatar
         UserAvatar(
             photoUrl = user.photoUrl,
             displayName = user.displayName,
             isOnline = user.isOnline,
-            size = 120.dp,
+            size = Tokens.Size.avatarXXLarge,
             showOnlineIndicator = true
         )
 
@@ -134,12 +178,12 @@ private fun ProfileContent(
         // Username
         if (user.username.isNotEmpty()) {
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(Tokens.Spacing.md),
                 color = MaterialTheme.colorScheme.secondaryContainer
             ) {
                 Text(
                     text = "@${user.username}",
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    modifier = Modifier.padding(horizontal = Tokens.Spacing.sm, vertical = Tokens.Spacing.xs),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -164,30 +208,25 @@ private fun ProfileContent(
         // Action Buttons
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
         ) {
             // Start Chat Button
-            Button(
+            PrimaryButton(
+                text = "Start Chat",
                 onClick = { onCreateOrGetChat(user.id) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    Icons.Default.Chat,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Start Chat")
-            }
+                modifier = Modifier,
+                icon = IconSet.Message.chat,
+                fullWidth = true
+            )
 
-            // Add to Project Button (placeholder for future)
-            OutlinedButton(
-                onClick = { /* TODO: Implement add to project */ },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = false
-            ) {
-                Text("Add to Project")
-            }
+            // Add to Project Button
+            SecondaryButton(
+                text = "Add to Project",
+                onClick = onAddToProjectClick,
+                modifier = Modifier,
+                icon = IconSet.Action.add,
+                fullWidth = true
+            )
         }
 
         // Additional Info Sections
@@ -212,38 +251,29 @@ private fun OnlineStatusCard(
     lastSeen: Long,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isOnline) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            }
-        )
+    StandardCard(
+        modifier = modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Status Indicator
             Box(
                 modifier = Modifier
-                    .size(12.dp)
+                    .size(Tokens.Size.statusDot)
                     .background(
                         color = if (isOnline) {
-                            androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                            ColorTokens.Status.online
                         } else {
                             MaterialTheme.colorScheme.outline
                         },
-                        shape = androidx.compose.foundation.shape.CircleShape
+                        shape = CircleShape
                     )
             )
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(Tokens.Spacing.xs))
 
             // Status Text
             Text(
@@ -273,17 +303,11 @@ private fun ProfileInfoCard(
     sharedProjectCount: Int,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+    StandardCard(
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
         ) {
             Text(
                 text = "Information",
@@ -292,7 +316,7 @@ private fun ProfileInfoCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            HorizontalDivider()
+            ListDivider()
 
             // Age
             if (user.age != null && user.age > 0) {
@@ -361,55 +385,6 @@ private fun InfoRow(
 }
 
 /**
- * Loading State
- */
-@Composable
-private fun LoadingState(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
-    }
-}
-
-/**
- * Error State
- */
-@Composable
-private fun ErrorState(
-    error: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(32.dp)
-        ) {
-            Text(
-                text = "Failed to load profile",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.error
-            )
-            Text(
-                text = error,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            Button(onClick = onRetry) {
-                Text("Retry")
-            }
-        }
-    }
-}
-
-/**
  * Bio Section
  */
 @Composable
@@ -417,17 +392,11 @@ private fun BioSection(
     bio: String,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+    StandardCard(
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
         ) {
             Text(
                 text = "About",
@@ -475,17 +444,11 @@ private fun SocialLinksSection(
     }
 
     if (socialLinks.isNotEmpty()) {
-        Card(
-            modifier = modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+        StandardCard(
+            modifier = modifier.fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
             ) {
                 Text(
                     text = "Social Links",
@@ -496,7 +459,7 @@ private fun SocialLinksSection(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
                 ) {
                     socialLinks.forEach { (name, icon, url) ->
                         FilledTonalIconButton(

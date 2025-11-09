@@ -53,4 +53,29 @@ interface ProjectDao {
 
     @Query("SELECT COUNT(*) FROM projects WHERE ownerId = :userId")
     suspend fun getProjectCountByOwner(userId: String): Int
+
+    // Metadata counter updates for real-time stats
+    @Query("UPDATE projects SET memberCount = memberCount + 1, updatedAt = :timestamp WHERE id = :projectId")
+    suspend fun incrementMemberCount(projectId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE projects SET memberCount = memberCount - 1, updatedAt = :timestamp WHERE id = :projectId")
+    suspend fun decrementMemberCount(projectId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE projects SET chatCount = chatCount + 1, updatedAt = :timestamp WHERE id = :projectId")
+    suspend fun incrementChatCount(projectId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE projects SET chatCount = chatCount - 1, updatedAt = :timestamp WHERE id = :projectId")
+    suspend fun decrementChatCount(projectId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE projects SET taskCount = taskCount + 1, updatedAt = :timestamp WHERE id = :projectId")
+    suspend fun incrementTaskCount(projectId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE projects SET taskCount = taskCount - 1, updatedAt = :timestamp WHERE id = :projectId")
+    suspend fun decrementTaskCount(projectId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE projects SET completedTaskCount = completedTaskCount + 1, updatedAt = :timestamp WHERE id = :projectId")
+    suspend fun incrementCompletedTaskCount(projectId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE projects SET completedTaskCount = completedTaskCount - 1, updatedAt = :timestamp WHERE id = :projectId")
+    suspend fun decrementCompletedTaskCount(projectId: String, timestamp: Long = System.currentTimeMillis())
 }

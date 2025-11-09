@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kosmos.core.models.ChatRoom
 import com.example.kosmos.core.models.ChatRoomType
+import com.example.kosmos.core.models.Project
+import com.example.kosmos.core.models.ProjectRole
 import com.example.kosmos.core.models.User
 import com.example.kosmos.data.repository.ChatRepository
 import com.example.kosmos.data.repository.UserRepository
@@ -150,6 +152,126 @@ class UserProfileViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * Load user's projects for adding members
+     */
+    fun loadMyProjects() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingProjects = true, projectsError = null)
+
+            try {
+                val userId = currentUserId
+                if (userId == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingProjects = false,
+                        projectsError = "You must be logged in"
+                    )
+                    return@launch
+                }
+
+                projectRepository.getUserProjectsFlow(userId).collect { projects ->
+                    _uiState.value = _uiState.value.copy(
+                        myProjects = projects,
+                        isLoadingProjects = false,
+                        projectsError = null
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("UserProfileVM", "Exception loading projects: ${e.message}")
+                _uiState.value = _uiState.value.copy(
+                    myProjects = emptyList(),
+                    isLoadingProjects = false,
+                    projectsError = "Failed to load projects: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Add user to a project with specified role
+     * @param projectId Project to add user to
+     * @param targetUserId User to add
+     * @param role Role to assign (MEMBER or MANAGER only)
+     */
+    fun addUserToProject(projectId: String, targetUserId: String, role: ProjectRole) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isAddingToProject = true, addToProjectError = null)
+
+            try {
+                val userId = currentUserId
+                if (userId == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isAddingToProject = false,
+                        addToProjectError = "You must be logged in"
+                    )
+                    return@launch
+                }
+
+                // Validate role (only MEMBER and MANAGER can be assigned via this flow)
+                if (role == ProjectRole.ADMIN) {
+                    _uiState.value = _uiState.value.copy(
+                        isAddingToProject = false,
+                        addToProjectError = "ADMIN role can only be assigned by existing admins in project settings"
+                    )
+                    return@launch
+                }
+
+                val result = projectRepository.addMember(
+                    projectId = projectId,
+                    userId = targetUserId,
+                    role = role,
+                    invitedBy = userId
+                )
+
+                if (result.isSuccess) {
+                    Log.d("UserProfileVM", "User added to project successfully")
+                    _uiState.value = _uiState.value.copy(
+                        isAddingToProject = false,
+                        addToProjectSuccess = true,
+                        addToProjectError = null,
+                        showAddToProjectDialog = false  // Close dialog on success
+                    )
+                } else {
+                    val error = result.exceptionOrNull()
+                    Log.e("UserProfileVM", "Failed to add user to project: ${error?.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isAddingToProject = false,
+                        addToProjectError = error?.message ?: "Failed to add user to project"
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("UserProfileVM", "Exception adding user to project: ${e.message}")
+                _uiState.value = _uiState.value.copy(
+                    isAddingToProject = false,
+                    addToProjectError = "Failed to add user: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Show/hide the Add to Project dialog
+     */
+    fun setShowAddToProjectDialog(show: Boolean) {
+        _uiState.value = _uiState.value.copy(
+            showAddToProjectDialog = show,
+            addToProjectSuccess = false,  // Reset success state
+            addToProjectError = null       // Clear errors
+        )
+
+        // Load projects when dialog is shown
+        if (show) {
+            loadMyProjects()
+        }
+    }
+
+    /**
+     * Clear success message after user acknowledges
+     */
+    fun clearAddToProjectSuccess() {
+        _uiState.value = _uiState.value.copy(addToProjectSuccess = false)
+    }
 }
 
 /**
@@ -161,5 +283,13 @@ data class UserProfileState(
     val isLoading: Boolean = false,
     val isCreatingChat: Boolean = false,
     val createdChatRoomId: String? = null,
-    val error: String? = null
+    val error: String? = null,
+    // Add to Project Dialog state
+    val showAddToProjectDialog: Boolean = false,
+    val myProjects: List<Project> = emptyList(),
+    val isLoadingProjects: Boolean = false,
+    val projectsError: String? = null,
+    val isAddingToProject: Boolean = false,
+    val addToProjectSuccess: Boolean = false,
+    val addToProjectError: String? = null
 )

@@ -116,4 +116,12 @@ class Converters {
     @TypeConverter
     fun toProjectRole(value: String): ProjectRole =
         try { ProjectRole.valueOf(value) } catch (e: Exception) { ProjectRole.MEMBER }
+
+    // Nullable ProjectRole converters for Task entity fields (assignedToRole, createdByRole)
+    @TypeConverter
+    fun fromNullableProjectRole(value: ProjectRole?): String? = value?.name
+
+    @TypeConverter
+    fun toNullableProjectRole(value: String?): ProjectRole? =
+        value?.let { try { ProjectRole.valueOf(it) } catch (e: Exception) { null } }
 }

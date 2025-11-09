@@ -120,11 +120,15 @@ class ChatViewModel @Inject constructor(
                     senderPhotoUrl = currentUser.photoUrl?.toString(),
                     content = content,
                     timestamp = System.currentTimeMillis(),
-                    type = MessageType.TEXT
+                    type = MessageType.TEXT,
+                    replyToMessageId = _uiState.value.replyingToMessage?.id
                 )
 
                 chatRepository.sendMessage(message)
-                _uiState.value = _uiState.value.copy(messageText = "")
+                _uiState.value = _uiState.value.copy(
+                    messageText = "",
+                    replyingToMessage = null // Clear reply after sending
+                )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     error = "Failed to send message: ${e.message}"
@@ -340,6 +344,19 @@ class ChatViewModel @Inject constructor(
         )
     }
 
+    fun showReplyTo(message: Message) {
+        _uiState.value = _uiState.value.copy(
+            showMessageContextMenu = false,
+            replyingToMessage = message
+        )
+    }
+
+    fun cancelReply() {
+        _uiState.value = _uiState.value.copy(
+            replyingToMessage = null
+        )
+    }
+
     fun editMessage(newContent: String) {
         val messageId = _uiState.value.selectedMessage?.id ?: return
 
@@ -509,6 +526,8 @@ data class ChatUiState(
     val showEditDialog: Boolean = false,
     val showDeleteDialog: Boolean = false,
     val showReactionPicker: Boolean = false,
+    // Reply/Threading
+    val replyingToMessage: Message? = null,
     // Typing indicators
     val typingUsers: Set<String> = emptySet()
 )

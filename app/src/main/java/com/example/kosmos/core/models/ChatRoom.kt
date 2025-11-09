@@ -62,6 +62,12 @@ data class ChatRoom(
     val isArchived: Boolean = false,
 
     /**
+     * Whether this room is pinned to the top
+     */
+    @SerialName("is_pinned")
+    val isPinned: Boolean = false,
+
+    /**
      * Whether this is a private/invitation-only room
      */
     @SerialName("is_private")

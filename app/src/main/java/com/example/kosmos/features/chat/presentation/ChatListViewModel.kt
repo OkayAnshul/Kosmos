@@ -18,7 +18,8 @@ import javax.inject.Inject
 class ChatListViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val chatRepository: ChatRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val projectRepository: com.example.kosmos.data.repository.ProjectRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatListUiState())
@@ -119,44 +120,65 @@ class ChatListViewModel @Inject constructor(
         }
     }
 
-    fun searchUsers(query: String) {
-        if (query.length < 2) {
-            _uiState.value = _uiState.value.copy(searchResults = emptyList())
-            return
-        }
-
+    /**
+     * Load project members for chat creation
+     * Fetches FRESH data directly from Supabase (no stale cache)
+     * This ensures banned/deleted users don't appear and new users show up immediately
+     * @param projectId Project ID to load members from
+     */
+    fun loadProjectMembers(projectId: String) {
         viewModelScope.launch {
             try {
-                if (query.isBlank()) {
-                    _uiState.value = _uiState.value.copy(searchResults = emptyList())
-                    return@launch
-                }
+                _uiState.value = _uiState.value.copy(isLoadingMembers = true, error = null)
 
-                // Get all users and filter by display name or email
-                userRepository.getAllUsersFlow().collect { allUsers ->
-                    val filteredUsers = allUsers.filter { user ->
-                        user.displayName.contains(query, ignoreCase = true) ||
-                        user.email.contains(query, ignoreCase = true)
-                    }.take(10) // Limit to 10 results
+                // Get project members (just the membership records)
+                projectRepository.getProjectMembersFlow(projectId).collect { members ->
+                    if (members.isEmpty()) {
+                        _uiState.value = _uiState.value.copy(
+                            projectMembers = emptyList(),
+                            isLoadingMembers = false
+                        )
+                        return@collect
+                    }
 
-                    _uiState.value = _uiState.value.copy(searchResults = filteredUsers)
+                    // Load FRESH user details from Supabase (no cache)
+                    val users = mutableListOf<User>()
+
+                    for (member in members) {
+                        // Fetch fresh data from Supabase - guaranteed current
+                        val result = userRepository.getUserByIdFromSupabase(member.userId)
+                        if (result.isSuccess) {
+                            val user = result.getOrNull()
+                            // Only add if user still exists (not deleted/banned)
+                            if (user != null) {
+                                users.add(user)
+                            }
+                        }
+                    }
+
+                    _uiState.value = _uiState.value.copy(
+                        projectMembers = users.toList(),
+                        isLoadingMembers = false
+                    )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    error = "Failed to search users: ${e.message}"
+                    isLoadingMembers = false,
+                    error = "Failed to load project members: ${e.message}"
                 )
             }
         }
     }
 
-    fun showCreateChatDialog() {
+    fun showCreateChatDialog(projectId: String) {
         _uiState.value = _uiState.value.copy(showCreateChatDialog = true)
+        loadProjectMembers(projectId)
     }
 
     fun hideCreateChatDialog() {
         _uiState.value = _uiState.value.copy(
             showCreateChatDialog = false,
-            searchResults = emptyList()
+            projectMembers = emptyList()
         )
     }
 
@@ -169,6 +191,94 @@ class ChatListViewModel @Inject constructor(
             authRepository.signOut()
         }
     }
+
+    /**
+     * Archive a chat room
+     * @param chatRoomId Chat room ID to archive
+     */
+    fun archiveChatRoom(chatRoomId: String) {
+        viewModelScope.launch {
+            try {
+                val result = chatRepository.archiveChatRoom(chatRoomId, isArchived = true)
+                if (result.isFailure) {
+                    _uiState.value = _uiState.value.copy(
+                        error = "Failed to archive chat: ${result.exceptionOrNull()?.message}"
+                    )
+                }
+                // Room Flow will automatically update the chat list
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Error archiving chat: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Unarchive a chat room
+     * @param chatRoomId Chat room ID to unarchive
+     */
+    fun unarchiveChatRoom(chatRoomId: String) {
+        viewModelScope.launch {
+            try {
+                val result = chatRepository.archiveChatRoom(chatRoomId, isArchived = false)
+                if (result.isFailure) {
+                    _uiState.value = _uiState.value.copy(
+                        error = "Failed to unarchive chat: ${result.exceptionOrNull()?.message}"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Error unarchiving chat: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Delete a chat room permanently
+     * @param chatRoomId Chat room ID to delete
+     */
+    fun deleteChatRoom(chatRoomId: String) {
+        viewModelScope.launch {
+            try {
+                val result = chatRepository.deleteChatRoom(chatRoomId)
+                if (result.isFailure) {
+                    _uiState.value = _uiState.value.copy(
+                        error = "Failed to delete chat: ${result.exceptionOrNull()?.message}"
+                    )
+                }
+                // Room Flow will automatically update the chat list
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Error deleting chat: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Pin or unpin a chat room
+     * @param chatRoomId Chat room ID to toggle pin status
+     * @param isPinned Whether to pin (true) or unpin (false)
+     */
+    fun pinChatRoom(chatRoomId: String, isPinned: Boolean) {
+        viewModelScope.launch {
+            try {
+                val result = chatRepository.pinChatRoom(chatRoomId, isPinned)
+                if (result.isFailure) {
+                    _uiState.value = _uiState.value.copy(
+                        error = "Failed to ${if (isPinned) "pin" else "unpin"} chat: ${result.exceptionOrNull()?.message}"
+                    )
+                }
+                // Room Flow will automatically update the chat list
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Error ${if (isPinned) "pinning" else "unpinning"} chat: ${e.message}"
+                )
+            }
+        }
+    }
 }
 
 data class ChatListUiState(
@@ -177,6 +287,7 @@ data class ChatListUiState(
     val currentUser: User? = null,
     val showCreateChatDialog: Boolean = false,
     val isCreatingChat: Boolean = false,
-    val searchResults: List<User> = emptyList(),
+    val projectMembers: List<User> = emptyList(),
+    val isLoadingMembers: Boolean = false,
     val error: String? = null
 )

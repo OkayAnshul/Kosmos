@@ -29,4 +29,11 @@ interface ChatRoomDao {
 
     @Query("DELETE FROM chat_rooms WHERE id = :roomId")
     suspend fun deleteChatRoomById(roomId: String)
+
+    // Stats queries for project statistics
+    @Query("SELECT COUNT(*) FROM chat_rooms WHERE projectId = :projectId")
+    suspend fun getChatRoomCountForProject(projectId: String): Int
+
+    @Query("SELECT COUNT(*) FROM chat_rooms WHERE projectId = :projectId")
+    fun getChatRoomCountForProjectFlow(projectId: String): Flow<Int>
 }

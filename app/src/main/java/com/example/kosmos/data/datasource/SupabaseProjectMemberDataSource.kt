@@ -73,8 +73,8 @@ class SupabaseProjectMemberDataSource @Inject constructor(
             val member = supabase.from(TABLE_NAME)
                 .select {
                     filter {
-                        eq("projectId", projectId)
-                        eq("userId", userId)
+                        eq("project_id", projectId)
+                        eq("user_id", userId)
                     }
                 }
                 .decodeSingleOrNull<ProjectMember>()
@@ -95,8 +95,8 @@ class SupabaseProjectMemberDataSource @Inject constructor(
             val members = supabase.from(TABLE_NAME)
                 .select {
                     filter {
-                        eq("projectId", projectId)
-                        eq("isActive", true)
+                        eq("project_id", projectId)
+                        eq("is_active", true)
                     }
                 }
                 .decodeList<ProjectMember>()
@@ -119,9 +119,9 @@ class SupabaseProjectMemberDataSource @Inject constructor(
             val members = supabase.from(TABLE_NAME)
                 .select {
                     filter {
-                        eq("projectId", projectId)
+                        eq("project_id", projectId)
                         eq("role", role.name)
-                        eq("isActive", true)
+                        eq("is_active", true)
                     }
                 }
                 .decodeList<ProjectMember>()
@@ -142,8 +142,8 @@ class SupabaseProjectMemberDataSource @Inject constructor(
             val memberships = supabase.from(TABLE_NAME)
                 .select {
                     filter {
-                        eq("userId", userId)
-                        eq("isActive", true)
+                        eq("user_id", userId)
+                        eq("is_active", true)
                     }
                 }
                 .decodeList<ProjectMember>()
@@ -165,8 +165,8 @@ class SupabaseProjectMemberDataSource @Inject constructor(
         return try {
             supabase.from(TABLE_NAME).delete {
                 filter {
-                    eq("projectId", projectId)
-                    eq("userId", userId)
+                    eq("project_id", projectId)
+                    eq("user_id", userId)
                 }
             }
             Result.success(Unit)
@@ -207,7 +207,7 @@ class SupabaseProjectMemberDataSource @Inject constructor(
     suspend fun updateStatus(memberId: String, isActive: Boolean): Result<Unit> {
         return try {
             supabase.from(TABLE_NAME).update({
-                set("isActive", isActive)
+                set("is_active", isActive)
             }) {
                 filter {
                     eq("id", memberId)
@@ -230,11 +230,11 @@ class SupabaseProjectMemberDataSource @Inject constructor(
     suspend fun updateLastActivity(projectId: String, userId: String, timestamp: Long): Result<Unit> {
         return try {
             supabase.from(TABLE_NAME).update({
-                set("lastActivityAt", timestamp)
+                set("last_activity_at", timestamp)
             }) {
                 filter {
-                    eq("projectId", projectId)
-                    eq("userId", userId)
+                    eq("project_id", projectId)
+                    eq("user_id", userId)
                 }
             }
             Result.success(Unit)
@@ -254,8 +254,8 @@ class SupabaseProjectMemberDataSource @Inject constructor(
             val members = supabase.from(TABLE_NAME)
                 .select {
                     filter {
-                        eq("projectId", projectId)
-                        eq("isActive", true)
+                        eq("project_id", projectId)
+                        eq("is_active", true)
                     }
                 }
                 .decodeList<ProjectMember>()

@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -85,7 +86,7 @@ fun ChatListScreen(
                 }
 
                 // Create Chat Button
-                IconButton(onClick = { viewModel.showCreateChatDialog() }) {
+                IconButton(onClick = { viewModel.showCreateChatDialog(projectId) }) {
                     Icon(Icons.Default.Add, contentDescription = "Create Chat")
                 }
 
@@ -157,7 +158,7 @@ fun ChatListScreen(
             }
             uiState.chatRooms.isEmpty() -> {
                 EmptyChatListContent(
-                    onCreateNewChat = { viewModel.showCreateChatDialog() }
+                    onCreateNewChat = { viewModel.showCreateChatDialog(projectId) }
                 )
             }
             else -> {
@@ -183,8 +184,8 @@ fun ChatListScreen(
             onCreate = { name, description, selectedUserIds ->
                 viewModel.createNewChatRoom(name, description, selectedUserIds, projectId)
             },
-            searchResults = uiState.searchResults,
-            onSearchUsers = { query -> viewModel.searchUsers(query) },
+            projectMembers = uiState.projectMembers,
+            isLoadingMembers = uiState.isLoadingMembers,
             isCreating = uiState.isCreatingChat
         )
     }
@@ -475,23 +476,37 @@ private fun EmptyChatListContent(
 }
 
 @Composable
-private fun CreateChatDialog(
+internal fun CreateChatDialog(
     onDismiss: () -> Unit,
     onCreate: (String, String, List<String>) -> Unit,
-    searchResults: List<User>,
-    onSearchUsers: (String) -> Unit,
+    projectMembers: List<User>,
+    isLoadingMembers: Boolean,
     isCreating: Boolean
 ) {
     var chatName by remember { mutableStateOf("") }
     var chatDescription by remember { mutableStateOf("") }
-    var searchQuery by remember { mutableStateOf("") }
     var selectedUsers by remember { mutableStateOf<List<User>>(emptyList()) }
     var roomType by remember { mutableStateOf("GENERAL") }
     var nameError by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = { if (!isCreating) onDismiss() },
-        title = { Text("Create New Chat Room") },
+        title = {
+            Column {
+                Text(
+                    if (selectedUsers.isEmpty()) {
+                        "Create New Chat Room"
+                    } else {
+                        "Create New Chat Room (${selectedUsers.size} selected)"
+                    }
+                )
+                Text(
+                    text = "Select participants from this project",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
         text = {
             Column(
                 modifier = Modifier
@@ -552,74 +567,165 @@ private fun CreateChatDialog(
                     }
                 }
 
-                // User search for participants
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = {
-                        searchQuery = it
-                        if (it.length >= 2) {
-                            onSearchUsers(it)
-                        }
-                    },
-                    label = { Text("Add Participants") },
-                    placeholder = { Text("Search users...") },
-                    enabled = !isCreating,
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(Icons.Default.Search, "Search")
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                // Project members selection
+                Text(
+                    text = "Add Participants (Project Members Only)",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
                 )
 
-                // Search results
-                if (searchResults.isNotEmpty() && searchQuery.length >= 2) {
-                    Text(
-                        text = "Select users:",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Column(
-                        modifier = Modifier.heightIn(max = 150.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                // Selected users - ALWAYS VISIBLE AT TOP
+                if (selectedUsers.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                        )
                     ) {
-                        searchResults.take(5).forEach { user ->
-                            val isSelected = selectedUsers.any { it.id == user.id }
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = {
-                                    selectedUsers = if (isSelected) {
-                                        selectedUsers.filter { it.id != user.id }
-                                    } else {
-                                        selectedUsers + user
-                                    }
-                                },
-                                label = { Text(user.displayName) },
-                                modifier = Modifier.fillMaxWidth()
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Selected (${selectedUsers.size}):",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
                             )
+                            androidx.compose.foundation.layout.FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                selectedUsers.forEach { user ->
+                                    AssistChip(
+                                        onClick = {
+                                            if (!isCreating) {
+                                                selectedUsers = selectedUsers.filter { it.id != user.id }
+                                            }
+                                        },
+                                        label = { Text(user.displayName, style = MaterialTheme.typography.bodySmall) },
+                                        trailingIcon = {
+                                            Icon(Icons.Default.Close, "Remove", modifier = Modifier.size(16.dp))
+                                        },
+                                        enabled = !isCreating
+                                    )
+                                }
+                            }
                         }
                     }
                 }
 
-                // Selected users
-                if (selectedUsers.isNotEmpty()) {
-                    Text(
-                        text = "Selected (${selectedUsers.size}):",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                if (isLoadingMembers) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                            Text(
+                                text = "Loading members...",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else if (projectMembers.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Group,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                            Text(
+                                text = "No project members yet",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = "Invite members to the project first",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    // Select All button
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        selectedUsers.forEach { user ->
-                            AssistChip(
-                                onClick = {
-                                    selectedUsers = selectedUsers.filter { it.id != user.id }
-                                },
-                                label = { Text(user.displayName, style = MaterialTheme.typography.bodySmall) },
-                                trailingIcon = {
-                                    Icon(Icons.Default.Close, "Remove", modifier = Modifier.size(16.dp))
+                        Text(
+                            text = "Available project members (tap to select):",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        TextButton(
+                            onClick = {
+                                if (!isCreating) {
+                                    selectedUsers = if (selectedUsers.size == projectMembers.size) {
+                                        emptyList() // Deselect all
+                                    } else {
+                                        projectMembers // Select all
+                                    }
                                 }
+                            },
+                            enabled = !isCreating
+                        ) {
+                            Text(
+                                text = if (selectedUsers.size == projectMembers.size) "Deselect All" else "Select All",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+
+                    // Scrollable member list
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 200.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(projectMembers) { user ->
+                            val isSelected = selectedUsers.any { it.id == user.id }
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    if (!isCreating) {
+                                        selectedUsers = if (isSelected) {
+                                            selectedUsers.filter { it.id != user.id }
+                                        } else {
+                                            selectedUsers + user
+                                        }
+                                    }
+                                },
+                                label = { Text(user.displayName) },
+                                leadingIcon = if (isSelected) {
+                                    { Icon(Icons.Default.Check, "Selected", modifier = Modifier.size(18.dp)) }
+                                } else null,
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = !isCreating
                             )
                         }
                     }

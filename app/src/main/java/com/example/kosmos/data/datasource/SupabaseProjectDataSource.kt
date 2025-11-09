@@ -180,7 +180,7 @@ class SupabaseProjectDataSource @Inject constructor(
         return try {
             supabase.from(TABLE_NAME).update({
                 set("status", status.name)
-                set("updatedAt", System.currentTimeMillis())
+                set("updated_at", System.currentTimeMillis())
             }) {
                 filter {
                     eq("id", projectId)

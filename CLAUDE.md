@@ -22,6 +22,170 @@ The logbook is the **single source of truth** for:
 
 **Workflow**: Read logbook → Update progress → Work on tasks → Update logbook → Review checkpoint
 
+---
+
+## 🎨 CURRENT PHASE: Main Screens Polish & Feature Enhancement
+
+**STATUS: ACTIVE** - The project is now in the **Main Screens Polish Phase** where we focus on user-facing screens (TaskBoard, Chat, Profile, Projects) with feature-rich implementations.
+
+### 🔥 Main Screens Polish Documentation (MUST READ - CURRENT WORK)
+
+**For ALL main screens work**, use this specialized logbook:
+
+1. **`/MAIN_SCREENS_POLISH_LOGBOOK.md`** - Main Screens Polish Tracker ⭐ **PRIMARY DOCUMENT**
+   - Read this FIRST before any main screen work
+   - Contains 10-day feature-rich enhancement plan (4 phases)
+   - Daily progress tracking with checkboxes
+   - Schema features to unlock (subtasks, reactions, threading, etc.)
+   - Design improvements tracking
+   - Context file guide per phase
+   - **Use this when:** Working on TaskBoard, Chat, Profile, Projects screens
+   - **Update this:** At end of each day with progress, issues, decisions
+
+### Main Screens Polish Workflow
+
+```
+START MAIN SCREEN TASK
+    ↓
+1. Read MAIN_SCREENS_POLISH_LOGBOOK.md → Check current day & phase tasks
+    ↓
+2. Load phase-specific context files (listed in logbook)
+    ↓
+3. Check schema (SCHEMA_FIX_COMPLETE_V2.sql) for feature capabilities
+    ↓
+4. Implement using design system (/shared/ui/designsystem/)
+    ↓
+5. Update MAIN_SCREENS_POLISH_LOGBOOK.md → Mark complete, log notes
+    ↓
+6. Build and test → Move to next task
+    ↓
+END MAIN SCREEN TASK
+```
+
+### When to Use Which Document
+
+**Use `/MAIN_SCREENS_POLISH_LOGBOOK.md` for:** (CURRENT PHASE)
+- Daily task planning for main screens
+- Progress tracking on TaskBoard/Chat/Profile/Projects
+- Schema feature unlock tracking
+- Phase-specific context file list
+- Design improvements log
+
+**Use `/SCHEMA_FIX_COMPLETE_V2.sql` for:**
+- Understanding database capabilities
+- Planning schema-powered features
+- Checking what's possible (subtasks, threading, reactions, etc.)
+
+### 🔥 Previous UI Phase Documentation (REFERENCE ONLY)
+
+**For ALL UI-related work**, use these specialized documents instead of the general development logbook:
+
+1. **`/UI_AUDIT_REPORT_2025-11-08.md`** - Comprehensive UI Analysis
+   - Read this FIRST to understand current UI state
+   - Contains screen-by-screen functionality analysis
+   - Lists all broken/incomplete/working features
+   - Identifies critical issues and priorities
+   - **Use this when:** You need to understand what's broken, what works, or what needs to be built
+
+2. **`/UI_ENHANCEMENT_LOGBOOK.md`** - UI Phase Project Tracker
+   - Read this BEFORE starting each UI task
+   - Contains the 10-day UI enhancement plan (6 phases)
+   - Daily progress tracking and checklists
+   - Task-by-task breakdown with file locations
+   - Review checkpoints and success criteria
+   - **Use this when:** Planning work, tracking progress, or reviewing completed work
+   - **Update this:** Daily with progress, issues, and notes
+
+### UI Phase Workflow
+
+```
+START UI TASK
+    ↓
+1. Read UI_ENHANCEMENT_LOGBOOK.md → Check current phase & today's tasks
+    ↓
+2. Read UI_AUDIT_REPORT_2025-11-08.md → Understand specific screen/feature details
+    ↓
+3. Implement the task following the plan
+    ↓
+4. Update UI_ENHANCEMENT_LOGBOOK.md → Mark tasks complete, log issues, add notes
+    ↓
+5. At phase completion → Review phase checklist in logbook
+    ↓
+END UI TASK
+```
+
+### When to Use Which Document
+
+**Use `/UI_ENHANCEMENT_LOGBOOK.md` for:**
+- Daily task planning
+- Progress tracking (checkboxes)
+- Recording decisions made
+- Logging issues and blockers
+- Phase review checkpoints
+- Success metrics tracking
+
+**Use `/UI_AUDIT_REPORT_2025-11-08.md` for:**
+- Understanding current UI state
+- Finding which features are broken
+- Checking backend support status
+- Getting specific screen details
+- Understanding navigation flow
+- Reference during implementation
+
+**Use `/DEVELOPMENT_LOGBOOK.md` for:**
+- Non-UI backend work
+- Database/API changes
+- Performance optimizations
+- Overall project history
+
+### UI Phase Priorities
+
+Based on user requirements, prioritize in this order:
+
+1. **CRITICAL (Do First):**
+   - Privacy Settings Screen
+   - Notification Settings Screen
+   - Project Edit Dialog
+   - Members List Screen
+   - Chat Management UI (archive/pin/delete)
+
+2. **HIGH (Do Second):**
+   - Design System implementation
+   - Component library creation
+   - Photo upload to Supabase Storage
+
+3. **MEDIUM (Do Third):**
+   - Apply design system to all screens
+   - Animations and transitions
+   - Empty states with illustrations
+
+4. **NICE TO HAVE (If Time):**
+   - Search/filter features
+   - Advanced accessibility
+   - Performance optimizations
+
+### UI Phase Success Criteria
+
+Before marking UI phase complete, ensure:
+- [ ] Zero broken/incomplete UI elements
+- [ ] All navigation working end-to-end
+- [ ] Consistent design across all screens
+- [ ] Smooth animations on all transitions
+- [ ] Accessibility score 90%+
+- [ ] No duplicate/legacy code in main source
+- [ ] Complete design system documentation
+- [ ] All features fully tested
+- [ ] Both UI logbook and audit report updated
+
+### IMPORTANT NOTES FOR UI WORK
+
+- **Always** check if backend methods exist before creating UI (see audit report)
+- **Always** update the UI_ENHANCEMENT_LOGBOOK.md daily log
+- **Always** use the design system once it's created (Phase 3)
+- **Never** create new screens without checking audit report first
+- **Never** skip the review checkpoints at end of each phase
+- **Archive** old screen files, don't delete (user wants to keep for reference)
+
 ## Project Overview
 
 Kosmos is an Android chat application built with Kotlin and Jetpack Compose. It features real-time messaging, voice transcription, task management, and smart action detection. The app uses a hybrid backend approach with Firebase for authentication and Supabase for database and storage services, plus Room for local data persistence.

@@ -328,6 +328,44 @@ class UserRepository @Inject constructor(
     }
 
     /**
+     * Get user by ID directly from Supabase (no cache)
+     * Use this when you need guaranteed fresh data (e.g., checking if user is banned/deleted)
+     *
+     * @param userId User ID
+     * @return Result with fresh user data from Supabase
+     */
+    suspend fun getUserByIdFromSupabase(userId: String): Result<User?> {
+        return supabaseUserDataSource.getById(userId)
+    }
+
+    /**
+     * Search users directly from Supabase (no cache)
+     * Use this for user discovery where fresh data is critical
+     *
+     * @param query Search query
+     * @param excludeIds User IDs to exclude from results
+     * @param limit Maximum number of results
+     * @return Result with fresh user list from Supabase
+     */
+    suspend fun searchUsersFromSupabase(
+        query: String,
+        excludeIds: List<String> = emptyList(),
+        limit: Int = 50
+    ): Result<List<User>> {
+        return supabaseUserDataSource.searchUsers(query, excludeIds, limit)
+    }
+
+    /**
+     * Get all users directly from Supabase (no cache)
+     * Use this when you need complete fresh user list
+     *
+     * @return Result with all users from Supabase
+     */
+    suspend fun getAllUsersFromSupabase(): Result<List<User>> {
+        return supabaseUserDataSource.getAll()
+    }
+
+    /**
      * Check if username exists in Supabase
      * Used for username availability validation during registration
      *

@@ -62,6 +62,7 @@ class UserSearchViewModel @Inject constructor(
 
     /**
      * Search for users by display name or email
+     * Fetches FRESH data from Supabase (no stale cache)
      * Excludes current user from results
      */
     private fun searchUsers(query: String) {
@@ -71,27 +72,28 @@ class UserSearchViewModel @Inject constructor(
             // Get current user ID to exclude from results
             val currentUserId = authRepository.getCurrentUser()?.id ?: ""
 
-            userRepository.searchUsers(
+            // Use Supabase-only search for fresh, real-time data
+            val result = userRepository.searchUsersFromSupabase(
                 query = query,
                 excludeIds = if (currentUserId.isNotEmpty()) listOf(currentUserId) else emptyList(),
                 limit = 50
-            ).collect { result ->
-                when {
-                    result.isSuccess -> {
-                        val users = result.getOrNull() ?: emptyList()
-                        _uiState.value = UserSearchState(
-                            users = users,
-                            isLoading = false,
-                            error = null
-                        )
-                    }
-                    result.isFailure -> {
-                        val error = result.exceptionOrNull()
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = error?.message ?: "Search failed"
-                        )
-                    }
+            )
+
+            when {
+                result.isSuccess -> {
+                    val users = result.getOrNull() ?: emptyList()
+                    _uiState.value = UserSearchState(
+                        users = users,
+                        isLoading = false,
+                        error = null
+                    )
+                }
+                result.isFailure -> {
+                    val error = result.exceptionOrNull()
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = error?.message ?: "Search failed"
+                    )
                 }
             }
         }

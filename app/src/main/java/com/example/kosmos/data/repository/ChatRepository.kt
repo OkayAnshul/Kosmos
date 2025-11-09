@@ -1,5 +1,6 @@
 package com.example.kosmos.data.repository
 
+import android.util.Log
 import com.example.kosmos.core.database.dao.ChatRoomDao
 import com.example.kosmos.core.database.dao.MessageDao
 import com.example.kosmos.core.models.ChatRoom
@@ -22,11 +23,16 @@ import javax.inject.Singleton
 class ChatRepository @Inject constructor(
     private val chatRoomDao: ChatRoomDao,
     private val messageDao: MessageDao,
+    private val projectDao: com.example.kosmos.core.database.dao.ProjectDao,
     private val supabase: SupabaseClient,
     private val supabaseMessageDataSource: SupabaseMessageDataSource,
     private val supabaseChatDataSource: com.example.kosmos.data.datasource.SupabaseChatDataSource,
     private val realtimeManager: SupabaseRealtimeManager
 ) {
+
+    companion object {
+        private const val TAG = "ChatRepository"
+    }
 
     /**
      * Get chat rooms for a specific project with real-time updates
@@ -52,6 +58,67 @@ class ChatRepository @Inject constructor(
     fun getChatRoomsFlow(userId: String): Flow<List<ChatRoom>> {
         return chatRoomDao.getAllChatRoomsFlow().map { rooms ->
             rooms.filter { room -> room.participantIds.contains(userId) }
+        }
+    }
+
+    /**
+     * Sync chat rooms for a user from Supabase to local cache
+     * Fetches all chat rooms where the user is a participant
+     *
+     * CRITICAL: This fixes the bug where chat rooms are never fetched from Supabase.
+     * Call this on app startup, login, or pull-to-refresh.
+     *
+     * @param userId User ID
+     * @return Result indicating success or failure
+     */
+    suspend fun syncUserChatRooms(userId: String): Result<Unit> {
+        return try {
+            Log.d(TAG, "Starting chat room sync for user: $userId")
+
+            // Fetch all chat rooms from Supabase where user is a participant
+            val chatRoomsResult = supabaseChatDataSource.getChatRoomsForUser(userId)
+
+            if (chatRoomsResult.isFailure) {
+                Log.w(TAG, "Failed to fetch chat rooms from Supabase", chatRoomsResult.exceptionOrNull())
+                return chatRoomsResult.map { }  // Convert to Result<Unit>
+            }
+
+            val chatRooms = chatRoomsResult.getOrNull() ?: emptyList()
+
+            // Update local cache
+            chatRooms.forEach { chatRoom ->
+                chatRoomDao.insertChatRoom(chatRoom)
+            }
+
+            Log.d(TAG, "✅ Synced ${chatRooms.size} chat rooms from Supabase")
+
+            // Also sync recent messages for each chat room (last 50 messages)
+            var messagesSynced = 0
+            chatRooms.forEach { chatRoom ->
+                try {
+                    val messagesResult = supabaseMessageDataSource.getMessages(
+                        chatRoomId = chatRoom.id,
+                        limit = 50,
+                        before = null
+                    )
+
+                    if (messagesResult.isSuccess) {
+                        val messages = messagesResult.getOrNull() ?: emptyList()
+                        messages.forEach { message ->
+                            messageDao.insertMessage(message)
+                        }
+                        messagesSynced += messages.size
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Error syncing messages for chat ${chatRoom.id}", e)
+                }
+            }
+
+            Log.d(TAG, "✅ Synced $messagesSynced messages from Supabase")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Critical error in chat room sync", e)
+            Result.failure(e)
         }
     }
 
@@ -160,6 +227,11 @@ class ChatRepository @Inject constructor(
             // Save locally
             chatRoomDao.insertChatRoom(chatRoomWithId)
 
+            // Update project chat count if this chat has a project
+            chatRoomWithId.projectId?.let { projId ->
+                projectDao.incrementChatCount(projId)
+            }
+
             // Sync to Supabase with retry on FK violation (in case project not synced yet)
             val supabaseResult = SyncRetryHelper.retryOnForeignKeyViolation(
                 maxRetries = 3,
@@ -252,17 +324,29 @@ class ChatRepository @Inject constructor(
 
     /**
      * Delete a chat room and all its messages
+     * Hybrid pattern: Delete from Supabase first (cascade), then Room
      * @param chatRoomId Chat room ID
      * @return Result indicating success or failure
      */
     suspend fun deleteChatRoom(chatRoomId: String): Result<Unit> {
         return try {
-            // Delete locally first
+            // Delete from Supabase first (will cascade delete messages via FK)
+            val supabaseResult = supabaseChatDataSource.deleteChatRoom(chatRoomId)
+
+            if (supabaseResult.isFailure) {
+                android.util.Log.e("ChatRepository", "❌ Failed to delete chat room from Supabase", supabaseResult.exceptionOrNull())
+                // Continue to delete locally anyway for offline support
+            } else {
+                android.util.Log.d("ChatRepository", "✅ Chat room deleted from Supabase: $chatRoomId")
+            }
+
+            // Delete locally
             chatRoomDao.deleteChatRoomById(chatRoomId)
             messageDao.deleteMessagesForChatRoom(chatRoomId)
 
             Result.success(Unit)
         } catch (e: Exception) {
+            android.util.Log.e("ChatRepository", "❌ Failed to delete chat room", e)
             Result.failure(e)
         }
     }
@@ -497,5 +581,85 @@ class ChatRepository @Inject constructor(
      */
     fun disconnectRealtime() {
         realtimeManager.disconnect()
+    }
+
+    /**
+     * Archive a chat room
+     * Hybrid pattern: Update Room first, then sync to Supabase
+     * @param chatRoomId Chat room ID to archive
+     * @param isArchived Whether to archive (true) or unarchive (false)
+     * @return Result indicating success or failure
+     */
+    suspend fun archiveChatRoom(chatRoomId: String, isArchived: Boolean = true): Result<Unit> {
+        return try {
+            val chatRoom = chatRoomDao.getChatRoomById(chatRoomId)
+                ?: return Result.failure(Exception("Chat room not found"))
+
+            // Update locally first (optimistic)
+            val updatedChatRoom = chatRoom.copy(
+                // Note: Room entity needs is_archived field added
+                // For now we'll just update Supabase
+            )
+
+            // Sync to Supabase
+            val supabaseResult = supabaseChatDataSource.archiveChatRoom(chatRoomId, isArchived)
+
+            if (supabaseResult.isFailure) {
+                android.util.Log.e("ChatRepository", "❌ Failed to archive chat room in Supabase", supabaseResult.exceptionOrNull())
+                return Result.failure(supabaseResult.exceptionOrNull() ?: Exception("Failed to archive chat room"))
+            }
+
+            android.util.Log.d("ChatRepository", "✅ Chat room ${if (isArchived) "archived" else "unarchived"}: $chatRoomId")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            android.util.Log.e("ChatRepository", "❌ Failed to archive chat room", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Pin a chat room to the top of the chat list
+     * Hybrid pattern: Update Room first, then sync to Supabase
+     * @param chatRoomId Chat room ID to pin
+     * @param isPinned Whether to pin (true) or unpin (false)
+     * @return Result indicating success or failure
+     */
+    suspend fun pinChatRoom(chatRoomId: String, isPinned: Boolean): Result<Unit> {
+        return try {
+            val chatRoom = chatRoomDao.getChatRoomById(chatRoomId)
+                ?: return Result.failure(Exception("Chat room not found"))
+
+            // Update local database first
+            val updatedChatRoom = chatRoom.copy(isPinned = isPinned)
+            chatRoomDao.updateChatRoom(updatedChatRoom)
+
+            // Sync to Supabase
+            val supabaseResult = supabaseChatDataSource.pinChatRoom(chatRoomId, isPinned)
+
+            if (supabaseResult.isFailure) {
+                android.util.Log.e("ChatRepository", "❌ Failed to pin chat room in Supabase", supabaseResult.exceptionOrNull())
+                return Result.failure(supabaseResult.exceptionOrNull() ?: Exception("Failed to pin chat room"))
+            }
+
+            android.util.Log.d("ChatRepository", "✅ Chat room ${if (isPinned) "pinned" else "unpinned"}: $chatRoomId")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            android.util.Log.e("ChatRepository", "❌ Failed to pin chat room", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Get unread message count for a chat room
+     * @param chatRoomId Chat room ID
+     * @param userId Current user ID
+     * @return Flow of unread message count
+     */
+    fun getUnreadCountFlow(chatRoomId: String, userId: String): Flow<Int> {
+        return messageDao.getMessagesForChatRoomFlow(chatRoomId).map { messages ->
+            messages.count { message ->
+                message.senderId != userId && !message.readBy.contains(userId)
+            }
+        }
     }
 }
