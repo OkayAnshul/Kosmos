@@ -1,0 +1,563 @@
+package com.example.kosmos.features.users.presentation
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.kosmos.core.models.ConnectionStatus
+import com.example.kosmos.core.models.User
+import com.example.kosmos.features.users.presentation.components.AddToProjectDialog
+import com.example.kosmos.features.users.presentation.components.UserAvatar
+import com.example.kosmos.shared.ui.components.*
+import com.example.kosmos.shared.ui.designsystem.IconSet
+import com.example.kosmos.shared.ui.designsystem.Tokens
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
+import kotlinx.coroutines.CancellationException
+
+/**
+ * User Profile Screen
+ * Displays detailed information about a user
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun UserProfileScreen(
+    userId: String,
+    projectId: String,
+    onNavigateBack: () -> Unit,
+    onStartChat: (String, String) -> Unit, // Navigate to chat with (userId, chatRoomId)
+    modifier: Modifier = Modifier,
+    viewModel: UserProfileViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(userId) {
+        viewModel.loadUser(userId)
+    }
+
+    // Navigate to chat when created
+    LaunchedEffect(uiState.createdChatRoomId) {
+        uiState.createdChatRoomId?.let { chatRoomId ->
+            onStartChat(userId, chatRoomId)
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Profile") },
+                navigationIcon = {
+                    IconButtonStandard(
+                        icon = IconSet.Navigation.back,
+                        onClick = onNavigateBack,
+                        contentDescription = "Back"
+                    )
+                }
+            )
+        },
+        modifier = modifier.fillMaxSize()
+    ) { paddingValues ->
+        when {
+            uiState.isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LoadingIndicator()
+                }
+            }
+
+            uiState.error != null -> {
+                uiState.error?.let { error ->
+                    ErrorState(
+                        title = "Failed to load profile",
+                        message = error,
+                        onRetry = { viewModel.loadUser(userId) },
+                        modifier = Modifier.padding(paddingValues)
+                    )
+                }
+            }
+
+            uiState.user != null -> {
+                uiState.user?.let { user ->
+                    ProfileContent(
+                        user = user,
+                    projectId = projectId,
+                    sharedProjectCount = uiState.sharedProjectCount,
+                    connectionStatus = uiState.connectionStatus,
+                    onStartChat = { chatRoomId ->
+                        onStartChat(userId, chatRoomId)
+                    },
+                    onCreateOrGetChat = { targetUserId ->
+                        viewModel.createOrGetDirectChat(projectId, targetUserId)
+                    },
+                    onAddToProjectClick = {
+                        viewModel.setShowAddToProjectDialog(true)
+                    },
+                    onConnectClick = { viewModel.sendConnectionRequest(userId) },
+                    onRemoveConnectionClick = { viewModel.removeConnection(userId) },
+                    modifier = Modifier.padding(paddingValues)
+                )
+                }
+            }
+        }
+
+        // Add to Project Dialog
+        if (uiState.showAddToProjectDialog) {
+            AddToProjectDialog(
+                projects = uiState.myProjects,
+                isLoading = uiState.isLoadingProjects || uiState.isAddingToProject,
+                error = uiState.projectsError ?: uiState.addToProjectError,
+                onDismiss = {
+                    viewModel.setShowAddToProjectDialog(false)
+                },
+                onAddToProject = { projectId, role ->
+                    viewModel.addUserToProject(projectId, userId, role)
+                }
+            )
+        }
+
+        // Success Snackbar
+        if (uiState.addToProjectSuccess) {
+            LaunchedEffect(Unit) {
+                // Show success message (you can add a SnackbarHost if needed)
+                viewModel.clearAddToProjectSuccess()
+            }
+        }
+    }
+}
+
+/**
+ * Profile Content
+ */
+@Composable
+private fun ProfileContent(
+    user: User,
+    projectId: String,
+    sharedProjectCount: Int,
+    connectionStatus: ConnectionStatus?,
+    onStartChat: (String) -> Unit,
+    onCreateOrGetChat: (String) -> Unit,
+    onAddToProjectClick: () -> Unit,
+    onConnectClick: () -> Unit,
+    onRemoveConnectionClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(Tokens.Spacing.lg),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.lg)
+    ) {
+        Spacer(modifier = Modifier.height(Tokens.Spacing.xs))
+
+        // Large Avatar
+        UserAvatar(
+            photoUrl = user.photoUrl,
+            displayName = user.displayName,
+            isOnline = user.isOnline,
+            size = Tokens.Size.avatarXXLarge,
+            showOnlineIndicator = true
+        )
+
+        // Display Name
+        Text(
+            text = user.displayName,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = ColorTokens.ReactTheme.foreground,
+            textAlign = TextAlign.Center
+        )
+
+        // Username
+        if (user.username.isNotEmpty()) {
+            Surface(
+                shape = RoundedCornerShape(Tokens.Spacing.md),
+                color = ColorTokens.ReactTheme.secondary
+            ) {
+                Text(
+                    text = "@${user.username}",
+                    modifier = Modifier.padding(horizontal = Tokens.Spacing.sm, vertical = Tokens.Spacing.xs),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = ColorTokens.ReactTheme.secondaryForeground
+                )
+            }
+        }
+
+        // Email
+        Text(
+            text = user.email,
+            style = MaterialTheme.typography.bodyLarge,
+            color = ColorTokens.ReactTheme.mutedForeground,
+            textAlign = TextAlign.Center
+        )
+
+        // Online Status
+        OnlineStatusCard(
+            isOnline = user.isOnline,
+            lastSeen = user.lastSeen
+        )
+
+        // Action Buttons
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+        ) {
+            // Start Chat Button
+            PrimaryButton(
+                text = "Start Chat",
+                onClick = { onCreateOrGetChat(user.id) },
+                modifier = Modifier,
+                icon = IconSet.Message.chat,
+                fullWidth = true
+            )
+
+            // Connection Button
+            when (connectionStatus) {
+                null -> {
+                    SecondaryButton(
+                        text = "Connect",
+                        onClick = onConnectClick,
+                        modifier = Modifier,
+                        icon = Icons.Default.PersonAdd,
+                        fullWidth = true
+                    )
+                }
+                ConnectionStatus.PENDING -> {
+                    OutlinedButton(
+                        onClick = {},
+                        enabled = false,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.HourglassTop, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Pending")
+                    }
+                }
+                ConnectionStatus.ACCEPTED -> {
+                    OutlinedButton(
+                        onClick = onRemoveConnectionClick,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.PersonRemove, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Remove Connection")
+                    }
+                }
+                ConnectionStatus.DECLINED, ConnectionStatus.BLOCKED -> {
+                    // Don't show button
+                }
+            }
+
+            // Add to Project Button
+            SecondaryButton(
+                text = "Add to Project",
+                onClick = onAddToProjectClick,
+                modifier = Modifier,
+                icon = IconSet.Action.add,
+                fullWidth = true
+            )
+        }
+
+        // Additional Info Sections
+        ProfileInfoCard(user = user, sharedProjectCount = sharedProjectCount)
+
+        // Bio Section
+        if (!user.bio.isNullOrBlank()) {
+            BioSection(bio = user.bio)
+        }
+
+        // Social Links Section
+        SocialLinksSection(user = user)
+    }
+}
+
+/**
+ * Online Status Card
+ */
+@Composable
+private fun OnlineStatusCard(
+    isOnline: Boolean,
+    lastSeen: Long,
+    modifier: Modifier = Modifier
+) {
+    StandardCard(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Status Indicator
+            Box(
+                modifier = Modifier
+                    .size(Tokens.Size.statusDot)
+                    .background(
+                        color = if (isOnline) {
+                            ColorTokens.Status.online
+                        } else {
+                            ColorTokens.ReactTheme.border
+                        },
+                        shape = CircleShape
+                    )
+            )
+
+            Spacer(modifier = Modifier.width(Tokens.Spacing.xs))
+
+            // Status Text
+            Text(
+                text = if (isOnline) {
+                    "Online"
+                } else {
+                    formatLastSeen(lastSeen)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = if (isOnline) {
+                    ColorTokens.ReactTheme.primaryForeground
+                } else {
+                    ColorTokens.ReactTheme.mutedForeground
+                }
+            )
+        }
+    }
+}
+
+/**
+ * Profile Info Card
+ */
+@Composable
+private fun ProfileInfoCard(
+    user: User,
+    sharedProjectCount: Int,
+    modifier: Modifier = Modifier
+) {
+    StandardCard(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+        ) {
+            Text(
+                text = "Information",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = ColorTokens.ReactTheme.mutedForeground
+            )
+
+            ListDivider()
+
+            // Age
+            if (user.age != null && user.age > 0) {
+                InfoRow(
+                    label = "Age",
+                    value = user.age.toString()
+                )
+            }
+
+            // Role/Title
+            if (!user.role.isNullOrBlank()) {
+                InfoRow(
+                    label = "Role",
+                    value = user.role
+                )
+            }
+
+            // Location
+            if (!user.location.isNullOrBlank()) {
+                InfoRow(
+                    label = "Location",
+                    value = user.location
+                )
+            }
+
+            // Member Since
+            InfoRow(
+                label = "Member since",
+                value = formatMemberSince(user.createdAt)
+            )
+
+            // Projects in Common
+            InfoRow(
+                label = "Projects in common",
+                value = sharedProjectCount.toString()
+            )
+        }
+    }
+}
+
+/**
+ * Info Row Component
+ */
+@Composable
+private fun InfoRow(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = ColorTokens.ReactTheme.mutedForeground
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = ColorTokens.ReactTheme.foreground
+        )
+    }
+}
+
+/**
+ * Bio Section
+ */
+@Composable
+private fun BioSection(
+    bio: String,
+    modifier: Modifier = Modifier
+) {
+    StandardCard(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
+        ) {
+            Text(
+                text = "About",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = ColorTokens.ReactTheme.mutedForeground
+            )
+
+            Text(
+                text = bio,
+                style = MaterialTheme.typography.bodyMedium,
+                color = ColorTokens.ReactTheme.mutedForeground
+            )
+        }
+    }
+}
+
+/**
+ * Social Links Section
+ */
+@Composable
+private fun SocialLinksSection(
+    user: User,
+    modifier: Modifier = Modifier
+) {
+    val uriHandler = LocalUriHandler.current
+
+    // Build list of available social links
+    val socialLinks = buildList {
+        user.githubUrl?.takeIf { it.isNotBlank() }?.let {
+            add(Triple("GitHub", Icons.Default.Code, it))
+        }
+        user.twitterUrl?.takeIf { it.isNotBlank() }?.let {
+            add(Triple("Twitter", Icons.Default.Tag, it))
+        }
+        user.linkedinUrl?.takeIf { it.isNotBlank() }?.let {
+            add(Triple("LinkedIn", Icons.Default.Business, it))
+        }
+        user.websiteUrl?.takeIf { it.isNotBlank() }?.let {
+            add(Triple("Website", Icons.Default.Language, it))
+        }
+        user.portfolioUrl?.takeIf { it.isNotBlank() }?.let {
+            add(Triple("Portfolio", Icons.Default.Folder, it))
+        }
+    }
+
+    if (socialLinks.isNotEmpty()) {
+        StandardCard(
+            modifier = modifier.fillMaxWidth()
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+            ) {
+                Text(
+                    text = "Social Links",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = ColorTokens.ReactTheme.mutedForeground
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+                ) {
+                    socialLinks.forEach { (name, icon, url) ->
+                        FilledTonalIconButton(
+                            onClick = {
+                                try {
+                                    val formattedUrl = if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                                        "https://$url"
+                                    } else {
+                                        url
+                                    }
+                                    uriHandler.openUri(formattedUrl)
+                                } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
+                                    // Handle URL error gracefully
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = name
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Format last seen timestamp
+ */
+private fun formatLastSeen(timestamp: Long): String {
+    if (timestamp == 0L) return "Last seen a while ago"
+
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+
+    return when {
+        diff < 60_000 -> "Last seen just now"
+        diff < 3600_000 -> "Last seen ${diff / 60_000}m ago"
+        diff < 86400_000 -> "Last seen ${diff / 3600_000}h ago"
+        diff < 604800_000 -> "Last seen ${diff / 86400_000}d ago"
+        else -> "Last seen a while ago"
+    }
+}
+
+/**
+ * Format member since date
+ */
+private fun formatMemberSince(timestamp: Long): String {
+    val date = java.util.Date(timestamp)
+    val format = java.text.SimpleDateFormat("MMM yyyy", java.util.Locale.getDefault())
+    return format.format(date)
+}
