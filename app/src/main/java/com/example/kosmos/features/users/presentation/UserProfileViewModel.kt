@@ -1,0 +1,358 @@
+package com.example.kosmos.features.users.presentation
+
+import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.kosmos.core.models.ChatRoom
+import com.example.kosmos.core.models.ChatRoomType
+import com.example.kosmos.core.models.Project
+import com.example.kosmos.core.models.ProjectRole
+import com.example.kosmos.core.models.User
+import com.example.kosmos.core.models.ConnectionStatus
+import com.example.kosmos.data.repository.ChatRepository
+import com.example.kosmos.data.repository.UserConnectionRepository
+import com.example.kosmos.data.repository.UserRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+
+/**
+ * ViewModel for User Profile Screen
+ * Handles loading and displaying user profile information
+ */
+@HiltViewModel
+class UserProfileViewModel @Inject constructor(
+    private val userRepository: UserRepository,
+    private val chatRepository: ChatRepository,
+    private val authRepository: com.example.kosmos.data.repository.AuthRepository,
+    private val projectRepository: com.example.kosmos.data.repository.ProjectRepository,
+    private val taskRepository: com.example.kosmos.data.repository.TaskRepository,
+    private val userConnectionRepository: UserConnectionRepository
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(UserProfileState())
+    val uiState: StateFlow<UserProfileState> = _uiState.asStateFlow()
+
+    // Current logged-in user ID
+    private var currentUserId: String? = null
+
+    init {
+        // Get current user ID from auth repository
+        viewModelScope.launch {
+            authRepository.userFlow.collect { user ->
+                currentUserId = user?.id
+            }
+        }
+    }
+
+    /**
+     * Load user profile by ID
+     * Uses hybrid sync to get cached data first, then fresh from Supabase
+     */
+    fun loadUser(userId: String) {
+        viewModelScope.launch {
+            _uiState.value = UserProfileState(isLoading = true)
+
+            userRepository.getUserByIdWithSync(userId).collect { result ->
+                when {
+                    result.isSuccess -> {
+                        val user = result.getOrNull()
+                        if (user != null) {
+                            // Load shared project count
+                            val sharedCount = try {
+                                currentUserId?.let { myId ->
+                                    projectRepository.getSharedProjectCount(myId, userId)
+                                } ?: 0
+                            } catch (e: Exception) {
+                                if (e is CancellationException) throw e
+                                Log.e("UserProfileVM", "Failed to load shared project count: ${e.message}")
+                                0
+                            }
+
+                            // Calculate on-time rate
+                            val onTimeRate = try {
+                                taskRepository.calculateOnTimeRate(userId)
+                            } catch (e: Exception) {
+                                if (e is CancellationException) throw e
+                                Log.e("UserProfileVM", "Failed to calculate on-time rate: ${e.message}")
+                                null
+                            }
+
+                            // Load connection status
+                            val connectionStatus = try {
+                                currentUserId?.let { myId ->
+                                    userConnectionRepository.getConnectionStatus(myId, userId)
+                                }
+                            } catch (e: Exception) {
+                                if (e is CancellationException) throw e
+                                Log.e("UserProfileVM", "Failed to load connection status: ${e.message}")
+                                null
+                            }
+
+                            _uiState.value = UserProfileState(
+                                user = user,
+                                sharedProjectCount = sharedCount,
+                                onTimeRate = onTimeRate,
+                                connectionStatus = connectionStatus,
+                                isLoading = false,
+                                error = null
+                            )
+                        } else {
+                            _uiState.value = UserProfileState(
+                                user = null,
+                                isLoading = false,
+                                error = "User not found"
+                            )
+                        }
+                    }
+                    result.isFailure -> {
+                        val error = result.exceptionOrNull()
+                        _uiState.value = UserProfileState(
+                            user = null,
+                            isLoading = false,
+                            error = error?.message ?: "Failed to load user profile"
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Create or get existing direct chat with a user
+     * @param projectId Project context for the chat
+     * @param targetUserId User to chat with
+     */
+    fun createOrGetDirectChat(projectId: String, targetUserId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isCreatingChat = true)
+
+            try {
+                // Get current user ID from auth repository
+                val userId = currentUserId
+                if (userId == null) {
+                    Log.e("UserProfileVM", "Cannot create chat: User not logged in")
+                    _uiState.value = _uiState.value.copy(
+                        isCreatingChat = false,
+                        error = "You must be logged in to start a chat"
+                    )
+                    return@launch
+                }
+
+                // Create chat room
+                val chatRoom = ChatRoom(
+                    id = "",  // Will be generated by repository
+                    projectId = projectId,
+                    name = "Direct Chat",  // Can be updated with display names
+                    description = "Direct message",
+                    type = ChatRoomType.DIRECT,
+                    participantIds = listOf(userId, targetUserId),
+                    createdBy = userId,
+                    isPrivate = true,
+                    isTaskBoardEnabled = true
+                )
+
+                val result = chatRepository.createChatRoom(chatRoom)
+                if (result.isSuccess) {
+                    val chatRoomId = result.getOrNull() ?: ""
+                    Log.d("UserProfileVM", "Chat room created successfully: $chatRoomId")
+                    _uiState.value = _uiState.value.copy(
+                        isCreatingChat = false,
+                        createdChatRoomId = chatRoomId
+                    )
+                } else {
+                    Log.e("UserProfileVM", "Failed to create chat room: ${result.exceptionOrNull()}")
+                    _uiState.value = _uiState.value.copy(
+                        isCreatingChat = false,
+                        error = "Failed to create chat"
+                    )
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Log.e("UserProfileVM", "Exception creating chat: ${e.message}")
+                _uiState.value = _uiState.value.copy(
+                    isCreatingChat = false,
+                    error = "Failed to create chat: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Load user's projects for adding members
+     */
+    fun loadMyProjects() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingProjects = true, projectsError = null)
+
+            try {
+                val userId = currentUserId
+                if (userId == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingProjects = false,
+                        projectsError = "You must be logged in"
+                    )
+                    return@launch
+                }
+
+                projectRepository.getUserProjectsFlow(userId).collect { projects ->
+                    _uiState.value = _uiState.value.copy(
+                        myProjects = projects,
+                        isLoadingProjects = false,
+                        projectsError = null
+                    )
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Log.e("UserProfileVM", "Exception loading projects: ${e.message}")
+                _uiState.value = _uiState.value.copy(
+                    myProjects = emptyList(),
+                    isLoadingProjects = false,
+                    projectsError = "Failed to load projects: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Add user to a project with specified role
+     * @param projectId Project to add user to
+     * @param targetUserId User to add
+     * @param role Role to assign (MEMBER or MANAGER only)
+     */
+    fun addUserToProject(projectId: String, targetUserId: String, role: ProjectRole) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isAddingToProject = true, addToProjectError = null)
+
+            try {
+                val userId = currentUserId
+                if (userId == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isAddingToProject = false,
+                        addToProjectError = "You must be logged in"
+                    )
+                    return@launch
+                }
+
+                // Validate role (only MEMBER and MANAGER can be assigned via this flow)
+                if (role == ProjectRole.ADMIN) {
+                    _uiState.value = _uiState.value.copy(
+                        isAddingToProject = false,
+                        addToProjectError = "ADMIN role can only be assigned by existing admins in project settings"
+                    )
+                    return@launch
+                }
+
+                val result = projectRepository.addMember(
+                    projectId = projectId,
+                    userId = targetUserId,
+                    role = role,
+                    invitedBy = userId
+                )
+
+                if (result.isSuccess) {
+                    Log.d("UserProfileVM", "User added to project successfully")
+                    _uiState.value = _uiState.value.copy(
+                        isAddingToProject = false,
+                        addToProjectSuccess = true,
+                        addToProjectError = null,
+                        showAddToProjectDialog = false  // Close dialog on success
+                    )
+                } else {
+                    val error = result.exceptionOrNull()
+                    Log.e("UserProfileVM", "Failed to add user to project: ${error?.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isAddingToProject = false,
+                        addToProjectError = error?.message ?: "Failed to add user to project"
+                    )
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Log.e("UserProfileVM", "Exception adding user to project: ${e.message}")
+                _uiState.value = _uiState.value.copy(
+                    isAddingToProject = false,
+                    addToProjectError = "Failed to add user: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Show/hide the Add to Project dialog
+     */
+    fun setShowAddToProjectDialog(show: Boolean) {
+        _uiState.value = _uiState.value.copy(
+            showAddToProjectDialog = show,
+            addToProjectSuccess = false,  // Reset success state
+            addToProjectError = null       // Clear errors
+        )
+
+        // Load projects when dialog is shown
+        if (show) {
+            loadMyProjects()
+        }
+    }
+
+    /**
+     * Clear success message after user acknowledges
+     */
+    fun clearAddToProjectSuccess() {
+        _uiState.value = _uiState.value.copy(addToProjectSuccess = false)
+    }
+
+    fun sendConnectionRequest(targetUserId: String) {
+        viewModelScope.launch {
+            val userId = currentUserId ?: return@launch
+            val userName = authRepository.getCurrentUser()?.displayName ?: ""
+            _uiState.value = _uiState.value.copy(connectionStatus = ConnectionStatus.PENDING)
+            val result = userConnectionRepository.sendRequest(userId, targetUserId, userName)
+            if (result.isFailure) {
+                _uiState.value = _uiState.value.copy(
+                    connectionStatus = null,
+                    error = "Failed to send connection request"
+                )
+            }
+        }
+    }
+
+    fun removeConnection(targetUserId: String) {
+        viewModelScope.launch {
+            val userId = currentUserId ?: return@launch
+            val connection = userConnectionRepository.getConnectionBetween(userId, targetUserId)
+            if (connection != null) {
+                val result = userConnectionRepository.removeConnection(connection.id)
+                if (result.isSuccess) {
+                    _uiState.value = _uiState.value.copy(connectionStatus = null)
+                } else {
+                    _uiState.value = _uiState.value.copy(error = "Failed to remove connection")
+                }
+            }
+        }
+    }
+}
+
+/**
+ * UI State for User Profile Screen
+ */
+data class UserProfileState(
+    val user: User? = null,
+    val sharedProjectCount: Int = 0,
+    val onTimeRate: Int? = null,
+    val connectionStatus: ConnectionStatus? = null,
+    val isLoading: Boolean = false,
+    val isCreatingChat: Boolean = false,
+    val createdChatRoomId: String? = null,
+    val error: String? = null,
+    // Add to Project Dialog state
+    val showAddToProjectDialog: Boolean = false,
+    val myProjects: List<Project> = emptyList(),
+    val isLoadingProjects: Boolean = false,
+    val projectsError: String? = null,
+    val isAddingToProject: Boolean = false,
+    val addToProjectSuccess: Boolean = false,
+    val addToProjectError: String? = null
+)
