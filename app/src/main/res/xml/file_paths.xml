@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Cache directory for temporary voice recordings -->
+    <cache-path name="voice_recordings" path="voice_recordings/" />
+
+    <!-- Files directory for persistent voice files -->
+    <files-path name="voice_files" path="voice/" />
+
+    <!-- External files directory for shared voice files -->
+    <external-files-path name="external_voice" path="voice/" />
+
+    <!-- Downloads directory for exported files -->
+    <external-path name="downloads" path="Download/" />
+</paths>
