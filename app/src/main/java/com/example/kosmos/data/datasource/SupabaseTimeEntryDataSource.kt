@@ -1,5 +1,8 @@
 package com.example.kosmos.data.datasource
 import kotlinx.coroutines.CancellationException
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 import android.util.Log
 import com.example.kosmos.core.models.TimeEntry
@@ -46,23 +49,21 @@ class SupabaseTimeEntryDataSource @Inject constructor(
         return try {
             Log.d(TAG, "Inserting time entry: ${entry.id}")
 
-            supabase.from(TABLE_NAME).insert(
-                mapOf(
-                    "id" to entry.id,
-                    "task_id" to entry.taskId,
-                    "project_id" to entry.projectId,
-                    "user_id" to entry.userId,
-                    "start_time" to entry.startTime,
-                    "end_time" to entry.endTime,
-                    "duration_seconds" to entry.durationSeconds,
-                    "description" to entry.description,
-                    "is_billable" to entry.isBillable,
-                    "hourly_rate" to entry.hourlyRate,
-                    "is_manual" to entry.isManual,
-                    "created_at" to entry.createdAt,
-                    "updated_at" to entry.updatedAt
-                )
-            )
+            supabase.from(TABLE_NAME).insert(buildJsonObject {
+                put("id", entry.id)
+                put("task_id", entry.taskId)
+                put("project_id", entry.projectId)
+                put("user_id", entry.userId)
+                put("start_time", entry.startTime)
+                entry.endTime?.let { put("end_time", it) }
+                entry.durationSeconds?.let { put("duration_seconds", it) }
+                entry.description?.let { put("description", it) }
+                put("is_billable", entry.isBillable)
+                entry.hourlyRate?.let { put("hourly_rate", it) }
+                put("is_manual", entry.isManual)
+                put("created_at", entry.createdAt)
+                put("updated_at", entry.updatedAt)
+            })
 
             Log.d(TAG, "Successfully inserted time entry: ${entry.id}")
             Result.success(entry)
@@ -89,21 +90,19 @@ class SupabaseTimeEntryDataSource @Inject constructor(
         return try {
             Log.d(TAG, "Updating time entry: ${entry.id}")
 
-            supabase.from(TABLE_NAME).update(
-                mapOf(
-                    "task_id" to entry.taskId,
-                    "project_id" to entry.projectId,
-                    "user_id" to entry.userId,
-                    "start_time" to entry.startTime,
-                    "end_time" to entry.endTime,
-                    "duration_seconds" to entry.durationSeconds,
-                    "description" to entry.description,
-                    "is_billable" to entry.isBillable,
-                    "hourly_rate" to entry.hourlyRate,
-                    "is_manual" to entry.isManual,
-                    "updated_at" to System.currentTimeMillis()
-                )
-            ) {
+            supabase.from(TABLE_NAME).update(buildJsonObject {
+                put("task_id", entry.taskId)
+                put("project_id", entry.projectId)
+                put("user_id", entry.userId)
+                put("start_time", entry.startTime)
+                entry.endTime?.let { put("end_time", it) } ?: run { put("end_time", JsonNull) }
+                entry.durationSeconds?.let { put("duration_seconds", it) } ?: run { put("duration_seconds", JsonNull) }
+                entry.description?.let { put("description", it) } ?: run { put("description", JsonNull) }
+                put("is_billable", entry.isBillable)
+                entry.hourlyRate?.let { put("hourly_rate", it) } ?: run { put("hourly_rate", JsonNull) }
+                put("is_manual", entry.isManual)
+                put("updated_at", System.currentTimeMillis())
+            }) {
                 filter {
                     eq("id", entry.id)
                 }
