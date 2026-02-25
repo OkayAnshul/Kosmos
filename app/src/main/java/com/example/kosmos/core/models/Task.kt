@@ -1,12 +1,54 @@
 package com.example.kosmos.core.models
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.JsonTransformingSerializer
 
 @Serializable
-@Entity(tableName = "tasks")
+@Entity(
+    tableName = "tasks",
+    foreignKeys = [
+        // NO_ACTION: REPLACE strategy in DAOs does DELETE+INSERT, CASCADE would wipe child records during sync
+        ForeignKey(
+            entity = Project::class,
+            parentColumns = ["id"],
+            childColumns = ["projectId"],
+            onDelete = ForeignKey.NO_ACTION
+        ),
+        ForeignKey(
+            entity = ChatRoom::class,
+            parentColumns = ["id"],
+            childColumns = ["chatRoomId"],
+            onDelete = ForeignKey.SET_NULL  // Tasks can exist without chat room
+        ),
+        ForeignKey(
+            entity = User::class,
+            parentColumns = ["id"],
+            childColumns = ["assignedToId"],
+            onDelete = ForeignKey.SET_NULL  // Task remains if assignee deleted
+        ),
+        ForeignKey(
+            entity = User::class,
+            parentColumns = ["id"],
+            childColumns = ["createdById"],
+            onDelete = ForeignKey.NO_ACTION  // Keep tasks even if creator deleted
+        )
+    ],
+    indices = [
+        Index(value = ["projectId"]),
+        Index(value = ["chatRoomId"]),
+        Index(value = ["assignedToId"]),
+        Index(value = ["createdById"])
+    ]
+)
 data class Task(
     @PrimaryKey
     val id: String = "",
@@ -72,6 +114,12 @@ data class Task(
     @SerialName("updated_at")
     val updatedAt: Long = System.currentTimeMillis(),
 
+    /**
+     * P1-11: Version field for optimistic locking
+     * Incremented on every update to detect conflicts
+     */
+    val version: Int = 1,
+
     @SerialName("due_date")
     val dueDate: Long? = null,
 
@@ -82,6 +130,7 @@ data class Task(
     val sourceMessageId: String? = null,
 
     val tags: List<String> = emptyList(),
+    @Serializable(with = CommentsSerializer::class)
     val comments: List<TaskComment> = emptyList(),
 
     /**
@@ -112,6 +161,20 @@ enum class TaskStatus {
 @Serializable
 enum class TaskPriority {
     LOW, MEDIUM, HIGH, URGENT
+}
+
+/**
+ * Resilient deserializer for comments JSONB column.
+ * Historical rows may have been double-encoded (stored as a JSON string literal instead of array).
+ * This unwraps the string form transparently.
+ */
+object CommentsSerializer : JsonTransformingSerializer<List<TaskComment>>(
+    ListSerializer(TaskComment.serializer())
+) {
+    override fun transformDeserialize(element: JsonElement): JsonElement =
+        if (element is JsonPrimitive && element.isString)
+            Json.Default.decodeFromString(JsonElement.serializer(), element.content)
+        else element
 }
 
 @Serializable
