@@ -1,9 +1,11 @@
 package com.example.kosmos.data.datasource
+import kotlinx.coroutines.CancellationException
 
 import android.util.Log
 import com.example.kosmos.core.models.Message
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Order
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,6 +32,8 @@ class SupabaseMessageDataSource @Inject constructor(
             supabase.from(TABLE_NAME)
                 .insert(message)
             Result.success(message)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error inserting message", e)
             Result.failure(e)
@@ -63,6 +67,8 @@ class SupabaseMessageDataSource @Inject constructor(
                 }
 
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error updating message: id=$messageId", e)
             Result.failure(e)
@@ -84,6 +90,8 @@ class SupabaseMessageDataSource @Inject constructor(
                 }
 
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting message: id=$messageId", e)
             Result.failure(e)
@@ -123,6 +131,8 @@ class SupabaseMessageDataSource @Inject constructor(
                 .decodeList<Message>()
 
             Result.success(messages)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching messages: chatRoomId=$chatRoomId", e)
             Result.failure(e)
@@ -160,6 +170,8 @@ class SupabaseMessageDataSource @Inject constructor(
             }
 
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error marking message as read: id=$messageId, userId=$userId", e)
             Result.failure(e)
@@ -199,6 +211,8 @@ class SupabaseMessageDataSource @Inject constructor(
             }
 
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error marking messages as read: userId=$userId", e)
             Result.failure(e)
@@ -242,6 +256,8 @@ class SupabaseMessageDataSource @Inject constructor(
             }
 
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error adding reaction: messageId=$messageId, emoji=$emoji", e)
             Result.failure(e)
@@ -279,6 +295,8 @@ class SupabaseMessageDataSource @Inject constructor(
             }
 
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error removing reaction: messageId=$messageId, userId=$userId", e)
             Result.failure(e)
@@ -296,8 +314,41 @@ class SupabaseMessageDataSource @Inject constructor(
             supabase.from(TABLE_NAME)
                 .insert(messages)
             Result.success(messages)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error batch inserting messages", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Search messages by content or sender name within a chat room
+     * @param chatRoomId Chat room ID to search within
+     * @param query Search query
+     * @return Result with list of matching messages or error
+     */
+    suspend fun searchMessages(chatRoomId: String, query: String): Result<List<Message>> {
+        return try {
+            val messages = supabase.from(TABLE_NAME)
+                .select {
+                    filter {
+                        eq("chat_room_id", chatRoomId)
+                        or {
+                            ilike("content", "%$query%")
+                            ilike("sender_name", "%$query%")
+                        }
+                    }
+                    order("timestamp", Order.DESCENDING)
+                }
+                .decodeList<Message>()
+
+            Log.d(TAG, "Search found ${messages.size} messages for query: $query")
+            Result.success(messages)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Error searching messages: $query", e)
             Result.failure(e)
         }
     }

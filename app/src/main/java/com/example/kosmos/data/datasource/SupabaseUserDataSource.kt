@@ -1,6 +1,8 @@
 package com.example.kosmos.data.datasource
 
 import android.util.Log
+import kotlinx.coroutines.CancellationException
+import com.example.kosmos.core.exceptions.ConflictException
 import com.example.kosmos.core.models.User
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
@@ -36,6 +38,8 @@ class SupabaseUserDataSource @Inject constructor(
             supabase.from(TABLE_NAME)
                 .insert(user)
             Result.success(user)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error inserting user", e)
             Result.failure(e)
@@ -50,14 +54,36 @@ class SupabaseUserDataSource @Inject constructor(
     suspend fun update(user: User): Result<User> {
         return try {
             supabase.from(TABLE_NAME)
-                .update(user) {
+                .update({
+                    set("email", user.email)
+                    set("username", user.username)
+                    set("display_name", user.displayName)
+                    set("age", user.age)
+                    set("role", user.role)
+                    set("bio", user.bio)
+                    set("location", user.location)
+                    set("github_url", user.githubUrl)
+                    set("twitter_url", user.twitterUrl)
+                    set("linkedin_url", user.linkedinUrl)
+                    set("website_url", user.websiteUrl)
+                    set("portfolio_url", user.portfolioUrl)
+                    set("photo_url", user.photoUrl)
+                    set("is_online", user.isOnline)
+                    set("last_seen", user.lastSeen)
+                    set("fcm_token", user.fcmToken)
+                    set("settings", user.settings)
+                }) {
                     filter {
                         eq("id", user.id)
                     }
                 }
+
+            Log.d(TAG, "✅ User ${user.id} updated in Supabase")
             Result.success(user)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Error updating user", e)
+            Log.e(TAG, "Error updating user: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -76,6 +102,8 @@ class SupabaseUserDataSource @Inject constructor(
                     }
                 }
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting user", e)
             Result.failure(e)
@@ -98,6 +126,8 @@ class SupabaseUserDataSource @Inject constructor(
                 .decodeSingleOrNull<User>()
 
             Result.success(user)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching user by ID", e)
             Result.failure(e)
@@ -120,6 +150,8 @@ class SupabaseUserDataSource @Inject constructor(
                 .decodeSingleOrNull<User>()
 
             Result.success(user)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching user by username: $username", e)
             Result.failure(e)
@@ -137,6 +169,8 @@ class SupabaseUserDataSource @Inject constructor(
                 .decodeList<User>()
 
             Result.success(users)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching all users", e)
             Result.failure(e)
@@ -168,6 +202,9 @@ class SupabaseUserDataSource @Inject constructor(
 
             // Note: Supabase Postgrest doesn't support complex NOT IN filters easily
             // So we'll fetch and filter client-side for excludeIds
+            // DEFENSIVE: Wrap the Supabase call in try-catch to handle NULL username deserialization errors
+            // If NULL usernames exist in the database, the JSON deserialization will fail
+            // The migration script POPULATE_NULL_USERNAMES_MIGRATION.sql should be run to fix this permanently
             val users = try {
                 supabase.from(TABLE_NAME)
                     .select() {
@@ -183,10 +220,15 @@ class SupabaseUserDataSource @Inject constructor(
                         limit(limit.toLong())
                     }
                     .decodeList<User>()
-            } catch (e: Exception) {
-                Log.e(TAG, "JSON deserialization error during search. This may be due to NULL username fields.", e)
-                Log.e(TAG, "Run SQL script to populate username: UPDATE users SET username = LOWER(REPLACE(display_name, ' ', '_')) WHERE username IS NULL")
-                // Return empty list instead of crashing
+            } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+                // Catch deserialization errors that occur when username is NULL in the database
+                Log.e(TAG, "JSON deserialization error during user search.", e)
+                Log.w(TAG, "This may indicate NULL username fields still exist in the database.")
+                Log.w(TAG, "SOLUTION: Run the migration script: POPULATE_NULL_USERNAMES_MIGRATION.sql")
+                Log.w(TAG, "Location: /POPULATE_NULL_USERNAMES_MIGRATION.sql in project root")
+                // Return empty list instead of crashing the app
                 emptyList()
             }
 
@@ -204,8 +246,55 @@ class SupabaseUserDataSource @Inject constructor(
 
             Log.d(TAG, "Search completed: query='$query', found ${sorted.size} users")
             Result.success(sorted)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error searching users: query='$query'", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Search users via the users_public view (bypasses RLS for global discovery)
+     * Only returns: id, username, display_name, photo_url, is_online, last_seen
+     */
+    suspend fun searchUsersPublic(
+        query: String,
+        excludeIds: List<String> = emptyList(),
+        limit: Int = 50
+    ): Result<List<User>> {
+        return try {
+            if (query.isBlank()) return Result.success(emptyList())
+
+            val searchPattern = "%${query.trim()}%"
+            val users = try {
+                supabase.from("users_public")
+                    .select {
+                        filter {
+                            or {
+                                ilike("username", searchPattern)
+                                ilike("display_name", searchPattern)
+                            }
+                        }
+                        limit(limit.toLong())
+                    }
+                    .decodeList<User>()
+            } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+                Log.e(TAG, "Error decoding users_public search results", e)
+                emptyList()
+            }
+
+            val filtered = users
+                .filter { it.username.isNotBlank() && !excludeIds.contains(it.id) }
+                .sortedBy { it.displayName }
+
+            Result.success(filtered)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Error searching users_public", e)
             Result.failure(e)
         }
     }
@@ -231,6 +320,8 @@ class SupabaseUserDataSource @Inject constructor(
                 }
 
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error updating online status", e)
             Result.failure(e)
@@ -255,6 +346,8 @@ class SupabaseUserDataSource @Inject constructor(
                 }
 
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error updating FCM token", e)
             Result.failure(e)
@@ -265,28 +358,54 @@ class SupabaseUserDataSource @Inject constructor(
      * Observe real-time changes to users table
      * @return Flow of user changes (INSERT, UPDATE, DELETE)
      */
-    fun observeChanges(): Flow<List<User>> {
+    fun observeChanges(): Flow<PostgresAction> {
         return supabase.channel("users_changes")
             .postgresChangeFlow<PostgresAction>(schema = "public") {
                 table = TABLE_NAME
             }
-            .map { action ->
-                // This is a simplified implementation
-                // In a real app, you'd want to handle INSERT, UPDATE, DELETE separately
-                // and maintain a local list that you update based on the action
-                emptyList<User>()
-            }
     }
 
     /**
-     * Observe changes to a specific user
+     * Observe changes to a specific user via realtime
      * @param userId User ID to observe
-     * @return Flow of user updates
+     * @return Flow of user updates (emits updated User on INSERT/UPDATE, null on DELETE)
      */
     fun observeUserById(userId: String): Flow<User?> {
-        // Realtime subscriptions require proper setup in Supabase
-        // For now, returning an empty flow - will implement when needed
-        return kotlinx.coroutines.flow.flowOf(null)
+        val channel = supabase.channel("user_$userId")
+        return channel
+            .postgresChangeFlow<PostgresAction>(schema = "public") {
+                table = TABLE_NAME
+                filter("id", io.github.jan.supabase.postgrest.query.filter.FilterOperator.EQ, userId)
+            }
+            .map { action ->
+                when (action) {
+                    is PostgresAction.Update -> {
+                        try {
+                            // Fetch fresh user data after update
+                            val result = getById(userId)
+                            result.getOrNull()
+                        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+                            Log.e(TAG, "Error fetching user after realtime update", e)
+                            null
+                        }
+                    }
+                    is PostgresAction.Insert -> {
+                        try {
+                            val result = getById(userId)
+                            result.getOrNull()
+                        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+                            Log.e(TAG, "Error fetching user after realtime insert", e)
+                            null
+                        }
+                    }
+                    is PostgresAction.Delete -> null
+                    else -> null
+                }
+            }
     }
 
     /**
@@ -299,6 +418,8 @@ class SupabaseUserDataSource @Inject constructor(
             supabase.from(TABLE_NAME)
                 .insert(users)
             Result.success(users)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error batch inserting users", e)
             Result.failure(e)
