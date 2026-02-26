@@ -6,21 +6,22 @@ import androidx.lifecycle.viewModelScope
 import com.example.kosmos.core.models.ProjectRole
 import com.example.kosmos.core.models.User
 import com.example.kosmos.data.repository.AuthRepository
+import com.example.kosmos.data.repository.ProjectInviteRepository
 import com.example.kosmos.data.repository.ProjectRepository
+import com.example.kosmos.data.repository.UserConnectionRepository
 import com.example.kosmos.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
-/**
- * ViewModel for Invite Members Screen
- * Handles bulk member invitation with multi-select functionality
- */
 @HiltViewModel
 class InviteMembersViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val projectRepository: ProjectRepository,
+    private val projectInviteRepository: ProjectInviteRepository,
+    private val userConnectionRepository: UserConnectionRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
@@ -36,18 +37,25 @@ class InviteMembersViewModel @Inject constructor(
     private val _selectedRole = MutableStateFlow(ProjectRole.MEMBER)
     val selectedRole: StateFlow<ProjectRole> = _selectedRole.asStateFlow()
 
+    private val _selectedTab = MutableStateFlow(0) // 0 = Connections, 1 = Search
+    val selectedTab: StateFlow<Int> = _selectedTab.asStateFlow()
+
+    private val _connections = MutableStateFlow<List<User>>(emptyList())
+    val connections: StateFlow<List<User>> = _connections.asStateFlow()
+
     private var currentProjectId: String? = null
 
     init {
-        // Search users as query changes
         _searchQuery
             .debounce(300)
             .distinctUntilChanged()
             .onEach { query ->
                 if (query.length >= 2) {
                     searchUsers(query)
+                } else if (query.isNotEmpty()) {
+                    _uiState.value = _uiState.value.copy(users = emptyList(), searchHint = "Type at least 2 characters to search")
                 } else {
-                    _uiState.value = _uiState.value.copy(users = emptyList())
+                    _uiState.value = _uiState.value.copy(users = emptyList(), searchHint = null)
                 }
             }
             .launchIn(viewModelScope)
@@ -55,6 +63,13 @@ class InviteMembersViewModel @Inject constructor(
 
     fun setProjectId(projectId: String) {
         currentProjectId = projectId
+        loadExistingMembers()
+        loadPendingInvites()
+        loadConnections()
+    }
+
+    fun selectTab(tab: Int) {
+        _selectedTab.value = tab
     }
 
     fun onSearchQueryChange(query: String) {
@@ -83,12 +98,8 @@ class InviteMembersViewModel @Inject constructor(
         _selectedUsers.value = emptyList()
     }
 
-    /**
-     * Load existing project members to prevent duplicate invitations
-     */
-    fun loadExistingMembers() {
+    private fun loadExistingMembers() {
         val projectId = currentProjectId ?: return
-
         viewModelScope.launch {
             try {
                 projectRepository.getProjectMembersFlow(projectId).collect { members ->
@@ -97,24 +108,59 @@ class InviteMembersViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e("InviteMembersVM", "Failed to load existing members: ${e.message}")
             }
         }
     }
 
-    /**
-     * Search for users to invite
-     * Fetches FRESH data from Supabase (no stale cache)
-     */
+    private fun loadPendingInvites() {
+        val projectId = currentProjectId ?: return
+        viewModelScope.launch {
+            try {
+                projectInviteRepository.getProjectInvitesFlow(projectId).collect { invites ->
+                    val pendingIds = invites
+                        .filter { it.status == com.example.kosmos.core.models.InviteStatus.PENDING }
+                        .map { it.inviteeId }
+                        .toSet()
+                    _uiState.value = _uiState.value.copy(pendingInviteUserIds = pendingIds)
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Log.e("InviteMembersVM", "Failed to load pending invites: ${e.message}")
+            }
+        }
+    }
+
+    private fun loadConnections() {
+        viewModelScope.launch {
+            try {
+                val currentUserId = authRepository.getCurrentUser()?.id ?: return@launch
+                userConnectionRepository.getAcceptedConnectionsFlow(currentUserId).collect { connectionsList ->
+                    // Get user details for each connection
+                    val connectedUserIds = connectionsList.map { conn ->
+                        if (conn.requesterId == currentUserId) conn.addresseeId else conn.requesterId
+                    }
+                    val users = connectedUserIds.mapNotNull { userId ->
+                        userRepository.getUserById(userId)
+                    }
+                    _connections.value = users
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Log.e("InviteMembersVM", "Failed to load connections: ${e.message}")
+            }
+        }
+    }
+
     private fun searchUsers(query: String) {
         viewModelScope.launch {
             try {
-                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+                _uiState.value = _uiState.value.copy(isLoading = true, error = null, searchHint = null)
 
-                // Search directly from Supabase for fresh, real-time data
                 val result = userRepository.searchUsersFromSupabase(
                     query = query,
-                    excludeIds = emptyList(), // Don't exclude anyone, we mark existing members in UI
+                    excludeIds = emptyList(),
                     limit = 50
                 )
 
@@ -132,6 +178,7 @@ class InviteMembersViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e("InviteMembersVM", "Failed to search users: ${e.message}")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -147,9 +194,6 @@ class InviteMembersViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Invite all selected members to the project
-     */
     fun inviteMembers() {
         val projectId = currentProjectId
         if (projectId == null) {
@@ -158,8 +202,8 @@ class InviteMembersViewModel @Inject constructor(
         }
 
         val usersToInvite = _selectedUsers.value.filter { user ->
-            // Don't invite existing members
-            user.id !in _uiState.value.existingMemberIds
+            user.id !in _uiState.value.existingMemberIds &&
+            user.id !in _uiState.value.pendingInviteUserIds
         }
 
         if (usersToInvite.isEmpty()) {
@@ -175,8 +219,8 @@ class InviteMembersViewModel @Inject constructor(
                     invitationSuccess = false
                 )
 
-                val currentUserId = authRepository.getCurrentUser()?.id
-                if (currentUserId == null) {
+                val currentUser = authRepository.getCurrentUser()
+                if (currentUser == null) {
                     _uiState.value = _uiState.value.copy(
                         isInviting = false,
                         error = "You must be logged in to invite members"
@@ -184,49 +228,52 @@ class InviteMembersViewModel @Inject constructor(
                     return@launch
                 }
 
+                // Get project name for notification
+                val project = projectRepository.getProject(projectId)
+                val projectName = project?.name ?: ""
+
                 val role = _selectedRole.value
                 var successCount = 0
                 var failedCount = 0
 
-                // Invite each user
                 for (user in usersToInvite) {
-                    val result = projectRepository.addMember(
+                    val result = projectInviteRepository.sendInvite(
                         projectId = projectId,
-                        userId = user.id,
-                        role = role,
-                        invitedBy = currentUserId
+                        inviteeId = user.id,
+                        inviterId = currentUser.id,
+                        role = role.name,
+                        projectName = projectName,
+                        inviterName = currentUser.displayName
                     )
 
                     if (result.isSuccess) {
                         successCount++
-                        Log.d("InviteMembersVM", "Successfully invited ${user.displayName}")
+                        Log.d("InviteMembersVM", "Invite sent to ${user.displayName}")
                     } else {
                         failedCount++
                         Log.e("InviteMembersVM", "Failed to invite ${user.displayName}: ${result.exceptionOrNull()?.message}")
                     }
                 }
 
-                // Show result
                 if (failedCount == 0) {
-                    // All successful
                     _uiState.value = _uiState.value.copy(
                         isInviting = false,
                         invitationSuccess = true
                     )
                     _selectedUsers.value = emptyList()
                 } else {
-                    // Some failed
                     _uiState.value = _uiState.value.copy(
                         isInviting = false,
-                        error = "Invited $successCount member(s). $failedCount failed."
+                        error = "Sent $successCount invite(s). $failedCount failed."
                     )
                 }
 
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e("InviteMembersVM", "Exception inviting members: ${e.message}")
                 _uiState.value = _uiState.value.copy(
                     isInviting = false,
-                    error = "Failed to invite members: ${e.message}"
+                    error = "Failed to send invites: ${e.message}"
                 )
             }
         }
@@ -237,7 +284,9 @@ data class InviteMembersUiState(
     val isLoading: Boolean = false,
     val users: List<User> = emptyList(),
     val existingMemberIds: Set<String> = emptySet(),
+    val pendingInviteUserIds: Set<String> = emptySet(),
     val isInviting: Boolean = false,
     val invitationSuccess: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val searchHint: String? = null
 )

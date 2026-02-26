@@ -1,11 +1,14 @@
 package com.example.kosmos.core.models
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.*
 import kotlinx.serialization.json.*
+import kotlinx.coroutines.CancellationException
 
 /**
  * Custom serializer for reactions field that handles both array and object formats from Supabase
@@ -31,6 +34,7 @@ object ReactionsSerializer : KSerializer<Map<String, String>> {
                 else -> emptyMap()
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             emptyMap()
         }
     }
@@ -48,7 +52,43 @@ object ReactionsSerializer : KSerializer<Map<String, String>> {
 }
 
 @Serializable
-@Entity(tableName = "messages")
+@Entity(
+    tableName = "messages",
+    foreignKeys = [
+        // NO_ACTION: REPLACE strategy in DAOs does DELETE+INSERT, CASCADE would wipe child records during sync
+        ForeignKey(
+            entity = ChatRoom::class,
+            parentColumns = ["id"],
+            childColumns = ["chatRoomId"],
+            onDelete = ForeignKey.NO_ACTION
+        ),
+        ForeignKey(
+            entity = User::class,
+            parentColumns = ["id"],
+            childColumns = ["senderId"],
+            onDelete = ForeignKey.NO_ACTION  // Keep messages even if sender deleted
+        ),
+        ForeignKey(
+            entity = VoiceMessage::class,
+            parentColumns = ["id"],
+            childColumns = ["voiceMessageId"],
+            onDelete = ForeignKey.SET_NULL  // Message remains if voice file deleted
+        ),
+        ForeignKey(
+            entity = Message::class,
+            parentColumns = ["id"],
+            childColumns = ["replyToMessageId"],
+            onDelete = ForeignKey.SET_NULL  // Message remains if replied-to message deleted
+        )
+    ],
+    indices = [
+        Index(value = ["chatRoomId"]),
+        Index(value = ["senderId"]),
+        Index(value = ["voiceMessageId"]),
+        Index(value = ["replyToMessageId"]),
+        Index(value = ["timestamp"])
+    ]
+)
 data class Message(
     @PrimaryKey
     val id: String = "",

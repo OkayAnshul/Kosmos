@@ -14,7 +14,8 @@ import com.example.kosmos.shared.ui.designsystem.IconSet
 import com.example.kosmos.shared.ui.designsystem.Tokens
 import com.example.kosmos.shared.ui.designsystem.TypographyTokens
 import kotlinx.coroutines.delay
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
+import kotlinx.coroutines.delay
 /**
  * Feedback Components for Kosmos App
  *
@@ -65,7 +66,7 @@ fun LoadingIndicator(
             Text(
                 text = message,
                 style = TypographyTokens.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = ColorTokens.ReactTheme.mutedForeground,
                 textAlign = TextAlign.Center
             )
         }
@@ -112,14 +113,14 @@ fun EmptyState(
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(Tokens.Size.avatarXLarge),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                tint = ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.6f)
             )
         }
 
         Text(
             text = title,
             style = TypographyTokens.Custom.emptyStateTitle,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = ColorTokens.ReactTheme.foreground,
             textAlign = TextAlign.Center
         )
 
@@ -127,7 +128,7 @@ fun EmptyState(
             Text(
                 text = message,
                 style = TypographyTokens.Custom.emptyStateDescription,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = ColorTokens.ReactTheme.mutedForeground,
                 textAlign = TextAlign.Center
             )
         }
@@ -173,13 +174,13 @@ fun ErrorState(
             imageVector = IconSet.Feedback.error,
             contentDescription = null,
             modifier = Modifier.size(Tokens.Size.avatarXLarge),
-            tint = MaterialTheme.colorScheme.error
+            tint = ColorTokens.ReactTheme.destructive
         )
 
         Text(
             text = title,
             style = TypographyTokens.Custom.emptyStateTitle,
-            color = MaterialTheme.colorScheme.error,
+            color = ColorTokens.ReactTheme.destructive,
             textAlign = TextAlign.Center
         )
 
@@ -187,7 +188,7 @@ fun ErrorState(
             Text(
                 text = message,
                 style = TypographyTokens.Custom.emptyStateDescription,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = ColorTokens.ReactTheme.mutedForeground,
                 textAlign = TextAlign.Center
             )
         }
@@ -243,13 +244,13 @@ fun SuccessState(
             imageVector = IconSet.Feedback.success,
             contentDescription = null,
             modifier = Modifier.size(Tokens.Size.avatarLarge),
-            tint = MaterialTheme.colorScheme.primary
+            tint = ColorTokens.ReactTheme.primary
         )
 
         Text(
             text = title,
             style = TypographyTokens.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = ColorTokens.ReactTheme.foreground,
             textAlign = TextAlign.Center
         )
 
@@ -257,7 +258,7 @@ fun SuccessState(
             Text(
                 text = message,
                 style = TypographyTokens.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = ColorTokens.ReactTheme.mutedForeground,
                 textAlign = TextAlign.Center
             )
         }
@@ -305,7 +306,7 @@ fun LoadingDots(
                     .size(dotSize)
                     .alpha(animateDotAlpha(index * 200)),
                 shape = MaterialTheme.shapes.extraSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = ColorTokens.ReactTheme.mutedForeground
             ) {}
         }
     }
@@ -342,14 +343,14 @@ fun ProgressBarLinear(
                     Text(
                         text = label,
                         style = TypographyTokens.Custom.caption,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = ColorTokens.ReactTheme.mutedForeground
                     )
                 }
                 if (showPercentage) {
                     Text(
                         text = "${(progress * 100).toInt()}%",
                         style = TypographyTokens.Custom.caption,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = ColorTokens.ReactTheme.mutedForeground
                     )
                 }
             }
@@ -383,7 +384,7 @@ fun ProgressBarIndeterminate(
             Text(
                 text = label,
                 style = TypographyTokens.Custom.caption,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = ColorTokens.ReactTheme.mutedForeground
             )
         }
 
@@ -411,7 +412,7 @@ fun NetworkErrorBanner(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.errorContainer,
+        color = ColorTokens.ReactTheme.destructive,
         tonalElevation = Tokens.Elevation.level2
     ) {
         Row(
@@ -429,12 +430,12 @@ fun NetworkErrorBanner(
                 Icon(
                     imageVector = IconSet.Feedback.offline,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onErrorContainer
+                    tint = ColorTokens.ReactTheme.destructiveForeground
                 )
                 Text(
                     text = message,
                     style = TypographyTokens.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer
+                    color = ColorTokens.ReactTheme.destructiveForeground
                 )
             }
 
@@ -467,7 +468,7 @@ fun InfoBanner(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primaryContainer,
+        color = ColorTokens.ReactTheme.secondary,
         tonalElevation = Tokens.Elevation.level1
     ) {
         Row(
@@ -485,12 +486,12 @@ fun InfoBanner(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    tint = ColorTokens.ReactTheme.primaryForeground
                 )
                 Text(
                     text = message,
                     style = TypographyTokens.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = ColorTokens.ReactTheme.primaryForeground
                 )
             }
 
@@ -531,7 +532,7 @@ fun SkeletonLoader(
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = alpha)
+        color = ColorTokens.ReactTheme.secondary.copy(alpha = alpha)
     ) {
         Box(modifier = Modifier.fillMaxSize())
     }

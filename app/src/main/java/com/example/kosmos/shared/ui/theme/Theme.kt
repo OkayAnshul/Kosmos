@@ -2,9 +2,8 @@
 package com.example.kosmos.shared.ui.theme
 
 import androidx.compose.ui.graphics.Color
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
 import android.app.Activity
-import android.os.Build
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.animateFloat
@@ -13,7 +12,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,9 +45,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -58,7 +53,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -79,104 +73,49 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-
-// Primary colors - Modern blue with good contrast
-val Primary = Color(0xFF2196F3)
-val PrimaryVariant = Color(0xFF1976D2)
-val Secondary = Color(0xFF03DAC6)
-val SecondaryVariant = Color(0xFF018786)
-
-// Surface colors
-val Surface = Color(0xFFFFFBFE)
-val SurfaceVariant = Color(0xFFF3F4F6)
-val Background = Color(0xFFFFFBFE)
-
-// Error colors
-val Error = Color(0xFFB00020)
-val ErrorContainer = Color(0xFFFFDAD6)
-val OnErrorContainer = Color(0xFF410002)
-
-// Text colors
-val OnPrimary = Color(0xFFFFFFFF)
-val OnSecondary = Color(0xFF000000)
-val OnSurface = Color(0xFF1C1B1F)
-val OnBackground = Color(0xFF1C1B1F)
-
-// Dark theme colors
-val PrimaryDark = Color(0xFF90CAF9)
-val PrimaryVariantDark = Color(0xFF42A5F5)
-val SecondaryDark = Color(0xFF03DAC6)
-val SecondaryVariantDark = Color(0xFF03DAC6)
-
-val SurfaceDark = Color(0xFF121212)
-val SurfaceVariantDark = Color(0xFF2C2C2C)
-val BackgroundDark = Color(0xFF121212)
-
-val OnPrimaryDark = Color(0xFF000000)
-val OnSecondaryDark = Color(0xFF000000)
-val OnSurfaceDark = Color(0xFFE6E1E5)
-val OnBackgroundDark = Color(0xFFE6E1E5)
-
-
-private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryDark,
-    primaryContainer = PrimaryVariantDark,
-    secondary = SecondaryDark,
-    secondaryContainer = SecondaryVariantDark,
-    background = BackgroundDark,
-    surface = SurfaceDark,
-    surfaceVariant = SurfaceVariantDark,
-    error = Error,
-    errorContainer = ErrorContainer,
-    onPrimary = OnPrimaryDark,
-    onSecondary = OnSecondaryDark,
-    onBackground = OnBackgroundDark,
-    onSurface = OnSurfaceDark
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Primary,
-    primaryContainer = PrimaryVariant,
-    secondary = Secondary,
-    secondaryContainer = SecondaryVariant,
-    background = Background,
-    surface = Surface,
-    surfaceVariant = SurfaceVariant,
-    error = Error,
-    errorContainer = ErrorContainer,
-    onPrimary = OnPrimary,
-    onSecondary = OnSecondary,
-    onBackground = OnBackground,
-    onSurface = OnSurface,
-    onErrorContainer = OnErrorContainer
+// Dark-only color scheme aligned with ReactTheme tokens
+private val KosmosColorScheme = darkColorScheme(
+    primary = ColorTokens.ReactTheme.primary,              // #7C3AED
+    onPrimary = ColorTokens.ReactTheme.primaryForeground,  // #FFFFFF
+    primaryContainer = ColorTokens.ReactTheme.primary,
+    onPrimaryContainer = ColorTokens.ReactTheme.primaryForeground,
+    secondary = ColorTokens.ReactTheme.secondary,           // #1F1F27
+    onSecondary = ColorTokens.ReactTheme.secondaryForeground,
+    secondaryContainer = ColorTokens.ReactTheme.secondary,
+    onSecondaryContainer = ColorTokens.ReactTheme.secondaryForeground,
+    background = ColorTokens.ReactTheme.background,         // #0F0F14
+    onBackground = ColorTokens.ReactTheme.foreground,       // #E8E8ED
+    surface = ColorTokens.ReactTheme.card,                  // #18181D
+    onSurface = ColorTokens.ReactTheme.cardForeground,      // #E8E8ED
+    surfaceVariant = ColorTokens.ReactTheme.muted,          // #2A2A32
+    onSurfaceVariant = ColorTokens.ReactTheme.mutedForeground, // #9CA3AF
+    error = ColorTokens.ReactTheme.destructive,             // #EF4444
+    onError = ColorTokens.ReactTheme.destructiveForeground,
+    errorContainer = ColorTokens.ReactTheme.destructive.copy(alpha = 0.2f),
+    onErrorContainer = ColorTokens.ReactTheme.destructive,
+    outline = ColorTokens.ReactTheme.border,                // #2A2A32
+    outlineVariant = ColorTokens.ReactTheme.border.copy(alpha = 0.5f),
+    inverseSurface = ColorTokens.ReactTheme.foreground,
+    inverseOnSurface = ColorTokens.ReactTheme.background,
+    inversePrimary = ColorTokens.ReactTheme.primary,
+    surfaceTint = ColorTokens.ReactTheme.primary
 )
 
 @Composable
 fun KosmosTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            window.statusBarColor = ColorTokens.ReactTheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = KosmosColorScheme,
         typography = Typography,
         content = content
     )
@@ -302,7 +241,7 @@ fun KosmosTheme(
 @Composable
 fun LoadingDots(
     modifier: Modifier = Modifier,
-    dotColor: Color = MaterialTheme.colorScheme.primary,
+    dotColor: Color = ColorTokens.ReactTheme.primary,
     dotSize: Dp = 8.dp
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "loading_dots")
@@ -362,7 +301,7 @@ fun MessageShimmer(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = alpha))
+                    .background(ColorTokens.ReactTheme.foreground.copy(alpha = alpha))
             )
             Spacer(modifier = Modifier.width(8.dp))
         }
@@ -383,7 +322,7 @@ fun MessageShimmer(
                             bottomEnd = if (isFromCurrentUser) 4.dp else 16.dp
                         )
                     )
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = alpha))
+                    .background(ColorTokens.ReactTheme.foreground.copy(alpha = alpha))
             )
         }
 
@@ -402,7 +341,7 @@ fun ErrorMessage(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
+            containerColor = ColorTokens.ReactTheme.destructive
         )
     ) {
         Column(
@@ -412,7 +351,7 @@ fun ErrorMessage(
             Icon(
                 Icons.Default.Error,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onErrorContainer,
+                tint = ColorTokens.ReactTheme.destructiveForeground,
                 modifier = Modifier.size(48.dp)
             )
 
@@ -420,7 +359,7 @@ fun ErrorMessage(
 
             Text(
                 text = message,
-                color = MaterialTheme.colorScheme.onErrorContainer,
+                color = ColorTokens.ReactTheme.destructiveForeground,
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
@@ -431,7 +370,7 @@ fun ErrorMessage(
                 Button(
                     onClick = onRetry,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
+                        containerColor = ColorTokens.ReactTheme.destructive
                     )
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = null)
@@ -453,7 +392,7 @@ fun NetworkErrorBanner(
         Card(
             modifier = modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer
+                containerColor = ColorTokens.ReactTheme.destructive
             )
         ) {
             Row(
@@ -463,7 +402,7 @@ fun NetworkErrorBanner(
                 Icon(
                     Icons.Default.Error,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    tint = ColorTokens.ReactTheme.destructiveForeground,
                     modifier = Modifier.size(20.dp)
                 )
 
@@ -471,7 +410,7 @@ fun NetworkErrorBanner(
 
                 Text(
                     text = "Connection lost. Some features may not work properly.",
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    color = ColorTokens.ReactTheme.destructiveForeground,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.weight(1f)
                 )
@@ -479,7 +418,7 @@ fun NetworkErrorBanner(
                 TextButton(
                     onClick = onDismiss,
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        contentColor = ColorTokens.ReactTheme.destructiveForeground
                     )
                 ) {
                     Text("Dismiss", style = MaterialTheme.typography.bodySmall)
@@ -513,7 +452,7 @@ fun PermissionRequestDialog(
                     modifier = Modifier
                         .size(48.dp)
                         .align(Alignment.CenterHorizontally),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = ColorTokens.ReactTheme.primary
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -547,7 +486,7 @@ fun MicrophonePermissionCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = ColorTokens.ReactTheme.secondary
         )
     ) {
         Column(
@@ -558,7 +497,7 @@ fun MicrophonePermissionCard(
                 Icons.Default.Mic,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                tint = ColorTokens.ReactTheme.primaryForeground
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -566,7 +505,7 @@ fun MicrophonePermissionCard(
             Text(
                 text = "Voice Messages",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = ColorTokens.ReactTheme.primaryForeground
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -574,7 +513,7 @@ fun MicrophonePermissionCard(
             Text(
                 text = "Grant microphone access to send voice messages and use AI transcription features",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                color = ColorTokens.ReactTheme.primaryForeground.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center
             )
 
@@ -583,7 +522,7 @@ fun MicrophonePermissionCard(
             Button(
                 onClick = onRequestPermission,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = ColorTokens.ReactTheme.primary
                 )
             ) {
                 Text("Enable Voice Messages")
@@ -602,7 +541,7 @@ fun VoiceRecordingIndicator(
         Row(
             modifier = modifier
                 .background(
-                    MaterialTheme.colorScheme.errorContainer,
+                    ColorTokens.ReactTheme.destructive,
                     shape = CircleShape
                 )
                 .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -626,7 +565,7 @@ fun VoiceRecordingIndicator(
                 modifier = Modifier
                     .scale(scale)
                     .size(16.dp),
-                tint = MaterialTheme.colorScheme.error
+                tint = ColorTokens.ReactTheme.destructive
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -635,14 +574,14 @@ fun VoiceRecordingIndicator(
                 text = formatDuration(duration),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onErrorContainer
+                color = ColorTokens.ReactTheme.destructiveForeground
             )
 
             Spacer(modifier = Modifier.width(8.dp))
 
             // Animated waveform dots
             LoadingDots(
-                dotColor = MaterialTheme.colorScheme.error,
+                dotColor = ColorTokens.ReactTheme.destructive,
                 dotSize = 4.dp
             )
         }
@@ -655,8 +594,8 @@ fun AudioWaveform(
     isPlaying: Boolean,
     currentPosition: Float = 0f,
     modifier: Modifier = Modifier,
-    activeColor: Color = MaterialTheme.colorScheme.primary,
-    inactiveColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+    activeColor: Color = ColorTokens.ReactTheme.primary,
+    inactiveColor: Color = ColorTokens.ReactTheme.foreground.copy(alpha = 0.3f)
 ) {
     Row(
         modifier = modifier.height(32.dp),
@@ -706,7 +645,7 @@ fun VoiceMessagePlaybackControls(
         Text(
             text = "${formatDuration(currentPosition)} / ${formatDuration(duration)}",
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            color = ColorTokens.ReactTheme.foreground.copy(alpha = 0.7f)
         )
     }
 }
@@ -749,9 +688,9 @@ fun TaskCard(
                         if (task.status == TaskStatus.DONE) Icons.Default.CheckCircle else Icons.Default.Circle,
                         contentDescription = null,
                         tint = if (task.status == TaskStatus.DONE) {
-                            MaterialTheme.colorScheme.primary
+                            ColorTokens.ReactTheme.primary
                         } else {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            ColorTokens.ReactTheme.foreground.copy(alpha = 0.6f)
                         }
                     )
                 }
@@ -765,9 +704,9 @@ fun TaskCard(
                     fontWeight = FontWeight.Medium,
                     textDecoration = if (task.status == TaskStatus.DONE) TextDecoration.LineThrough else null,
                     color = if (task.status == TaskStatus.DONE) {
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        ColorTokens.ReactTheme.foreground.copy(alpha = 0.6f)
                     } else {
-                        MaterialTheme.colorScheme.onSurface
+                        ColorTokens.ReactTheme.foreground
                     },
                     maxLines = if (isCompact) 1 else 2,
                     overflow = TextOverflow.Ellipsis,
@@ -786,7 +725,7 @@ fun TaskCard(
                 Text(
                     text = task.description ?: "",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    color = ColorTokens.ReactTheme.foreground.copy(alpha = 0.7f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -808,16 +747,16 @@ fun TaskCard(
                                 Icons.Default.Schedule,
                                 contentDescription = null,
                                 modifier = Modifier.size(12.dp),
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                tint = ColorTokens.ReactTheme.foreground.copy(alpha = 0.6f)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = formatDueDate(task.dueDate),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (task.dueDate < System.currentTimeMillis() && task.status != TaskStatus.DONE) {
-                                    MaterialTheme.colorScheme.error
+                                    ColorTokens.ReactTheme.destructive
                                 } else {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    ColorTokens.ReactTheme.foreground.copy(alpha = 0.7f)
                                 }
                             )
                         }
@@ -878,8 +817,8 @@ fun PriorityChip(
 @Composable
 fun StatusChip(
     text: String,
-    color: Color = MaterialTheme.colorScheme.primaryContainer,
-    textColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    color: Color = ColorTokens.ReactTheme.secondary,
+    textColor: Color = ColorTokens.ReactTheme.primaryForeground,
     size: ChipSize = ChipSize.Medium,
     modifier: Modifier = Modifier
 ) {

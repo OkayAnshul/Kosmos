@@ -1,5 +1,6 @@
 package com.example.kosmos.features.chat.presentation.redesign
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -159,6 +160,7 @@ fun EnhancedChatListScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(ColorTokens.ReactTheme.background)  // Stitch navy background
                 .padding(padding)
         ) {
             // Filter chips
@@ -306,9 +308,9 @@ private fun ChatListItem(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         color = if (chat.hasUnread)
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ColorTokens.ReactTheme.card.copy(alpha = 1.2f)  // Slightly highlighted for unread
         else
-            MaterialTheme.colorScheme.surface
+            ColorTokens.ReactTheme.card  // Stitch card background
     ) {
         Row(
             modifier = Modifier
@@ -321,14 +323,14 @@ private fun ChatListItem(
             Box {
                 Surface(
                     shape = MaterialTheme.shapes.extraLarge,
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = ColorTokens.ReactTheme.secondary,
                     modifier = Modifier.size(Tokens.Size.avatarMedium)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = chat.name.take(2).uppercase(),
                             style = TypographyTokens.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = ColorTokens.ReactTheme.primaryForeground
                         )
                     }
                 }
@@ -340,10 +342,10 @@ private fun ChatListItem(
                             .size(Tokens.Size.statusDotWithBorder)
                             .align(Alignment.BottomEnd),
                         shape = MaterialTheme.shapes.extraSmall,
-                        color = MaterialTheme.colorScheme.surface,
+                        color = ColorTokens.ReactTheme.card,
                         border = androidx.compose.foundation.BorderStroke(
                             width = 2.dp,
-                            color = MaterialTheme.colorScheme.surface
+                            color = ColorTokens.ReactTheme.card
                         )
                     ) {
                         Box(
@@ -382,7 +384,7 @@ private fun ChatListItem(
                                 imageVector = IconSet.Message.pin,
                                 contentDescription = "Pinned",
                                 modifier = Modifier.size(Tokens.Size.iconSmall),
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = ColorTokens.ReactTheme.primary
                             )
                         }
 
@@ -391,7 +393,7 @@ private fun ChatListItem(
                             style = TypographyTokens.typography.titleMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = ColorTokens.ReactTheme.foreground  // Stitch primary text
                         )
                     }
 
@@ -399,9 +401,9 @@ private fun ChatListItem(
                         text = chat.formattedTimestamp,
                         style = TypographyTokens.Custom.caption,
                         color = if (chat.hasUnread)
-                            MaterialTheme.colorScheme.primary
+                            ColorTokens.ReactTheme.primary  // Stitch blue for unread
                         else
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                            ColorTokens.ReactTheme.mutedForeground  // Stitch secondary text
                     )
                 }
 
@@ -417,17 +419,17 @@ private fun ChatListItem(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         color = if (chat.hasUnread)
-                            MaterialTheme.colorScheme.onSurface
+                            ColorTokens.ReactTheme.foreground  // Stitch primary for unread
                         else
-                            MaterialTheme.colorScheme.onSurfaceVariant,
+                            ColorTokens.ReactTheme.mutedForeground,  // Stitch secondary for read
                         modifier = Modifier.weight(1f)
                     )
 
-                    // Unread badge
+                    // Unread badge - Stitch blue
                     if (chat.unreadCount > 0) {
                         Spacer(modifier = Modifier.width(Tokens.Spacing.xs))
                         Badge(
-                            containerColor = MaterialTheme.colorScheme.primary
+                            containerColor = ColorTokens.ReactTheme.primary  // Stitch blue badge
                         ) {
                             Text(
                                 text = if (chat.unreadCount > 99) "99+" else chat.unreadCount.toString(),

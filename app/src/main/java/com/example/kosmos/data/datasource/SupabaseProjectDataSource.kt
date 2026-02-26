@@ -129,7 +129,7 @@ class SupabaseProjectDataSource @Inject constructor(
             val projects = supabase.from(TABLE_NAME)
                 .select {
                     filter {
-                        eq("ownerId", userId)
+                        eq("owner_id", userId)
                     }
                 }
                 .decodeList<Project>()

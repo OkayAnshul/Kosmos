@@ -1,12 +1,49 @@
 package com.example.kosmos.core.models
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-@Entity(tableName = "action_items")
+@Entity(
+    tableName = "action_items",
+    foreignKeys = [
+        // NO_ACTION: REPLACE strategy in DAOs does DELETE+INSERT, CASCADE would wipe child records during sync
+        ForeignKey(
+            entity = Message::class,
+            parentColumns = ["id"],
+            childColumns = ["messageId"],
+            onDelete = ForeignKey.NO_ACTION
+        ),
+        ForeignKey(
+            entity = VoiceMessage::class,
+            parentColumns = ["id"],
+            childColumns = ["voiceMessageId"],
+            onDelete = ForeignKey.NO_ACTION
+        ),
+        ForeignKey(
+            entity = ChatRoom::class,
+            parentColumns = ["id"],
+            childColumns = ["chatRoomId"],
+            onDelete = ForeignKey.NO_ACTION
+        ),
+        ForeignKey(
+            entity = Task::class,
+            parentColumns = ["id"],
+            childColumns = ["taskId"],
+            onDelete = ForeignKey.SET_NULL  // Action item remains if task is deleted
+        )
+    ],
+    indices = [
+        Index(value = ["messageId"]),
+        Index(value = ["voiceMessageId"]),
+        Index(value = ["chatRoomId"]),
+        Index(value = ["taskId"])
+    ]
+)
 data class ActionItem(
     @PrimaryKey
     val id: String = "",

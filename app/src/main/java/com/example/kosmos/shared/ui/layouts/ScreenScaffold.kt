@@ -3,12 +3,15 @@ package com.example.kosmos.shared.ui.layouts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.kosmos.shared.ui.components.AnimatedGreeting
+import com.example.kosmos.shared.ui.components.OfflineModeBanner  // P0-07 FIX
 import com.example.kosmos.shared.ui.designsystem.IconSet
 import com.example.kosmos.shared.ui.designsystem.Tokens
 import com.example.kosmos.shared.ui.designsystem.TypographyTokens
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
 /**
  * Screen Scaffold Components
  *
@@ -31,6 +34,7 @@ import com.example.kosmos.shared.ui.designsystem.TypographyTokens
  * @param title Screen title
  * @param modifier Modifier
  * @param subtitle Optional subtitle
+ * @param isOffline Network connectivity state (P0-07 FIX)
  * @param navigationIcon Optional back/menu icon
  * @param onNavigationClick Navigation icon click handler
  * @param actions Optional top bar actions
@@ -44,6 +48,8 @@ fun ScreenScaffoldStandard(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    username: String? = null,
+    isOffline: Boolean = false,  // P0-07 FIX
     navigationIcon: ImageVector? = IconSet.Navigation.back,
     onNavigationClick: (() -> Unit)? = null,
     actions: (@Composable RowScope.() -> Unit)? = null,
@@ -54,19 +60,38 @@ fun ScreenScaffoldStandard(
     Scaffold(
         modifier = modifier,
         topBar = {
+            // P0-07 FIX: Add OfflineModeBanner above regular top bar
+            Column {
+                OfflineModeBanner(isOffline = isOffline)
+
             if (showTopBar) {
                 TopAppBar(
                     title = {
-                        Column {
-                            Text(
-                                text = title,
-                                style = TypographyTokens.typography.titleLarge
-                            )
-                            if (subtitle != null) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Title column
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = subtitle,
-                                    style = TypographyTokens.Custom.caption,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = title,
+                                    style = TypographyTokens.typography.titleLarge
+                                )
+                                if (subtitle != null) {
+                                    Text(
+                                        text = subtitle,
+                                        style = TypographyTokens.Custom.caption,
+                                        color = ColorTokens.ReactTheme.mutedForeground
+                                    )
+                                }
+                            }
+
+                            // Animated greeting
+                            if (username != null) {
+                                AnimatedGreeting(
+                                    username = username,
+                                    textColor = ColorTokens.ReactTheme.foreground
                                 )
                             }
                         }
@@ -87,6 +112,7 @@ fun ScreenScaffoldStandard(
                         }
                     }
                 )
+                }  // Close Column - P0-07 FIX
             }
         },
         snackbarHost = {
@@ -106,6 +132,7 @@ fun ScreenScaffoldStandard(
  * @param fabIcon FAB icon
  * @param onFabClick FAB click handler
  * @param modifier Modifier
+ * @param isOffline Network connectivity state (P0-07 FIX)
  * @param fabText Optional extended FAB text
  * @param fabExpanded Whether FAB is extended
  * @param navigationIcon Optional navigation icon
@@ -121,6 +148,7 @@ fun ScreenScaffoldWithFAB(
     fabIcon: ImageVector,
     onFabClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isOffline: Boolean = false,  // P0-07 FIX
     fabText: String? = null,
     fabExpanded: Boolean = false,
     navigationIcon: ImageVector? = IconSet.Navigation.back,
@@ -132,29 +160,34 @@ fun ScreenScaffoldWithFAB(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        style = TypographyTokens.typography.titleLarge
-                    )
-                },
-                navigationIcon = {
-                    if (navigationIcon != null && onNavigationClick != null) {
-                        IconButton(onClick = onNavigationClick) {
-                            Icon(
-                                imageVector = navigationIcon,
-                                contentDescription = "Navigate"
-                            )
+            // P0-07 FIX: Add OfflineModeBanner
+            Column {
+                OfflineModeBanner(isOffline = isOffline)
+
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = title,
+                            style = TypographyTokens.typography.titleLarge
+                        )
+                    },
+                    navigationIcon = {
+                        if (navigationIcon != null && onNavigationClick != null) {
+                            IconButton(onClick = onNavigationClick) {
+                                Icon(
+                                    imageVector = navigationIcon,
+                                    contentDescription = "Navigate"
+                                )
+                            }
+                        }
+                    },
+                    actions = {
+                        if (actions != null) {
+                            Row(content = actions)
                         }
                     }
-                },
-                actions = {
-                    if (actions != null) {
-                        Row(content = actions)
-                    }
-                }
-            )
+                )
+            }  // Close Column
         },
         floatingActionButton = {
             if (fabExpanded && fabText != null) {
@@ -394,8 +427,8 @@ fun SearchScreenScaffold(
                         },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                            focusedContainerColor = ColorTokens.ReactTheme.card,
+                            unfocusedContainerColor = ColorTokens.ReactTheme.card
                         )
                     )
                 },

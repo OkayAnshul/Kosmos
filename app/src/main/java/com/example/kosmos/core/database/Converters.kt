@@ -5,6 +5,7 @@ import com.example.kosmos.core.models.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.CancellationException
 
 class Converters {
     private val json = Json {
@@ -22,6 +23,7 @@ class Converters {
         return try {
             json.decodeFromString(value)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             emptyList()
         }
     }
@@ -36,6 +38,7 @@ class Converters {
         return try {
             json.decodeFromString(value)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             emptyMap()
         }
     }
@@ -50,6 +53,7 @@ class Converters {
         return try {
             json.decodeFromString(value)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             emptyMap()
         }
     }
@@ -64,6 +68,7 @@ class Converters {
         return try {
             json.decodeFromString(value)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             emptyList()
         }
     }
@@ -78,6 +83,7 @@ class Converters {
         return try {
             json.decodeFromString(value)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             emptyList()
         }
     }

@@ -4,6 +4,8 @@ import kotlinx.coroutines.CancellationException
 import android.util.Log
 import com.example.kosmos.core.models.TaskDependency
 import io.github.jan.supabase.SupabaseClient
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import javax.inject.Inject
@@ -35,16 +37,14 @@ class SupabaseDependencyDataSource @Inject constructor(
         return try {
             Log.d(TAG, "Inserting dependency: ${dependency.id}")
 
-            supabase.from(TABLE_NAME).insert(
-                mapOf(
-                    "id" to dependency.id,
-                    "task_id" to dependency.taskId,
-                    "depends_on_task_id" to dependency.dependsOnTaskId,
-                    "dependency_type" to dependency.dependencyType.name.lowercase(),
-                    "created_at" to dependency.createdAt,
-                    "created_by" to dependency.createdBy
-                )
-            )
+            supabase.from(TABLE_NAME).insert(buildJsonObject {
+                put("id", dependency.id)
+                put("task_id", dependency.taskId)
+                put("depends_on_task_id", dependency.dependsOnTaskId)
+                put("dependency_type", dependency.dependencyType.name.lowercase())
+                put("created_at", dependency.createdAt)
+                put("created_by", dependency.createdBy)
+            })
 
             Log.d(TAG, "Successfully inserted dependency: ${dependency.id}")
             Result.success(dependency)

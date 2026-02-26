@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.example.kosmos.shared.ui.designsystem.IconSet
 import com.example.kosmos.shared.ui.designsystem.Tokens
 import com.example.kosmos.shared.ui.designsystem.TypographyTokens
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
 /**
  * Input Components for Kosmos App
  *
@@ -579,7 +579,7 @@ fun CounterInput(
 
             Surface(
                 shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = ColorTokens.ReactTheme.secondary,
                 modifier = Modifier
                     .widthIn(min = 60.dp)
                     .heightIn(min = Tokens.TouchTarget.minimum)

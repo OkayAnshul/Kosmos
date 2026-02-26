@@ -116,6 +116,7 @@ fun ProjectWorkspaceScreen(
                         onBack = onBackClick,
                         onNewTask = onCreateTask,
                         onNewChat = onCreateChat,
+                        onEditProject = { _ -> onEditProject() },
                         onViewChats = {
                             Log.d("ProjectWorkspace", "onViewChats called - switching to CHATS")
                             coroutineScope.launch {
@@ -157,6 +158,7 @@ fun ProjectWorkspaceScreen(
                     ProjectTasksScreenReactWrapper(
                         projectId = projectId,
                         onTaskClick = onTaskClick,
+                        onTaskEdit = onTaskClick,
                         onCreateTask = onCreateTask
                     )
                 }
@@ -433,7 +435,7 @@ private fun ProjectActivityScreen(
                 IconSet.Time.history,
                 contentDescription = "",
                 modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = ColorTokens.ReactTheme.primary
             )
             Text(
                 "Activity Feed",
@@ -442,7 +444,7 @@ private fun ProjectActivityScreen(
             Text(
                 "Coming soon: Recent updates, changes, and notifications",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = ColorTokens.ReactTheme.mutedForeground
             )
         }
     }

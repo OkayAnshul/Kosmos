@@ -13,10 +13,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.kosmos.core.models.ConnectionStatus
 import com.example.kosmos.core.models.User
 import com.example.kosmos.features.users.presentation.components.AddToProjectDialog
 import com.example.kosmos.features.users.presentation.components.UserAvatar
@@ -24,6 +26,7 @@ import com.example.kosmos.shared.ui.components.*
 import com.example.kosmos.shared.ui.designsystem.IconSet
 import com.example.kosmos.shared.ui.designsystem.Tokens
 import com.example.kosmos.shared.ui.designsystem.ColorTokens
+import kotlinx.coroutines.CancellationException
 
 /**
  * User Profile Screen
@@ -94,6 +97,7 @@ fun UserProfileScreen(
                         user = user,
                     projectId = projectId,
                     sharedProjectCount = uiState.sharedProjectCount,
+                    connectionStatus = uiState.connectionStatus,
                     onStartChat = { chatRoomId ->
                         onStartChat(userId, chatRoomId)
                     },
@@ -103,6 +107,8 @@ fun UserProfileScreen(
                     onAddToProjectClick = {
                         viewModel.setShowAddToProjectDialog(true)
                     },
+                    onConnectClick = { viewModel.sendConnectionRequest(userId) },
+                    onRemoveConnectionClick = { viewModel.removeConnection(userId) },
                     modifier = Modifier.padding(paddingValues)
                 )
                 }
@@ -142,9 +148,12 @@ private fun ProfileContent(
     user: User,
     projectId: String,
     sharedProjectCount: Int,
-    onStartChat: (String) -> Unit, // chatRoomId
-    onCreateOrGetChat: (String) -> Unit, // targetUserId
+    connectionStatus: ConnectionStatus?,
+    onStartChat: (String) -> Unit,
+    onCreateOrGetChat: (String) -> Unit,
     onAddToProjectClick: () -> Unit,
+    onConnectClick: () -> Unit,
+    onRemoveConnectionClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -171,7 +180,7 @@ private fun ProfileContent(
             text = user.displayName,
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = ColorTokens.ReactTheme.foreground,
             textAlign = TextAlign.Center
         )
 
@@ -179,14 +188,14 @@ private fun ProfileContent(
         if (user.username.isNotEmpty()) {
             Surface(
                 shape = RoundedCornerShape(Tokens.Spacing.md),
-                color = MaterialTheme.colorScheme.secondaryContainer
+                color = ColorTokens.ReactTheme.secondary
             ) {
                 Text(
                     text = "@${user.username}",
                     modifier = Modifier.padding(horizontal = Tokens.Spacing.sm, vertical = Tokens.Spacing.xs),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                    color = ColorTokens.ReactTheme.secondaryForeground
                 )
             }
         }
@@ -195,7 +204,7 @@ private fun ProfileContent(
         Text(
             text = user.email,
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = ColorTokens.ReactTheme.mutedForeground,
             textAlign = TextAlign.Center
         )
 
@@ -218,6 +227,43 @@ private fun ProfileContent(
                 icon = IconSet.Message.chat,
                 fullWidth = true
             )
+
+            // Connection Button
+            when (connectionStatus) {
+                null -> {
+                    SecondaryButton(
+                        text = "Connect",
+                        onClick = onConnectClick,
+                        modifier = Modifier,
+                        icon = Icons.Default.PersonAdd,
+                        fullWidth = true
+                    )
+                }
+                ConnectionStatus.PENDING -> {
+                    OutlinedButton(
+                        onClick = {},
+                        enabled = false,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.HourglassTop, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Pending")
+                    }
+                }
+                ConnectionStatus.ACCEPTED -> {
+                    OutlinedButton(
+                        onClick = onRemoveConnectionClick,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.PersonRemove, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Remove Connection")
+                    }
+                }
+                ConnectionStatus.DECLINED, ConnectionStatus.BLOCKED -> {
+                    // Don't show button
+                }
+            }
 
             // Add to Project Button
             SecondaryButton(
@@ -267,7 +313,7 @@ private fun OnlineStatusCard(
                         color = if (isOnline) {
                             ColorTokens.Status.online
                         } else {
-                            MaterialTheme.colorScheme.outline
+                            ColorTokens.ReactTheme.border
                         },
                         shape = CircleShape
                     )
@@ -285,9 +331,9 @@ private fun OnlineStatusCard(
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 color = if (isOnline) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
+                    ColorTokens.ReactTheme.primaryForeground
                 } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
+                    ColorTokens.ReactTheme.mutedForeground
                 }
             )
         }
@@ -313,7 +359,7 @@ private fun ProfileInfoCard(
                 text = "Information",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = ColorTokens.ReactTheme.mutedForeground
             )
 
             ListDivider()
@@ -373,13 +419,13 @@ private fun InfoRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = ColorTokens.ReactTheme.mutedForeground
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = ColorTokens.ReactTheme.foreground
         )
     }
 }
@@ -402,13 +448,13 @@ private fun BioSection(
                 text = "About",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = ColorTokens.ReactTheme.mutedForeground
             )
 
             Text(
                 text = bio,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = ColorTokens.ReactTheme.mutedForeground
             )
         }
     }
@@ -454,7 +500,7 @@ private fun SocialLinksSection(
                     text = "Social Links",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = ColorTokens.ReactTheme.mutedForeground
                 )
 
                 Row(
@@ -472,6 +518,7 @@ private fun SocialLinksSection(
                                     }
                                     uriHandler.openUri(formattedUrl)
                                 } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
                                     // Handle URL error gracefully
                                 }
                             }

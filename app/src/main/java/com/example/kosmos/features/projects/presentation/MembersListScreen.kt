@@ -20,7 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.kosmos.core.models.ProjectRole
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
 /**
  * Members List Screen
  * Shows all project members with role management capabilities
@@ -67,7 +67,7 @@ fun MembersListScreen(
                         Text(
                             text = "${uiState.filteredMembers.size} members",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = ColorTokens.ReactTheme.mutedForeground
                         )
                     }
                 },
@@ -82,7 +82,7 @@ fun MembersListScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = ColorTokens.ReactTheme.card
                 )
             )
         },
@@ -90,7 +90,7 @@ fun MembersListScreen(
             if (currentUserRole == ProjectRole.ADMIN || currentUserRole == ProjectRole.MANAGER) {
                 FloatingActionButton(
                     onClick = onAddMembersClick,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = ColorTokens.ReactTheme.secondary
                 ) {
                     Icon(Icons.Default.PersonAdd, "Add Members")
                 }
@@ -180,7 +180,7 @@ fun MembersListScreen(
                             Text(
                                 text = "Loading members...",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = ColorTokens.ReactTheme.mutedForeground
                             )
                         }
                     }
@@ -197,9 +197,9 @@ fun MembersListScreen(
                         ) {
                             Icon(
                                 Icons.Default.Group,
-                                contentDescription = null,
+                                contentDescription = "",
                                 modifier = Modifier.size(64.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                tint = ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.5f)
                             )
                             Text(
                                 text = if (uiState.searchQuery.isNotEmpty()) {
@@ -208,14 +208,14 @@ fun MembersListScreen(
                                     "No members yet"
                                 },
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = ColorTokens.ReactTheme.mutedForeground,
                                 textAlign = TextAlign.Center
                             )
                             if (uiState.searchQuery.isEmpty()) {
                                 Text(
                                     text = "Add members to start collaborating",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    color = ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.7f),
                                     textAlign = TextAlign.Center
                                 )
                             }
@@ -307,7 +307,7 @@ private fun MemberListItem(
                     leadingIcon = {
                         Icon(
                             Icons.Default.Shield,
-                            contentDescription = null,
+                            contentDescription = "",
                             modifier = Modifier.size(16.dp),
                             tint = roleColor
                         )
@@ -336,13 +336,13 @@ private fun MemberListItem(
                 Surface(
                     modifier = Modifier.size(48.dp),
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer
+                    color = ColorTokens.ReactTheme.secondary
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = memberWithUser.user.displayName.firstOrNull()?.uppercase() ?: "?",
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = ColorTokens.ReactTheme.primaryForeground
                         )
                     }
                 }
@@ -359,7 +359,7 @@ private fun MemberListItem(
                             Icons.Default.PersonRemove,
                             "Remove",
                             modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.error
+                            tint = ColorTokens.ReactTheme.destructive
                         )
                     }
                 }
@@ -394,9 +394,9 @@ private fun RoleChangeDialog(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (selectedRole == role) {
-                                    MaterialTheme.colorScheme.primaryContainer
+                                    ColorTokens.ReactTheme.secondary
                                 } else {
-                                    MaterialTheme.colorScheme.surface
+                                    ColorTokens.ReactTheme.card
                                 }
                             )
                         ) {
@@ -452,8 +452,8 @@ private fun RemoveMemberDialog(
         icon = {
             Icon(
                 Icons.Default.Warning,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.error
+                contentDescription = "",
+                tint = ColorTokens.ReactTheme.destructive
             )
         },
         title = { Text("Remove Member?") },
@@ -463,7 +463,7 @@ private fun RemoveMemberDialog(
                 Text(
                     text = "They will lose access to all project resources.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = ColorTokens.ReactTheme.mutedForeground
                 )
                 if (isLoading) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
@@ -475,7 +475,7 @@ private fun RemoveMemberDialog(
                 onClick = onConfirm,
                 enabled = !isLoading,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
+                    containerColor = ColorTokens.ReactTheme.destructive
                 )
             ) {
                 Text("Remove")

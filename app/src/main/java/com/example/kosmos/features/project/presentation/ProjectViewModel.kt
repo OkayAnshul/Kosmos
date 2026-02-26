@@ -12,7 +12,9 @@ import com.example.kosmos.core.models.ProjectStatus
 import com.example.kosmos.core.models.User
 import com.example.kosmos.core.feedback.UserFeedbackManager
 import com.example.kosmos.core.feedback.safeCall
+import com.example.kosmos.core.validators.PermissionChecker
 import com.example.kosmos.data.repository.AuthRepository
+import kotlinx.coroutines.CancellationException
 import com.example.kosmos.data.repository.ProjectCreationData
 import com.example.kosmos.data.repository.ProjectRepository
 import com.example.kosmos.data.repository.UserRepository
@@ -126,6 +128,7 @@ class ProjectViewModel @Inject constructor(
                     Log.w(TAG, "Cannot sync projects: user not authenticated")
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Error syncing projects", e)
             }
         }
@@ -174,6 +177,7 @@ class ProjectViewModel @Inject constructor(
                         )
                     }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Error in loadUserProjects", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -224,9 +228,17 @@ class ProjectViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                if (e is PermissionChecker.PermissionDeniedException) {
+                    feedbackManager.permissionDenied("create project", e.message ?: "Permission denied")
+                    _uiState.value = _uiState.value.copy(isCreating = false)
+                    return@launch
+                }
+                val msg = ErrorMapper.mapError(e, "create project")
+                feedbackManager.error(msg)
                 _uiState.value = _uiState.value.copy(
                     isCreating = false,
-                    error = ErrorMapper.mapError(e, "create project")
+                    error = msg
                 )
             }
         }
@@ -245,6 +257,7 @@ class ProjectViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
                     error = ErrorMapper.mapError(e, "load members")
                 )
@@ -283,9 +296,17 @@ class ProjectViewModel @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    if (e is PermissionChecker.PermissionDeniedException) {
+                        feedbackManager.permissionDenied("add member", e.message ?: "Permission denied")
+                        _uiState.value = _uiState.value.copy(isAddingMember = false)
+                        return@launch
+                    }
+                    val msg = ErrorMapper.mapError(e, "add member")
+                    feedbackManager.error(msg)
                     _uiState.value = _uiState.value.copy(
                         isAddingMember = false,
-                        error = ErrorMapper.mapError(e, "add member")
+                        error = msg
                     )
                 }
             }
@@ -317,9 +338,14 @@ class ProjectViewModel @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
-                    _uiState.value = _uiState.value.copy(
-                        error = ErrorMapper.mapError(e, "remove member")
-                    )
+                    if (e is CancellationException) throw e
+                    if (e is PermissionChecker.PermissionDeniedException) {
+                        feedbackManager.permissionDenied("remove member", e.message ?: "Permission denied")
+                        return@launch
+                    }
+                    val msg = ErrorMapper.mapError(e, "remove member")
+                    feedbackManager.error(msg)
+                    _uiState.value = _uiState.value.copy(error = msg)
                 }
             }
         }
@@ -352,9 +378,14 @@ class ProjectViewModel @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
-                    _uiState.value = _uiState.value.copy(
-                        error = ErrorMapper.mapError(e, "change role")
-                    )
+                    if (e is CancellationException) throw e
+                    if (e is PermissionChecker.PermissionDeniedException) {
+                        feedbackManager.permissionDenied("change role", e.message ?: "Permission denied")
+                        return@launch
+                    }
+                    val msg = ErrorMapper.mapError(e, "change role")
+                    feedbackManager.error(msg)
+                    _uiState.value = _uiState.value.copy(error = msg)
                 }
             }
         }
@@ -423,9 +454,14 @@ class ProjectViewModel @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
-                    _uiState.value = _uiState.value.copy(
-                        error = ErrorMapper.mapError(e, "archive project")
-                    )
+                    if (e is CancellationException) throw e
+                    if (e is PermissionChecker.PermissionDeniedException) {
+                        feedbackManager.permissionDenied("archive project", e.message ?: "Permission denied")
+                        return@launch
+                    }
+                    val msg = ErrorMapper.mapError(e, "archive project")
+                    feedbackManager.error(msg)
+                    _uiState.value = _uiState.value.copy(error = msg)
                 }
             }
         }
@@ -456,9 +492,14 @@ class ProjectViewModel @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
-                    _uiState.value = _uiState.value.copy(
-                        error = ErrorMapper.mapError(e, "restore project")
-                    )
+                    if (e is CancellationException) throw e
+                    if (e is PermissionChecker.PermissionDeniedException) {
+                        feedbackManager.permissionDenied("restore project", e.message ?: "Permission denied")
+                        return@launch
+                    }
+                    val msg = ErrorMapper.mapError(e, "restore project")
+                    feedbackManager.error(msg)
+                    _uiState.value = _uiState.value.copy(error = msg)
                 }
             }
         }
@@ -506,9 +547,17 @@ class ProjectViewModel @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    if (e is PermissionChecker.PermissionDeniedException) {
+                        feedbackManager.permissionDenied("update project", e.message ?: "Permission denied")
+                        _uiState.value = _uiState.value.copy(isUpdating = false)
+                        return@launch
+                    }
+                    val msg = ErrorMapper.mapError(e, "update project")
+                    feedbackManager.error(msg)
                     _uiState.value = _uiState.value.copy(
                         isUpdating = false,
-                        error = ErrorMapper.mapError(e, "update project")
+                        error = msg
                     )
                 }
             }
@@ -547,6 +596,7 @@ class ProjectViewModel @Inject constructor(
                             )
                         }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     _uiState.value = _uiState.value.copy(
                         isLoadingStats = false,
                         error = ErrorMapper.mapError(e, "load project stats")
@@ -638,9 +688,17 @@ class ProjectViewModel @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    if (e is PermissionChecker.PermissionDeniedException) {
+                        feedbackManager.permissionDenied("delete project", e.message ?: "Permission denied")
+                        _uiState.value = _uiState.value.copy(isUpdating = false)
+                        return@launch
+                    }
+                    val msg = ErrorMapper.mapError(e, "delete project")
+                    feedbackManager.error(msg)
                     _uiState.value = _uiState.value.copy(
                         isUpdating = false,
-                        error = ErrorMapper.mapError(e, "delete project")
+                        error = msg
                     )
                 }
             }
@@ -986,9 +1044,17 @@ class ProjectViewModel @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    if (e is PermissionChecker.PermissionDeniedException) {
+                        feedbackManager.permissionDenied("create project", e.message ?: "Permission denied")
+                        _uiState.value = _uiState.value.copy(isCreatingProject = false)
+                        return@launch
+                    }
+                    val msg = ErrorMapper.mapError(e, "create project")
+                    feedbackManager.error(msg)
                     _uiState.value = _uiState.value.copy(
                         isCreatingProject = false,
-                        error = ErrorMapper.mapError(e, "create project")
+                        error = msg
                     )
                 }
             }

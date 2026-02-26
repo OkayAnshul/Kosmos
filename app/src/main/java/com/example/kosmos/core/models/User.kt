@@ -10,9 +10,9 @@ import kotlinx.serialization.Serializable
 data class User(
     // Account Info (Required)
     @PrimaryKey
-    val id: String = "",
-    val email: String = "",
-    val username: String = "", // Unique @username for easy discovery
+    val id: String,  // Required - no default (must be valid UUID)
+    val email: String = "",  // Default empty for views like users_public that don't return email
+    val username: String = "",  // Unique @username for easy discovery (default empty for NULL DB values)
 
     @SerialName("display_name")
     val displayName: String = "", // Full name
@@ -53,5 +53,11 @@ data class User(
     val fcmToken: String? = null,
 
     @SerialName("created_at")
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+
+    // User Settings (stored as JSONB in Supabase)
+    val settings: UserSettings? = null,
+
+    // Optimistic Locking for Conflict Resolution (P0-01 FIX)
+    val version: Int = 1
 )

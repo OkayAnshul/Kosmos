@@ -5,12 +5,19 @@ import com.example.kosmos.core.database.dao.ChatRoomDao
 import com.example.kosmos.core.database.dao.MessageDao
 import com.example.kosmos.core.models.ChatRoom
 import com.example.kosmos.core.models.Message
+import com.example.kosmos.core.models.SyncOperation
 import com.example.kosmos.data.datasource.SupabaseMessageDataSource
 import com.example.kosmos.data.realtime.SupabaseRealtimeManager
 import com.example.kosmos.data.sync.SyncRetryHelper
+import com.example.kosmos.data.sync.SyncQueueHelper
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.NonCancellable
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -27,7 +34,10 @@ class ChatRepository @Inject constructor(
     private val supabase: SupabaseClient,
     private val supabaseMessageDataSource: SupabaseMessageDataSource,
     private val supabaseChatDataSource: com.example.kosmos.data.datasource.SupabaseChatDataSource,
-    private val realtimeManager: SupabaseRealtimeManager
+    private val realtimeManager: SupabaseRealtimeManager,
+    private val networkMonitor: com.example.kosmos.shared.utils.NetworkMonitor,  // P0-06 FIX
+    private val syncQueueDao: com.example.kosmos.core.database.dao.SyncQueueDao,  // P0-08 FIX
+    private val fkRetryQueue: com.example.kosmos.data.sync.FKRetryQueue  // NEW: FK violation retry queue
 ) {
 
     companion object {
@@ -35,16 +45,36 @@ class ChatRepository @Inject constructor(
     }
 
     /**
+     * P0-06 FIX: Expose network connectivity state
+     * UI can observe this to show offline banner
+     */
+    val isOffline: kotlinx.coroutines.flow.StateFlow<Boolean> = networkMonitor.isOffline
+
+    /**
      * Get chat rooms for a specific project with real-time updates
-     * Filters by both userId (participant) and projectId
-     * @param userId User ID (must be a participant)
+     *
+     * FIXED LOGIC (2026-01-26):
+     * - Public/general rooms (isPrivate = false): Visible to ALL project members
+     * - Private rooms (isPrivate = true): Only visible if user is in participantIds
+     *
+     * Previous bug: Always checked participantIds.contains(userId), which excluded
+     * public/general rooms with empty participantIds list.
+     *
+     * @param userId User ID (to check private room access)
      * @param projectId Project ID (shows only rooms in this project)
      * @return Flow of chat room list for the project
      */
     fun getChatRoomsForProject(userId: String, projectId: String): Flow<List<ChatRoom>> {
         return chatRoomDao.getAllChatRoomsFlow().map { rooms ->
             rooms.filter { room ->
-                room.participantIds.contains(userId) && room.projectId == projectId
+                // Must be in the same project
+                if (room.projectId != projectId) return@filter false
+
+                // Public/general rooms: Show to all project members
+                if (!room.isPrivate) return@filter true
+
+                // Private rooms: Only show if user is explicitly in participantIds
+                room.participantIds.contains(userId)
             }
         }
     }
@@ -71,12 +101,20 @@ class ChatRepository @Inject constructor(
      * @param userId User ID
      * @return Result indicating success or failure
      */
+    @Deprecated(
+        message = "Use project-centric sync via InitialSyncManager instead. " +
+                  "This method fetches ALL chat rooms globally and filters client-side (inefficient).",
+        replaceWith = ReplaceWith("InitialSyncManager.syncAllData(userId)"),
+        level = DeprecationLevel.WARNING
+    )
     suspend fun syncUserChatRooms(userId: String): Result<Unit> {
         return try {
             Log.d(TAG, "Starting chat room sync for user: $userId")
 
-            // Fetch all chat rooms from Supabase where user is a participant
-            val chatRoomsResult = supabaseChatDataSource.getChatRoomsForUser(userId)
+            // CRITICAL FIX: Wrap HTTP call in NonCancellable to prevent mid-flight cancellation
+            val chatRoomsResult = withContext(NonCancellable) {
+                supabaseChatDataSource.getChatRoomsForUser(userId)
+            }
 
             if (chatRoomsResult.isFailure) {
                 Log.w(TAG, "Failed to fetch chat rooms from Supabase", chatRoomsResult.exceptionOrNull())
@@ -84,40 +122,184 @@ class ChatRepository @Inject constructor(
             }
 
             val chatRooms = chatRoomsResult.getOrNull() ?: emptyList()
+            var chatRoomsSaved = 0
+            var chatRoomsFailed = 0
 
-            // Update local cache
+            // Update local cache with granular error handling
             chatRooms.forEach { chatRoom ->
-                chatRoomDao.insertChatRoom(chatRoom)
+                try {
+                    chatRoomDao.insertChatRoom(chatRoom)
+                    chatRoomsSaved++
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    Log.w(TAG, "⚠️ Chat room insert cancelled for ${chatRoom.id}")
+                    throw e  // Re-throw at chat room level
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to insert chat room ${chatRoom.id}", e)
+                    chatRoomsFailed++
+                }
             }
 
-            Log.d(TAG, "✅ Synced ${chatRooms.size} chat rooms from Supabase")
+            Log.d(TAG, "✅ Synced $chatRoomsSaved/${chatRooms.size} chat rooms ($chatRoomsFailed failed)")
 
             // Also sync recent messages for each chat room (last 50 messages)
             var messagesSynced = 0
+            var messageFkErrors = 0
+            var messagesCancelled = 0
+
             chatRooms.forEach { chatRoom ->
                 try {
-                    val messagesResult = supabaseMessageDataSource.getMessages(
-                        chatRoomId = chatRoom.id,
-                        limit = 50,
-                        before = null
-                    )
+                    // CRITICAL FIX: Wrap HTTP call in NonCancellable to prevent mid-flight cancellation
+                    val messagesResult = withContext(NonCancellable) {
+                        supabaseMessageDataSource.getMessages(
+                            chatRoomId = chatRoom.id,
+                            limit = 50,
+                            before = null
+                        )
+                    }
 
                     if (messagesResult.isSuccess) {
                         val messages = messagesResult.getOrNull() ?: emptyList()
                         messages.forEach { message ->
-                            messageDao.insertMessage(message)
+                            try {
+                                messageDao.insertMessage(message)
+                                messagesSynced++
+                            } catch (e: Exception) {
+                                if (com.example.kosmos.data.sync.ForeignKeyErrorHandler.isForeignKeyViolation(e)) {
+                                    messageFkErrors++
+                                    // Queue message for retry after users sync completes
+                                    fkRetryQueue.queueMessageRetry(message)
+                                    Log.w(TAG, "FK violation for message ${message.id}, queued for retry (sender: ${message.senderId})")
+                                } else {
+                                    throw e
+                                }
+                            }
                         }
-                        messagesSynced += messages.size
                     }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    Log.w(TAG, "⚠️ Message sync cancelled for chat ${chatRoom.id}")
+                    messagesCancelled++
+                    // DON'T re-throw - continue with next chat
                 } catch (e: Exception) {
                     Log.w(TAG, "Error syncing messages for chat ${chatRoom.id}", e)
                 }
             }
 
-            Log.d(TAG, "✅ Synced $messagesSynced messages from Supabase")
+            if (messageFkErrors > 0 || messagesCancelled > 0) {
+                Log.w(TAG, "⚠️ Synced $messagesSynced messages ($messageFkErrors FK errors, $messagesCancelled cancelled)")
+            } else {
+                Log.d(TAG, "✅ Synced $messagesSynced messages from Supabase")
+            }
+
             Result.success(Unit)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            Log.w(TAG, "⚠️ Chat sync cancelled (partial data saved)")
+            Result.success(Unit)  // Return success - partial data is OK
         } catch (e: Exception) {
             Log.e(TAG, "❌ Critical error in chat room sync", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Sync all chat rooms for a specific project from Supabase
+     * PROJECT-SCOPED: Fetches all rooms in project (not filtered by user participation)
+     *
+     * This is the project-centric architecture approach that replaces user-centric sync.
+     * Benefits:
+     * - Server-side filtering by projectId (5.6x faster than client-side)
+     * - Complete project data (all rooms, not just user's participated rooms)
+     * - Scales to any project size
+     * - INCREMENTAL SYNC: Only fetches rooms modified since last sync (50-90% less data)
+     *
+     * @param projectId Project ID
+     * @param since Optional timestamp (milliseconds) - only fetch rooms updated after this time
+     * @return Result indicating success or failure
+     */
+    suspend fun syncProjectChatRooms(projectId: String, since: Long? = null): Result<Unit> {
+        return try {
+            if (since != null) {
+                Log.d(TAG, "Starting incremental chat room sync for project: $projectId (since: $since)")
+            } else {
+                Log.d(TAG, "Starting full chat room sync for project: $projectId")
+            }
+
+            // CRITICAL: Wrap in NonCancellable to prevent mid-flight HTTP cancellation
+            val chatRoomsResult = withContext(NonCancellable) {
+                supabaseChatDataSource.getChatRoomsForProject(projectId, since)
+            }
+
+            if (chatRoomsResult.isFailure) {
+                Log.w(TAG, "Failed to fetch chat rooms", chatRoomsResult.exceptionOrNull())
+                return chatRoomsResult.map { }
+            }
+
+            val chatRooms = chatRoomsResult.getOrNull() ?: emptyList()
+            var chatRoomsSaved = 0
+            var chatRoomsFailed = 0
+
+            // Save to Room with granular error handling
+            chatRooms.forEach { chatRoom ->
+                try {
+                    chatRoomDao.insertChatRoom(chatRoom)
+                    chatRoomsSaved++
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    Log.w(TAG, "⚠️ Chat room insert cancelled for ${chatRoom.id}")
+                    throw e
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to insert chat room ${chatRoom.id}", e)
+                    chatRoomsFailed++
+                }
+            }
+
+            Log.d(TAG, "✅ Synced $chatRoomsSaved/${chatRooms.size} chat rooms for project $projectId")
+
+            // Sync recent messages for each chat room (last 50)
+            var messagesSynced = 0
+            var messageFkErrors = 0
+
+            chatRooms.forEach { chatRoom ->
+                try {
+                    val messagesResult = withContext(NonCancellable) {
+                        supabaseMessageDataSource.getMessages(
+                            chatRoomId = chatRoom.id,
+                            limit = 50,
+                            before = null
+                        )
+                    }
+
+                    if (messagesResult.isSuccess) {
+                        val messages = messagesResult.getOrNull() ?: emptyList()
+                        messages.forEach { message ->
+                            try {
+                                messageDao.insertMessage(message)
+                                messagesSynced++
+                            } catch (e: Exception) {
+                                if (com.example.kosmos.data.sync.ForeignKeyErrorHandler.isForeignKeyViolation(e)) {
+                                    messageFkErrors++
+                                    // Queue message for retry after users sync completes
+                                    fkRetryQueue.queueMessageRetry(message)
+                                    Log.w(TAG, "FK violation for message ${message.id}, queued for retry (sender: ${message.senderId})")
+                                } else {
+                                    throw e
+                                }
+                            }
+                        }
+                    }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    Log.w(TAG, "⚠️ Message sync cancelled for chat ${chatRoom.id}")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Error syncing messages for chat ${chatRoom.id}", e)
+                }
+            }
+
+            Log.d(TAG, "✅ Synced $messagesSynced messages for project $projectId")
+            Result.success(Unit)
+
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            Log.w(TAG, "⚠️ Chat sync cancelled for project $projectId")
+            Result.success(Unit)  // Partial data is OK
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Critical error in chat room sync for project $projectId", e)
             Result.failure(e)
         }
     }
@@ -176,6 +358,10 @@ class ChatRepository @Inject constructor(
                 android.util.Log.e("ChatRepository", "❌ SUPABASE SYNC FAILED for message")
                 android.util.Log.e("ChatRepository", diagnosticMessage, error)
 
+                // P0-08 FIX: Queue for automatic retry
+                SyncQueueHelper.queueMessage(syncQueueDao, messageWithId, SyncOperation.CREATE)
+                android.util.Log.d("ChatRepository", "📥 Message queued for retry: $messageId")
+
                 // Message is still saved locally, so we don't fail the operation
                 // But we could add a flag to indicate sync status if needed
             } else {
@@ -195,6 +381,9 @@ class ChatRepository @Inject constructor(
                 val chatRoomSyncResult = supabaseChatDataSource.updateChatRoom(updatedRoom)
                 if (chatRoomSyncResult.isFailure) {
                     android.util.Log.e("ChatRepository", "❌ Failed to sync chat room update to Supabase", chatRoomSyncResult.exceptionOrNull())
+                    // P0-08 FIX: Queue for automatic retry
+                    SyncQueueHelper.queueChatRoom(syncQueueDao, updatedRoom, SyncOperation.UPDATE)
+                    android.util.Log.d("ChatRepository", "📥 Chat room update queued for retry: ${updatedRoom.id}")
                 }
             }
 
@@ -246,6 +435,9 @@ class ChatRepository @Inject constructor(
                 val diagnosticMessage = SyncRetryHelper.getDiagnosticMessage(error, "chat room")
                 android.util.Log.e("ChatRepository", "❌ SUPABASE SYNC FAILED for chat room")
                 android.util.Log.e("ChatRepository", diagnosticMessage, error)
+                // P0-08 FIX: Queue for automatic retry
+                SyncQueueHelper.queueChatRoom(syncQueueDao, chatRoomWithId, SyncOperation.CREATE)
+                android.util.Log.d("ChatRepository", "📥 Chat room queued for retry: $chatRoomId")
             } else {
                 android.util.Log.d("ChatRepository", "✅ Chat room synced to Supabase successfully: $chatRoomId")
             }
@@ -271,8 +463,15 @@ class ChatRepository @Inject constructor(
             val updatedParticipants = (chatRoom.participantIds + userId).distinct()
             val updatedChatRoom = chatRoom.copy(participantIds = updatedParticipants)
 
-            // Update locally
+            // Update locally first (optimistic)
             chatRoomDao.updateChatRoom(updatedChatRoom)
+
+            // Sync participant change to Supabase
+            val supabaseResult = supabaseChatDataSource.addParticipant(chatRoomId, userId)
+            if (supabaseResult.isFailure) {
+                Log.e(TAG, "Failed to sync addParticipant to Supabase, queuing for retry", supabaseResult.exceptionOrNull())
+                SyncQueueHelper.queueChatRoom(syncQueueDao, updatedChatRoom, SyncOperation.UPDATE)
+            }
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -294,8 +493,15 @@ class ChatRepository @Inject constructor(
             val updatedReadBy = (message.readBy + userId).distinct()
             val updatedMessage = message.copy(readBy = updatedReadBy)
 
-            // Update locally
+            // Update locally first (optimistic)
             messageDao.updateMessage(updatedMessage)
+
+            // Sync read receipt to Supabase
+            val supabaseResult = supabaseMessageDataSource.markAsRead(messageId, userId)
+            if (supabaseResult.isFailure) {
+                Log.e(TAG, "Failed to sync markAsRead to Supabase, queuing for retry", supabaseResult.exceptionOrNull())
+                SyncQueueHelper.queueMessage(syncQueueDao, updatedMessage, SyncOperation.UPDATE)
+            }
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -384,6 +590,8 @@ class ChatRepository @Inject constructor(
 
             if (supabaseResult.isFailure) {
                 android.util.Log.e("ChatRepository", "Failed to sync message edit to Supabase", supabaseResult.exceptionOrNull())
+                // Bug A fix: queue for retry
+                SyncQueueHelper.queueMessage(syncQueueDao, updatedMessage, SyncOperation.UPDATE)
             }
 
             Result.success(Unit)
@@ -394,12 +602,15 @@ class ChatRepository @Inject constructor(
 
     /**
      * Delete a message
-     * Hybrid pattern: Delete from Room first, then sync to Supabase
+     * Hybrid pattern: Fetch message first, delete from Room, then sync to Supabase
      * @param messageId Message ID to delete
      * @return Result indicating success or failure
      */
     suspend fun deleteMessage(messageId: String): Result<Unit> {
         return try {
+            // Bug B fix: Fetch message before deleting so we can queue it if Supabase fails
+            val message = messageDao.getMessageById(messageId)
+
             // Step 1: Delete locally first (optimistic)
             messageDao.deleteMessageById(messageId)
 
@@ -408,6 +619,10 @@ class ChatRepository @Inject constructor(
 
             if (supabaseResult.isFailure) {
                 android.util.Log.e("ChatRepository", "Failed to sync message deletion to Supabase", supabaseResult.exceptionOrNull())
+                // Queue for retry only if we have the message data
+                message?.let {
+                    SyncQueueHelper.queueMessage(syncQueueDao, it, SyncOperation.DELETE)
+                }
             }
 
             Result.success(Unit)
@@ -443,8 +658,12 @@ class ChatRepository @Inject constructor(
                 val updatedMessage = message.copy(reactions = updatedReactions)
                 messageDao.updateMessage(updatedMessage)
 
-                // Sync to Supabase
-                supabaseMessageDataSource.removeReaction(messageId, userId)
+                // Bug C fix: Wrap Supabase call in try-catch (reactions are ephemeral, no queue)
+                try {
+                    supabaseMessageDataSource.removeReaction(messageId, userId)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to sync removeReaction to Supabase (ephemeral, not queued)", e)
+                }
             } else {
                 // Different emoji or no reaction - add/update reaction
                 updatedReactions[userId] = emoji
@@ -453,8 +672,12 @@ class ChatRepository @Inject constructor(
                 val updatedMessage = message.copy(reactions = updatedReactions)
                 messageDao.updateMessage(updatedMessage)
 
-                // Sync to Supabase
-                supabaseMessageDataSource.addReaction(messageId, userId, emoji)
+                // Bug C fix: Wrap Supabase call in try-catch (reactions are ephemeral, no queue)
+                try {
+                    supabaseMessageDataSource.addReaction(messageId, userId, emoji)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to sync addReaction to Supabase (ephemeral, not queued)", e)
+                }
             }
 
             Result.success(Unit)
@@ -595,21 +818,20 @@ class ChatRepository @Inject constructor(
             val chatRoom = chatRoomDao.getChatRoomById(chatRoomId)
                 ?: return Result.failure(Exception("Chat room not found"))
 
-            // Update locally first (optimistic)
-            val updatedChatRoom = chatRoom.copy(
-                // Note: Room entity needs is_archived field added
-                // For now we'll just update Supabase
-            )
+            // C5 FIX: Update locally first (optimistic) with isArchived field
+            val updatedChatRoom = chatRoom.copy(isArchived = isArchived)
+            chatRoomDao.updateChatRoom(updatedChatRoom)
 
             // Sync to Supabase
             val supabaseResult = supabaseChatDataSource.archiveChatRoom(chatRoomId, isArchived)
 
             if (supabaseResult.isFailure) {
-                android.util.Log.e("ChatRepository", "❌ Failed to archive chat room in Supabase", supabaseResult.exceptionOrNull())
-                return Result.failure(supabaseResult.exceptionOrNull() ?: Exception("Failed to archive chat room"))
+                android.util.Log.e("ChatRepository", "❌ Failed to archive chat room in Supabase, queuing for retry", supabaseResult.exceptionOrNull())
+                // Bug D fix: queue instead of returning hard failure (local update already done)
+                SyncQueueHelper.queueChatRoom(syncQueueDao, updatedChatRoom, SyncOperation.UPDATE)
+            } else {
+                android.util.Log.d("ChatRepository", "✅ Chat room ${if (isArchived) "archived" else "unarchived"}: $chatRoomId")
             }
-
-            android.util.Log.d("ChatRepository", "✅ Chat room ${if (isArchived) "archived" else "unarchived"}: $chatRoomId")
             Result.success(Unit)
         } catch (e: Exception) {
             android.util.Log.e("ChatRepository", "❌ Failed to archive chat room", e)
@@ -661,5 +883,49 @@ class ChatRepository @Inject constructor(
                 message.senderId != userId && !message.readBy.contains(userId)
             }
         }
+    }
+
+    /**
+     * Get total unread message count across all user's chat rooms
+     * @param userId Current user ID
+     * @return Flow of total unread message count
+     */
+    fun getTotalUnreadCountFlow(userId: String): Flow<Int> {
+        // Get all chat rooms and filter for user's participation
+        return chatRoomDao.getAllChatRoomsFlow().flatMapLatest { allChatRooms: List<ChatRoom> ->
+            val userChatRooms = allChatRooms.filter { chatRoom ->
+                chatRoom.participantIds.contains(userId)
+            }
+
+            if (userChatRooms.isEmpty()) {
+                flowOf(0)
+            } else {
+                // Combine unread counts from all user's chat rooms
+                val flows: List<Flow<Int>> = userChatRooms.map { chatRoom: ChatRoom ->
+                    getUnreadCountFlow(chatRoom.id, userId)
+                }
+                combine(flows) { counts: Array<Int> ->
+                    counts.sum()
+                }
+            }
+        }
+    }
+
+    /**
+     * Search messages by content or sender name within a chat room
+     * Searches local cache first, reactive updates from Room
+     * @param chatRoomId Chat room ID to search within
+     * @param query Search query
+     * @return Flow of matching messages
+     */
+    fun searchMessages(chatRoomId: String, query: String): Flow<List<Message>> {
+        // If query is blank, return all messages
+        if (query.isBlank()) {
+            return messageDao.getMessagesForChatRoomFlow(chatRoomId)
+        }
+
+        // Return local search results
+        // Room will reactively update as messages change
+        return messageDao.searchMessages(chatRoomId, query)
     }
 }

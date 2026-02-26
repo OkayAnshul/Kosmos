@@ -5,6 +5,8 @@ import kotlinx.coroutines.CancellationException
 import com.example.kosmos.core.exceptions.ConflictException
 import com.example.kosmos.core.models.User
 import io.github.jan.supabase.SupabaseClient
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.realtime.PostgresAction
@@ -307,13 +309,11 @@ class SupabaseUserDataSource @Inject constructor(
      */
     suspend fun updateOnlineStatus(userId: String, isOnline: Boolean): Result<Unit> {
         return try {
-            val updates = mapOf(
-                "is_online" to isOnline,
-                "last_seen" to System.currentTimeMillis()
-            )
-
             supabase.from(TABLE_NAME)
-                .update(updates) {
+                .update(buildJsonObject {
+                    put("is_online", isOnline)
+                    put("last_seen", System.currentTimeMillis())
+                }) {
                     filter {
                         eq("id", userId)
                     }
@@ -336,10 +336,10 @@ class SupabaseUserDataSource @Inject constructor(
      */
     suspend fun updateFcmToken(userId: String, fcmToken: String?): Result<Unit> {
         return try {
-            val updates = mapOf("fcm_token" to fcmToken)
-
             supabase.from(TABLE_NAME)
-                .update(updates) {
+                .update(buildJsonObject {
+                    put("fcm_token", fcmToken)
+                }) {
                     filter {
                         eq("id", userId)
                     }

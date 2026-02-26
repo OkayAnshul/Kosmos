@@ -5,6 +5,7 @@ import com.example.kosmos.core.database.dao.SyncQueueDao
 import com.example.kosmos.core.database.dao.TaskDao
 import com.example.kosmos.core.models.*
 import com.example.kosmos.data.datasource.*
+import com.example.kosmos.data.datasource.SupabaseMilestoneDataSource
 import com.example.kosmos.shared.utils.NetworkMonitor
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
@@ -12,6 +13,7 @@ import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Qualifier
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 
 /**
  * Sync Queue Manager (P0-08 FIX)
@@ -47,6 +49,7 @@ class SyncQueueManager @Inject constructor(
     private val supabaseProjectJoinRequestDataSource: SupabaseProjectJoinRequestDataSource,
     private val supabaseTimeEntryDataSource: com.example.kosmos.data.datasource.SupabaseTimeEntryDataSource,
     private val supabaseDependencyDataSource: com.example.kosmos.data.datasource.SupabaseDependencyDataSource,
+    private val supabaseMilestoneDataSource: SupabaseMilestoneDataSource,
     @ApplicationScope private val scope: CoroutineScope
 ) {
     companion object {
@@ -112,6 +115,7 @@ class SyncQueueManager @Inject constructor(
 
             Log.d(TAG, "✅ Sync queue processing complete")
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "❌ Error processing sync queue", e)
         } finally {
             isSyncing = false
@@ -141,6 +145,7 @@ class SyncQueueManager @Inject constructor(
                 SyncEntityType.JOIN_REQUEST -> retryJoinRequestOperation(item)
                 SyncEntityType.TIME_ENTRY -> retryTimeEntryOperation(item)
                 SyncEntityType.TASK_DEPENDENCY -> retryTaskDependencyOperation(item)
+                SyncEntityType.MILESTONE -> retryMilestoneOperation(item)
             }
 
             if (result.isSuccess) {
@@ -167,6 +172,7 @@ class SyncQueueManager @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "❌ Error retrying ${item.entityType}", e)
 
             // Update retry count even on exception
@@ -200,6 +206,7 @@ class SyncQueueManager @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -219,6 +226,7 @@ class SyncQueueManager @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -238,6 +246,7 @@ class SyncQueueManager @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -259,6 +268,7 @@ class SyncQueueManager @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -278,6 +288,7 @@ class SyncQueueManager @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -297,6 +308,7 @@ class SyncQueueManager @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -320,6 +332,7 @@ class SyncQueueManager @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -340,6 +353,7 @@ class SyncQueueManager @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -360,6 +374,7 @@ class SyncQueueManager @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -380,6 +395,7 @@ class SyncQueueManager @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -408,6 +424,7 @@ class SyncQueueManager @Inject constructor(
                 SyncOperation.DELETE -> supabaseDependencyDataSource.deleteDependency(dependency.id).map { }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -425,6 +442,21 @@ class SyncQueueManager @Inject constructor(
                 SyncOperation.DELETE -> supabaseTimeEntryDataSource.deleteTimeEntry(timeEntry.id).map { }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun retryMilestoneOperation(item: SyncQueueItem): Result<Unit> {
+        return try {
+            val milestone = json.decodeFromString<Milestone>(item.entityJson)
+            when (item.operation) {
+                SyncOperation.CREATE -> supabaseMilestoneDataSource.insertMilestone(milestone).map { }
+                SyncOperation.UPDATE -> supabaseMilestoneDataSource.updateMilestone(milestone).map { }
+                SyncOperation.DELETE -> supabaseMilestoneDataSource.deleteMilestone(milestone.id).map { }
+            }
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -437,6 +469,7 @@ class SyncQueueManager @Inject constructor(
                 syncQueueDao.deleteAllFailed()
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Error cleaning up failed items", e)
         }
     }

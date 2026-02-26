@@ -8,14 +8,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.kosmos.core.models.ConnectionStatus
 import com.example.kosmos.core.models.User
 import com.example.kosmos.features.users.presentation.components.UserListItem
 import com.example.kosmos.shared.ui.components.*
 import com.example.kosmos.shared.ui.designsystem.IconSet
 import com.example.kosmos.shared.ui.designsystem.Tokens
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
 /**
  * User Search Screen
  * Allows searching for users by name or email
@@ -77,7 +80,7 @@ fun UserSearchScreen(
                             Text(
                                 text = "Searching...",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = ColorTokens.ReactTheme.mutedForeground
                             )
                         }
                     }
@@ -107,6 +110,7 @@ fun UserSearchScreen(
                     // Results list
                     UserResultsList(
                         users = uiState.users,
+                        connectionStatuses = uiState.connectionStatuses,
                         onUserClick = onUserClick,
                         isRefreshing = uiState.isLoading
                     )
@@ -122,6 +126,7 @@ fun UserSearchScreen(
 @Composable
 private fun UserResultsList(
     users: List<User>,
+    connectionStatuses: Map<String, ConnectionStatus> = emptyMap(),
     onUserClick: (String) -> Unit,
     isRefreshing: Boolean,
     modifier: Modifier = Modifier
@@ -132,7 +137,7 @@ private fun UserResultsList(
             Text(
                 text = "${users.size} user${if (users.size != 1) "s" else ""} found",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = ColorTokens.ReactTheme.mutedForeground,
                 modifier = Modifier.padding(horizontal = Tokens.Spacing.md, vertical = Tokens.Spacing.xs)
             )
         }
@@ -149,6 +154,38 @@ private fun UserResultsList(
                 UserListItem(
                     user = user,
                     onClick = { onUserClick(user.id) },
+                    trailingContent = {
+                        val status = connectionStatuses[user.id]
+                        when (status) {
+                            ConnectionStatus.ACCEPTED -> {
+                                Surface(
+                                    color = ColorTokens.Success.light.copy(alpha = 0.2f),
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                                ) {
+                                    Text(
+                                        "Connected",
+                                        fontSize = 12.sp,
+                                        color = ColorTokens.Success.dark,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            ConnectionStatus.PENDING -> {
+                                Surface(
+                                    color = ColorTokens.Priority.medium.copy(alpha = 0.2f),
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                                ) {
+                                    Text(
+                                        "Pending",
+                                        fontSize = 12.sp,
+                                        color = ColorTokens.Priority.medium,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            else -> {}
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             }

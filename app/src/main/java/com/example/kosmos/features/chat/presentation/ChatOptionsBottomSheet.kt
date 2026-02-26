@@ -10,7 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
+import com.example.kosmos.shared.ui.designsystem.Tokens
+import com.example.kosmos.shared.ui.components.KosmosDialogSurface
+import com.example.kosmos.shared.ui.components.KosmosDialogDefaults
+import com.example.kosmos.shared.ui.components.SecondaryButton
+import com.example.kosmos.shared.ui.components.DestructiveButton
 /**
  * Chat Options Bottom Sheet
  * Shows options for managing a chat room: pin/unpin, archive/unarchive, delete
@@ -32,7 +37,8 @@ fun ChatOptionsBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+        containerColor = ColorTokens.ReactTheme.card
     ) {
         Column(
             modifier = Modifier
@@ -50,7 +56,7 @@ fun ChatOptionsBottomSheet(
             Text(
                 text = chatName,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = ColorTokens.ReactTheme.mutedForeground,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
             )
 
@@ -67,7 +73,10 @@ fun ChatOptionsBottomSheet(
                 }
             )
 
-            Divider(modifier = Modifier.padding(horizontal = 24.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 24.dp),
+                color = ColorTokens.ReactTheme.border.copy(alpha = 0.3f)
+            )
 
             // Archive/Unarchive Option
             ChatOptionItem(
@@ -80,7 +89,10 @@ fun ChatOptionsBottomSheet(
                 }
             )
 
-            Divider(modifier = Modifier.padding(horizontal = 24.dp))
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 24.dp),
+                color = ColorTokens.ReactTheme.border.copy(alpha = 0.3f)
+            )
 
             // Delete Option (dangerous action)
             ChatOptionItem(
@@ -97,48 +109,59 @@ fun ChatOptionsBottomSheet(
 
     // Delete Confirmation Dialog
     if (showDeleteConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmation = false },
-            icon = {
+        KosmosDialogSurface(
+            onDismissRequest = { showDeleteConfirmation = false }
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
                     Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error
+                    contentDescription = "",
+                    tint = ColorTokens.ReactTheme.destructive,
+                    modifier = Modifier.size(32.dp)
                 )
-            },
-            title = {
-                Text("Delete Chat?")
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Are you sure you want to delete \"$chatName\"?")
-                    Text(
-                        "This action cannot be undone. All messages in this chat will be permanently deleted.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
+            }
+
+            Text(
+                text = "Delete Chat?",
+                style = KosmosDialogDefaults.titleStyle,
+                color = KosmosDialogDefaults.titleColor
+            )
+
+            Column(verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)) {
+                Text(
+                    text = "Are you sure you want to delete \"$chatName\"?",
+                    color = ColorTokens.ReactTheme.foreground
+                )
+                Text(
+                    text = "This action cannot be undone. All messages in this chat will be permanently deleted.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ColorTokens.ReactTheme.destructive
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+            ) {
+                SecondaryButton(
+                    text = "Cancel",
+                    onClick = { showDeleteConfirmation = false },
+                    modifier = Modifier.weight(1f)
+                )
+                DestructiveButton(
+                    text = "Delete",
                     onClick = {
                         onDelete()
                         showDeleteConfirmation = false
                         onDismiss()
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("Delete")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirmation = false }) {
-                    Text("Cancel")
-                }
+                    modifier = Modifier.weight(1f)
+                )
             }
-        )
+        }
     }
 }
 
@@ -156,7 +179,7 @@ private fun ChatOptionItem(
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface
+        color = ColorTokens.ReactTheme.card
     ) {
         Row(
             modifier = Modifier
@@ -167,11 +190,11 @@ private fun ChatOptionItem(
         ) {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
+                contentDescription = "",
                 tint = if (isDestructive)
-                    MaterialTheme.colorScheme.error
+                    ColorTokens.ReactTheme.destructive
                 else
-                    MaterialTheme.colorScheme.primary,
+                    ColorTokens.ReactTheme.primary,
                 modifier = Modifier.size(24.dp)
             )
 
@@ -184,15 +207,15 @@ private fun ChatOptionItem(
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
                     color = if (isDestructive)
-                        MaterialTheme.colorScheme.error
+                        ColorTokens.ReactTheme.destructive
                     else
-                        MaterialTheme.colorScheme.onSurface
+                        ColorTokens.ReactTheme.foreground
                 )
 
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = ColorTokens.ReactTheme.mutedForeground
                 )
             }
         }

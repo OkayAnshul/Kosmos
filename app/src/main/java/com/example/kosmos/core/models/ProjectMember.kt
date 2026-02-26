@@ -1,6 +1,8 @@
 package com.example.kosmos.core.models
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -11,7 +13,29 @@ import java.util.UUID
  * Includes role-based access control and permission management
  */
 @Serializable
-@Entity(tableName = "project_members")
+@Entity(
+    tableName = "project_members",
+    foreignKeys = [
+        // NO_ACTION: REPLACE strategy in DAOs does DELETE+INSERT, CASCADE would wipe child records during sync
+        ForeignKey(
+            entity = Project::class,
+            parentColumns = ["id"],
+            childColumns = ["projectId"],
+            onDelete = ForeignKey.NO_ACTION
+        ),
+        ForeignKey(
+            entity = User::class,
+            parentColumns = ["id"],
+            childColumns = ["userId"],
+            onDelete = ForeignKey.NO_ACTION
+        )
+    ],
+    indices = [
+        Index(value = ["projectId"]),
+        Index(value = ["userId"]),
+        Index(value = ["projectId", "userId"], unique = true)  // Prevent duplicate memberships
+    ]
+)
 data class ProjectMember(
     @PrimaryKey
     val id: String = UUID.randomUUID().toString(),

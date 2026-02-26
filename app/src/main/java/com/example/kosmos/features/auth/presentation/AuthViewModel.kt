@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.kosmos.data.repository.AuthRepository
 import com.example.kosmos.data.repository.UserRepository
 import com.example.kosmos.core.models.User
+import com.example.kosmos.shared.utils.ValidationUtils
+import com.example.kosmos.shared.utils.ErrorMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -31,19 +33,34 @@ class AuthViewModel @Inject constructor(
     }
 
     private fun checkAuthState() {
+        // Set initial state synchronously (may be null if async init hasn't completed)
+        val isLoggedIn = authRepository.isUserLoggedIn()
         _uiState.value = _uiState.value.copy(
-            isLoggedIn = authRepository.isUserLoggedIn()
+            isLoggedIn = isLoggedIn,
+            isCheckingAuth = false, // Sync check done — splash can navigate
+            currentUser = if (isLoggedIn) authRepository.getCurrentUser() else null
         )
+
+        // Always observe AuthRepository's currentUser —
+        // AuthRepository.init loads user asynchronously, so currentUser may arrive later
+        viewModelScope.launch {
+            authRepository.userFlow.collect { user ->
+                _uiState.value = _uiState.value.copy(
+                    isLoggedIn = user != null,
+                    currentUser = user
+                )
+            }
+        }
     }
 
-    fun login(email: String, password: String) {
+    fun login(email: String, password: String, rememberMe: Boolean = false) {
         if (!isValidInput(email, password)) return
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                val result = authRepository.signInWithEmailAndPassword(email, password)
+                val result = authRepository.signInWithEmailAndPassword(email, password, rememberMe)
                 result.fold(
                     onSuccess = { user ->
                         _uiState.value = _uiState.value.copy(
@@ -67,6 +84,10 @@ class AuthViewModel @Inject constructor(
             }
         }
     }
+
+    fun getSavedEmail(): String = authRepository.getSavedEmail()
+
+    fun isRememberMeEnabled(): Boolean = authRepository.isRememberMeEnabled()
 
     fun signUp(signUpData: SignUpData) {
         if (!isValidSignUpInput(signUpData)) return
@@ -153,6 +174,107 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Complete Google sign-in after the calling composable has obtained
+     * a Google ID token via Android Credential Manager.
+     *
+     * The UI layer is responsible for calling CredentialManager and extracting
+     * the token; this function handles the Supabase sign-in and state updates.
+     */
+    fun signInWithGoogleIdToken(idToken: String, rawNonce: String? = null) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            try {
+                val result = authRepository.signInWithGoogleIdToken(idToken, rawNonce)
+                result.fold(
+                    onSuccess = { (user, isNewUser) ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            isLoggedIn = true,
+                            currentUser = user,
+                            isNewGoogleUser = isNewUser
+                        )
+                    },
+                    onFailure = { e ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = e.message ?: "Google sign-in failed"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Google sign-in failed"
+                )
+            }
+        }
+    }
+
+    fun clearNewGoogleUserFlag() {
+        _uiState.value = _uiState.value.copy(isNewGoogleUser = false)
+    }
+
+    /**
+     * Save profile fields collected from the post-Google-sign-in wizard.
+     */
+    fun saveGoogleUserProfile(
+        displayName: String,
+        username: String,
+        age: Int?,
+        role: String?,
+        bio: String?,
+        location: String?,
+        githubUrl: String?,
+        twitterUrl: String?,
+        linkedinUrl: String?,
+        websiteUrl: String?,
+        portfolioUrl: String?
+    ) {
+        val currentUser = _uiState.value.currentUser ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            try {
+                val updatedUser = currentUser.copy(
+                    displayName = displayName.ifBlank { currentUser.displayName },
+                    username = username.ifBlank { currentUser.username },
+                    age = age ?: currentUser.age,
+                    role = role ?: currentUser.role,
+                    bio = bio ?: currentUser.bio,
+                    location = location ?: currentUser.location,
+                    githubUrl = githubUrl ?: currentUser.githubUrl,
+                    twitterUrl = twitterUrl ?: currentUser.twitterUrl,
+                    linkedinUrl = linkedinUrl ?: currentUser.linkedinUrl,
+                    websiteUrl = websiteUrl ?: currentUser.websiteUrl,
+                    portfolioUrl = portfolioUrl ?: currentUser.portfolioUrl
+                )
+                val result = userRepository.updateUser(updatedUser)
+                result.fold(
+                    onSuccess = {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            currentUser = updatedUser,
+                            isNewGoogleUser = false
+                        )
+                    },
+                    onFailure = { e ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = e.message ?: "Failed to save profile"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Failed to save profile"
+                )
+            }
+        }
+    }
+
     fun logout() {
         viewModelScope.launch {
             try {
@@ -170,52 +292,113 @@ class AuthViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(error = null)
     }
 
-    private fun isValidInput(email: String, password: String): Boolean {
-        return when {
-            email.isBlank() -> {
-                _uiState.value = _uiState.value.copy(error = "Email cannot be empty")
-                false
+    /**
+     * Send password reset email
+     * @param email User's email address
+     */
+    fun sendPasswordResetEmail(email: String) {
+        if (email.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                passwordResetError = "Please enter your email address"
+            )
+            return
+        }
+
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            _uiState.value = _uiState.value.copy(
+                passwordResetError = "Please enter a valid email address"
+            )
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                passwordResetError = null,
+                passwordResetSent = false
+            )
+
+            try {
+                val result = authRepository.sendPasswordResetEmail(email)
+                result.fold(
+                    onSuccess = {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            passwordResetSent = true,
+                            passwordResetError = null
+                        )
+                    },
+                    onFailure = { exception ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            passwordResetSent = false,
+                            passwordResetError = exception.message ?: "Failed to send reset email"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    passwordResetSent = false,
+                    passwordResetError = e.message ?: "Failed to send reset email"
+                )
             }
-            password.isBlank() -> {
-                _uiState.value = _uiState.value.copy(error = "Password cannot be empty")
-                false
-            }
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
-                _uiState.value = _uiState.value.copy(error = "Please enter a valid email")
-                false
-            }
-            else -> true
         }
     }
 
-    private fun isValidSignUpInput(signUpData: SignUpData): Boolean {
-        return when {
-            signUpData.displayName.isBlank() -> {
-                _uiState.value = _uiState.value.copy(error = "Display name cannot be empty")
-                false
-            }
-            signUpData.username.isBlank() -> {
-                _uiState.value = _uiState.value.copy(error = "Username cannot be empty")
-                false
-            }
-            signUpData.username.length < 3 -> {
-                _uiState.value = _uiState.value.copy(error = "Username must be at least 3 characters")
-                false
-            }
-            !signUpData.username.matches(Regex("^[a-zA-Z0-9_]+$")) -> {
-                _uiState.value = _uiState.value.copy(error = "Username can only contain letters, numbers, and underscores")
-                false
-            }
-            _uiState.value.isUsernameAvailable != true -> {
-                _uiState.value = _uiState.value.copy(error = "Username is not available")
-                false
-            }
-            signUpData.password.length < 6 -> {
-                _uiState.value = _uiState.value.copy(error = "Password must be at least 6 characters")
-                false
-            }
-            else -> isValidInput(signUpData.email, signUpData.password)
+    /**
+     * Clear password reset state
+     */
+    fun clearPasswordResetState() {
+        _uiState.value = _uiState.value.copy(
+            passwordResetSent = false,
+            passwordResetError = null
+        )
+    }
+
+    private fun isValidInput(email: String, password: String): Boolean {
+        // Validate email
+        ValidationUtils.validateRequiredEmail(email)?.let { error ->
+            _uiState.value = _uiState.value.copy(error = error)
+            return false
         }
+
+        // Validate password is not blank (detailed validation only on signup)
+        if (password.isBlank()) {
+            _uiState.value = _uiState.value.copy(error = "Password cannot be empty")
+            return false
+        }
+
+        return true
+    }
+
+    private fun isValidSignUpInput(signUpData: SignUpData): Boolean {
+        // Validate display name
+        ValidationUtils.validateDisplayName(signUpData.displayName)?.let { error ->
+            _uiState.value = _uiState.value.copy(error = error)
+            return false
+        }
+
+        // Validate username
+        ValidationUtils.validateUsername(signUpData.username)?.let { error ->
+            _uiState.value = _uiState.value.copy(error = error)
+            return false
+        }
+
+        // Check username availability
+        if (_uiState.value.isUsernameAvailable != true) {
+            _uiState.value = _uiState.value.copy(error = "Username is not available")
+            return false
+        }
+
+        // Validate password strength
+        ValidationUtils.validatePassword(signUpData.password)?.let { error ->
+            _uiState.value = _uiState.value.copy(error = error)
+            return false
+        }
+
+        // Validate email
+        return isValidInput(signUpData.email, signUpData.password)
     }
 
     /**
@@ -277,6 +460,8 @@ class AuthViewModel @Inject constructor(
                 val result = userRepository.updateUser(updatedUser)
                 result.fold(
                     onSuccess = {
+                        // Also update AuthRepository's currentUser so other ViewModels see it
+                        authRepository.updateCurrentUser(updatedUser)
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             currentUser = updatedUser,
@@ -302,9 +487,14 @@ class AuthViewModel @Inject constructor(
 
 data class AuthUiState(
     val isLoading: Boolean = false,
+    val isCheckingAuth: Boolean = true, // True until initial session check completes
     val isLoggedIn: Boolean = false,
     val currentUser: User? = null,
     val error: String? = null,
     val isCheckingUsername: Boolean = false,
-    val isUsernameAvailable: Boolean? = null
+    val isUsernameAvailable: Boolean? = null,
+    val passwordResetSent: Boolean = false,
+    val passwordResetError: String? = null,
+    // True after a successful Google OAuth sign-in where the user had no prior profile
+    val isNewGoogleUser: Boolean = false
 )

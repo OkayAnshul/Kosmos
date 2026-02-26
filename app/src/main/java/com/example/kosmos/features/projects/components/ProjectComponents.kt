@@ -7,7 +7,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.kosmos.core.models.ProjectStatus
 import com.example.kosmos.shared.ui.components.*
+import com.example.kosmos.shared.ui.components.CoreCard
+import com.example.kosmos.shared.ui.components.CardImportance
 import com.example.kosmos.shared.ui.designsystem.ColorTokens
 import com.example.kosmos.shared.ui.designsystem.IconSet
 import com.example.kosmos.shared.ui.designsystem.Tokens
@@ -64,7 +68,7 @@ fun EnhancedProjectCard(
 }
 
 /**
- * Project Card Content
+ * Project Card Content with Glassmorphic Design
  */
 @Composable
 private fun ProjectCardContent(
@@ -72,12 +76,10 @@ private fun ProjectCardContent(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    CoreCard(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = Tokens.Elevation.level2
+        importance = CardImportance.PRIMARY,
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
@@ -99,7 +101,7 @@ private fun ProjectCardContent(
                     Text(
                         text = project.name,
                         style = TypographyTokens.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = ColorTokens.Surface.onLight,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -109,31 +111,22 @@ private fun ProjectCardContent(
                         Text(
                             text = project.description,
                             style = TypographyTokens.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = ColorTokens.Surface.onLightVariant,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
 
-                // Status indicator
-                if (project.hasUnread || project.isActive) {
-                    Box {
-                        Surface(
-                            shape = MaterialTheme.shapes.extraSmall,
-                            color = if (project.hasUnread)
-                                ColorTokens.Status.online
-                            else
-                                ColorTokens.TaskStatus.inProgress
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .padding(2.dp)
-                            )
-                        }
-                    }
-                }
+                // Status badge
+                ProjectStatusBadge(
+                    status = when {
+                        project.isArchived -> ProjectStatus.ARCHIVED
+                        project.isActive -> ProjectStatus.ACTIVE
+                        else -> ProjectStatus.ON_HOLD
+                    },
+                    size = com.example.kosmos.shared.ui.components.BadgeSize.SMALL
+                )
             }
 
             // Stats row
@@ -165,38 +158,23 @@ private fun ProjectCardContent(
                 )
             }
 
-            // Progress bar (if tasks exist)
+            // Progress bar (if tasks exist) - Using Stitch ProgressBar component
             if (project.taskCount > 0) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xxs)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Progress",
-                            style = TypographyTokens.Custom.caption,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "${project.completedTaskCount}/${project.taskCount}",
-                            style = TypographyTokens.Custom.caption,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = "Task Progress",
+                        style = TypographyTokens.Custom.caption,
+                        color = ColorTokens.Surface.onLightVariant
+                    )
 
-                    LinearProgressIndicator(
-                        progress = {
-                            if (project.taskCount > 0)
-                                project.completedTaskCount.toFloat() / project.taskCount
-                            else 0f
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    ProgressBar(
+                        progress = if (project.taskCount > 0)
+                            project.completedTaskCount.toFloat() / project.taskCount
+                        else 0f,
+                        showPercentage = true,
+                        height = 8
                     )
                 }
             }
@@ -206,7 +184,7 @@ private fun ProjectCardContent(
                 Text(
                     text = "Last activity: ${project.lastActivityTimestamp.toRelativeTime()}",
                     style = TypographyTokens.Custom.caption,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = ColorTokens.Surface.onLightVariant
                 )
             }
         }
@@ -232,8 +210,8 @@ private fun StatItem(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            contentDescription = "",
+            tint = ColorTokens.Primary.light,
             modifier = Modifier.size(Tokens.Size.iconSmall)
         )
 
@@ -245,12 +223,12 @@ private fun StatItem(
                 Text(
                     text = value,
                     style = TypographyTokens.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = ColorTokens.Surface.onLight
                 )
 
                 if (hasBadge && badgeValue > 0) {
                     Badge(
-                        containerColor = MaterialTheme.colorScheme.primary
+                        containerColor = ColorTokens.ReactTheme.primary
                     ) {
                         Text(
                             text = if (badgeValue > 99) "99+" else badgeValue.toString(),
@@ -263,7 +241,7 @@ private fun StatItem(
             Text(
                 text = label,
                 style = TypographyTokens.Custom.caption,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = ColorTokens.Surface.onLightVariant
             )
         }
     }
@@ -282,7 +260,7 @@ fun CompactProjectCard(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surface,
+        color = ColorTokens.ReactTheme.card,
         tonalElevation = Tokens.Elevation.level1
     ) {
         Row(
@@ -295,14 +273,14 @@ fun CompactProjectCard(
             // Icon
             Surface(
                 shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = ColorTokens.ReactTheme.secondary,
                 modifier = Modifier.size(48.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = IconSet.Navigation.projects,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        contentDescription = "",
+                        tint = ColorTokens.ReactTheme.primaryForeground,
                         modifier = Modifier.size(Tokens.Size.iconMedium)
                     )
                 }
@@ -316,7 +294,7 @@ fun CompactProjectCard(
                 Text(
                     text = project.name,
                     style = TypographyTokens.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = ColorTokens.ReactTheme.foreground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -327,19 +305,19 @@ fun CompactProjectCard(
                     Text(
                         text = "${project.memberCount} members",
                         style = TypographyTokens.Custom.caption,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = ColorTokens.ReactTheme.mutedForeground
                     )
 
                     Text(
                         text = "•",
                         style = TypographyTokens.Custom.caption,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = ColorTokens.ReactTheme.mutedForeground
                     )
 
                     Text(
                         text = "${project.taskCount} tasks",
                         style = TypographyTokens.Custom.caption,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = ColorTokens.ReactTheme.mutedForeground
                     )
                 }
             }
@@ -347,7 +325,7 @@ fun CompactProjectCard(
             // Unread indicator
             if (project.hasUnread) {
                 Badge(
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = ColorTokens.ReactTheme.primary
                 ) {
                     Text(
                         text = (project.unreadChatCount + project.pendingTaskCount).toString(),
@@ -358,8 +336,8 @@ fun CompactProjectCard(
 
             Icon(
                 imageVector = IconSet.Direction.right,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                contentDescription = "",
+                tint = ColorTokens.ReactTheme.mutedForeground,
                 modifier = Modifier.size(Tokens.Size.iconSmall)
             )
         }
@@ -382,18 +360,18 @@ fun ProjectMemberAvatars(
         members.take(maxVisible).forEach { member ->
             Surface(
                 shape = MaterialTheme.shapes.extraLarge,
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = ColorTokens.ReactTheme.secondary,
                 modifier = Modifier.size(32.dp),
                 border = androidx.compose.foundation.BorderStroke(
                     width = 2.dp,
-                    color = MaterialTheme.colorScheme.surface
+                    color = ColorTokens.ReactTheme.card
                 )
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
                         text = member.initials,
                         style = TypographyTokens.Custom.caption,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = ColorTokens.ReactTheme.primaryForeground
                     )
                 }
             }
@@ -403,18 +381,18 @@ fun ProjectMemberAvatars(
         if (members.size > maxVisible) {
             Surface(
                 shape = MaterialTheme.shapes.extraLarge,
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = ColorTokens.ReactTheme.secondary,
                 modifier = Modifier.size(32.dp),
                 border = androidx.compose.foundation.BorderStroke(
                     width = 2.dp,
-                    color = MaterialTheme.colorScheme.surface
+                    color = ColorTokens.ReactTheme.card
                 )
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
                         text = "+${members.size - maxVisible}",
                         style = TypographyTokens.Custom.caption,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = ColorTokens.ReactTheme.mutedForeground
                     )
                 }
             }
@@ -445,7 +423,7 @@ fun ProjectActivityItem(
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = activity.icon,
-                    contentDescription = null,
+                    contentDescription = "",
                     tint = activity.iconColor,
                     modifier = Modifier.size(Tokens.Size.iconMedium)
                 )
@@ -460,13 +438,13 @@ fun ProjectActivityItem(
             Text(
                 text = activity.message,
                 style = TypographyTokens.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = ColorTokens.ReactTheme.foreground
             )
 
             Text(
                 text = activity.timestamp,
                 style = TypographyTokens.Custom.caption,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = ColorTokens.ReactTheme.mutedForeground
             )
         }
     }

@@ -1,13 +1,20 @@
 package com.example.kosmos.data.repository
 
+import com.example.kosmos.core.database.dao.ProjectMemberDao
 import com.example.kosmos.core.database.dao.UserDao
 import com.example.kosmos.core.models.User
+import com.example.kosmos.core.models.SyncOperation
 import com.example.kosmos.data.datasource.SupabaseUserDataSource
+import com.example.kosmos.data.sync.SyncQueueHelper
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.NonCancellable
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 
 /**
  * Repository for handling user operations
@@ -17,9 +24,21 @@ import javax.inject.Singleton
 @Singleton
 class UserRepository @Inject constructor(
     private val userDao: UserDao,
+    private val projectMemberDao: ProjectMemberDao,
     private val supabase: SupabaseClient,
-    private val supabaseUserDataSource: SupabaseUserDataSource
+    private val supabaseUserDataSource: SupabaseUserDataSource,
+    private val networkMonitor: com.example.kosmos.shared.utils.NetworkMonitor,  // P0-06 FIX
+    private val syncQueueDao: com.example.kosmos.core.database.dao.SyncQueueDao  // P0-08 FIX
 ) {
+    companion object {
+        private const val TAG = "UserRepository"
+    }
+
+    /**
+     * P0-06 FIX: Expose network connectivity state
+     * UI can observe this to show offline banner
+     */
+    val isOffline: kotlinx.coroutines.flow.StateFlow<Boolean> = networkMonitor.isOffline
 
     /**
      * Get a user by ID
@@ -40,6 +59,14 @@ class UserRepository @Inject constructor(
     }
 
     /**
+     * Cache a user profile to Room (no Supabase sync).
+     * Use when you fetched a user from Supabase and just want to cache it locally.
+     */
+    suspend fun cacheUser(user: User) {
+        userDao.insertUser(user)
+    }
+
+    /**
      * Get multiple users by their IDs
      * @param userIds List of user IDs
      * @return List of users
@@ -57,32 +84,127 @@ class UserRepository @Inject constructor(
     }
 
     /**
-     * Save or update user profile
+     * Get recent collaborators for a user
+     * Returns users who have worked with the given user in shared projects
+     * Sorted by most recent activity
+     *
+     * This is used in the project creation wizard to suggest users
+     * the creator has recently collaborated with
+     *
+     * @param userId User ID
+     * @param limit Maximum number of collaborators to return (default 10)
+     * @return List of users (recent collaborators)
+     */
+    suspend fun getRecentCollaborators(userId: String, limit: Int = 10): List<User> {
+        return try {
+            // Get all projects the user is a member of
+            val userProjectIds = projectMemberDao.getUserProjectIds(userId)
+
+            if (userProjectIds.isEmpty()) {
+                return emptyList()
+            }
+
+            // Get collaborator IDs (other members in those projects)
+            // Sorted by last activity, limited to requested count
+            val collaboratorIds = projectMemberDao.getCollaboratorIds(
+                projectIds = userProjectIds,
+                excludeUserId = userId,
+                limit = limit
+            )
+
+            if (collaboratorIds.isEmpty()) {
+                return emptyList()
+            }
+
+            // Fetch user details for those collaborators
+            userDao.getUsersByIds(collaboratorIds)
+
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            emptyList()
+        }
+    }
+
+    /**
+     * Save or update user profile (P0-01 FIX)
+     * Hybrid pattern: saves to Room immediately, then syncs to Supabase
      * @param user User to save
      * @return Result indicating success or failure
      */
     suspend fun saveUser(user: User): Result<Unit> {
         return try {
             val userWithTimestamp = user.copy(
-                createdAt = user.createdAt ?: System.currentTimeMillis()
+                createdAt = user.createdAt ?: System.currentTimeMillis(),
+                version = 1 // New user starts at version 1
             )
+
+            // Step 1: Save to Room immediately (offline-first)
             userDao.insertUser(userWithTimestamp)
+
+            // Step 2: Sync to Supabase (background sync)
+            try {
+                val supabaseResult = supabaseUserDataSource.insert(userWithTimestamp)
+                if (supabaseResult.isFailure) {
+                    android.util.Log.w(TAG, "Failed to sync new user to Supabase (will retry later)", supabaseResult.exceptionOrNull())
+                    // P0-08 FIX: Queue for automatic retry
+                    SyncQueueHelper.queueUser(syncQueueDao, userWithTimestamp, SyncOperation.CREATE)
+                    android.util.Log.d(TAG, "📥 User queued for retry: ${userWithTimestamp.id}")
+                    // Don't fail - Room cache is updated, Supabase will sync later
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                android.util.Log.w(TAG, "Error syncing new user to Supabase (offline mode?)", e)
+                // P0-08 FIX: Queue for automatic retry
+                SyncQueueHelper.queueUser(syncQueueDao, userWithTimestamp, SyncOperation.CREATE)
+                android.util.Log.d(TAG, "📥 User queued for retry: ${userWithTimestamp.id}")
+                // Continue - offline-first pattern
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
 
     /**
-     * Update user profile
+     * Update user profile (P0-01 FIX)
+     * Hybrid pattern with optimistic locking:
+     * 1. Updates Room immediately (offline-first)
+     * 2. Syncs to Supabase with version check
+     * 3. Handles conflicts if user was modified on another device
+     *
      * @param user User to update
-     * @return Result indicating success or failure
+     * @return Result indicating success or failure (ConflictException if version mismatch)
      */
     suspend fun updateUser(user: User): Result<Unit> {
         return try {
+            // Step 1: Update Room immediately (offline-first)
             userDao.updateUser(user)
+
+            // Step 2: Sync to Supabase
+            try {
+                val supabaseResult = supabaseUserDataSource.update(user)
+
+                if (supabaseResult.isSuccess) {
+                    val updatedUser = supabaseResult.getOrNull()
+                    if (updatedUser != null) {
+                        // Step 3: Update local cache with new version from Supabase
+                        userDao.updateUser(updatedUser)
+                    }
+                } else {
+                    android.util.Log.w(TAG, "Failed to sync user update to Supabase (will retry later)", supabaseResult.exceptionOrNull())
+                    SyncQueueHelper.queueUser(syncQueueDao, user, SyncOperation.UPDATE)
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                android.util.Log.w(TAG, "Error syncing user update to Supabase (offline mode?)", e)
+                SyncQueueHelper.queueUser(syncQueueDao, user, SyncOperation.UPDATE)
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -104,8 +226,18 @@ class UserRepository @Inject constructor(
             )
 
             userDao.updateUser(updatedUser)
+
+            // Sync presence to Supabase
+            try {
+                supabaseUserDataSource.updateOnlineStatus(userId, isOnline)
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                android.util.Log.w(TAG, "Error syncing presence to Supabase (offline?)", e)
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -123,8 +255,23 @@ class UserRepository @Inject constructor(
 
             val updatedUser = user.copy(displayName = displayName)
             userDao.updateUser(updatedUser)
+
+            // Sync to Supabase
+            try {
+                val supabaseResult = supabaseUserDataSource.update(updatedUser)
+                if (supabaseResult.isFailure) {
+                    android.util.Log.w(TAG, "Failed to sync display name to Supabase", supabaseResult.exceptionOrNull())
+                    SyncQueueHelper.queueUser(syncQueueDao, updatedUser, SyncOperation.UPDATE)
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                android.util.Log.w(TAG, "Error syncing display name to Supabase (offline?)", e)
+                SyncQueueHelper.queueUser(syncQueueDao, updatedUser, SyncOperation.UPDATE)
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -142,8 +289,23 @@ class UserRepository @Inject constructor(
 
             val updatedUser = user.copy(photoUrl = avatarUrl)
             userDao.updateUser(updatedUser)
+
+            // Sync to Supabase
+            try {
+                val supabaseResult = supabaseUserDataSource.update(updatedUser)
+                if (supabaseResult.isFailure) {
+                    android.util.Log.w(TAG, "Failed to sync avatar URL to Supabase", supabaseResult.exceptionOrNull())
+                    SyncQueueHelper.queueUser(syncQueueDao, updatedUser, SyncOperation.UPDATE)
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                android.util.Log.w(TAG, "Error syncing avatar URL to Supabase (offline?)", e)
+                SyncQueueHelper.queueUser(syncQueueDao, updatedUser, SyncOperation.UPDATE)
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -155,9 +317,31 @@ class UserRepository @Inject constructor(
      */
     suspend fun deleteUser(userId: String): Result<Unit> {
         return try {
+            // Step 1: Delete from Supabase first (if online)
+            try {
+                val supabaseResult = supabaseUserDataSource.delete(userId)
+                if (supabaseResult.isFailure) {
+                    android.util.Log.w(TAG, "Failed to delete user from Supabase", supabaseResult.exceptionOrNull())
+                    // Queue for retry - user will be deleted from Supabase later
+                    val user = userDao.getUserById(userId)
+                    if (user != null) {
+                        SyncQueueHelper.queueUser(syncQueueDao, user, SyncOperation.DELETE)
+                    }
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                android.util.Log.w(TAG, "Error deleting user from Supabase (offline?)", e)
+                val user = userDao.getUserById(userId)
+                if (user != null) {
+                    SyncQueueHelper.queueUser(syncQueueDao, user, SyncOperation.DELETE)
+                }
+            }
+
+            // Step 2: Delete from Room
             userDao.deleteUserById(userId)
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -172,6 +356,7 @@ class UserRepository @Inject constructor(
             userDao.insertUsers(users)
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -189,8 +374,23 @@ class UserRepository @Inject constructor(
 
             val updatedUser = user.copy(fcmToken = fcmToken)
             userDao.updateUser(updatedUser)
+
+            // Sync to Supabase using dedicated FCM token method
+            try {
+                val supabaseResult = supabaseUserDataSource.updateFcmToken(userId, fcmToken)
+                if (supabaseResult.isFailure) {
+                    android.util.Log.w(TAG, "Failed to sync FCM token to Supabase", supabaseResult.exceptionOrNull())
+                    SyncQueueHelper.queueUser(syncQueueDao, updatedUser, SyncOperation.UPDATE)
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                android.util.Log.w(TAG, "Error syncing FCM token to Supabase (offline?)", e)
+                SyncQueueHelper.queueUser(syncQueueDao, updatedUser, SyncOperation.UPDATE)
+            }
+
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -293,6 +493,7 @@ class UserRepository @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             emit(Result.failure(e))
         }
     }
@@ -323,6 +524,7 @@ class UserRepository @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             emit(Result.failure(e))
         }
     }
@@ -356,13 +558,53 @@ class UserRepository @Inject constructor(
     }
 
     /**
+     * Search users via users_public view (global discovery, no RLS restriction)
+     */
+    suspend fun searchUsersPublic(
+        query: String,
+        excludeIds: List<String> = emptyList(),
+        limit: Int = 50
+    ): Result<List<User>> {
+        return supabaseUserDataSource.searchUsersPublic(query, excludeIds, limit)
+    }
+
+    /**
      * Get all users directly from Supabase (no cache)
      * Use this when you need complete fresh user list
+     * Filters out users with invalid/empty IDs to prevent UUID errors
      *
-     * @return Result with all users from Supabase
+     * @return Result with all valid users from Supabase
      */
     suspend fun getAllUsersFromSupabase(): Result<List<User>> {
-        return supabaseUserDataSource.getAll()
+        return try {
+            // CRITICAL FIX: Wrap HTTP call in NonCancellable to prevent mid-flight cancellation
+            val result = withContext(NonCancellable) {
+                supabaseUserDataSource.getAll()
+            }
+
+            if (result.isFailure) {
+                return result
+            }
+
+            val users = result.getOrNull() ?: emptyList()
+
+            // Filter out users with invalid IDs
+            val validUsers = users.filter { user ->
+                user.id.isNotEmpty() &&
+                user.id.isNotBlank() &&
+                user.id.matches(Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", RegexOption.IGNORE_CASE))
+            }
+
+            if (validUsers.size < users.size) {
+                android.util.Log.w(TAG, "⚠️ Filtered out ${users.size - validUsers.size} invalid users with empty/malformed IDs")
+            }
+
+            Result.success(validUsers)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            android.util.Log.e(TAG, "Error fetching users from Supabase", e)
+            Result.failure(e)
+        }
     }
 
     /**
@@ -377,8 +619,129 @@ class UserRepository @Inject constructor(
             val result = supabaseUserDataSource.getByUsername(username)
             result.isSuccess && result.getOrNull() != null
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             // In case of error, assume username is taken to be safe
             true
+        }
+    }
+
+    /**
+     * Update user settings (privacy + notifications)
+     * Hybrid pattern: Update Room cache immediately, then sync to Supabase
+     *
+     * @param userId User ID
+     * @param settings User settings to save
+     * @return Result indicating success or failure
+     */
+    suspend fun updateUserSettings(userId: String, settings: com.example.kosmos.core.models.UserSettings): Result<Unit> {
+        return try {
+            // Step 1: Get current user from Room
+            val user = userDao.getUserById(userId)
+                ?: return Result.failure(Exception("User not found"))
+
+            // Step 2: Update user with new settings
+            val updatedUser = user.copy(settings = settings)
+
+            // Step 3: Update Room immediately (offline-first)
+            userDao.updateUser(updatedUser)
+
+            // Step 4: Sync to Supabase
+            try {
+                val supabaseResult = supabaseUserDataSource.update(updatedUser)
+                if (supabaseResult.isFailure) {
+                    android.util.Log.w(TAG, "Failed to sync settings to Supabase", supabaseResult.exceptionOrNull())
+                    SyncQueueHelper.queueUser(syncQueueDao, updatedUser, SyncOperation.UPDATE)
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                android.util.Log.w(TAG, "Error syncing settings to Supabase (offline?)", e)
+                SyncQueueHelper.queueUser(syncQueueDao, updatedUser, SyncOperation.UPDATE)
+            }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Get user settings
+     * Returns settings from Room cache (fast, works offline)
+     *
+     * @param userId User ID
+     * @return User settings or default settings if not found
+     */
+    suspend fun getUserSettings(userId: String): Result<com.example.kosmos.core.models.UserSettings> {
+        return try {
+            val user = userDao.getUserById(userId)
+            val settings = user?.settings ?: com.example.kosmos.core.models.UserSettings()
+            Result.success(settings)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Get user settings as Flow (reactive updates)
+     *
+     * @param userId User ID
+     * @return Flow of user settings
+     */
+    fun getUserSettingsFlow(userId: String): Flow<com.example.kosmos.core.models.UserSettings> {
+        return userDao.getUserByIdFlow(userId)
+            .map { user ->
+                user?.settings ?: com.example.kosmos.core.models.UserSettings()
+            }
+    }
+
+    /**
+     * Sync all users from Supabase to local cache
+     * CRITICAL: Must run FIRST before syncing entities with User FK dependencies
+     *
+     * This prevents FK constraint violations when inserting:
+     * - ProjectMembers (references users.id)
+     * - Messages (references users.id as sender_id)
+     * - Tasks (references users.id as assigned_to_id, created_by_id)
+     *
+     * @return Result indicating success or failure
+     */
+    suspend fun syncAllUsers(): Result<Unit> {
+        return try {
+            android.util.Log.d(TAG, "Starting user sync from Supabase")
+
+            // CRITICAL FIX: Wrap HTTP call in NonCancellable to prevent mid-flight cancellation
+            val usersResult = withContext(NonCancellable) {
+                supabaseUserDataSource.getAll()
+            }
+            if (usersResult.isFailure) {
+                android.util.Log.w(TAG, "Failed to fetch users", usersResult.exceptionOrNull())
+                return usersResult.map { }
+            }
+
+            val users = usersResult.getOrNull() ?: emptyList()
+
+            // Filter out invalid UUIDs to prevent database errors
+            val validUsers = users.filter { user ->
+                user.id.matches(Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", RegexOption.IGNORE_CASE))
+            }
+
+            if (validUsers.size < users.size) {
+                android.util.Log.w(TAG, "⚠️ Filtered out ${users.size - validUsers.size} users with invalid IDs")
+            }
+
+            // Batch insert to Room
+            if (validUsers.isNotEmpty()) {
+                userDao.insertUsers(validUsers)
+            }
+
+            android.util.Log.d(TAG, "✅ Synced ${validUsers.size} users to local cache")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            android.util.Log.e(TAG, "❌ User sync failed", e)
+            Result.failure(e)
         }
     }
 }

@@ -2,6 +2,8 @@ package com.example.kosmos.features.tasks.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.kosmos.core.feedback.UserFeedbackManager
+import com.example.kosmos.core.validators.PermissionChecker
 import com.example.kosmos.data.repository.AuthRepository
 import com.example.kosmos.data.repository.ChatRepository
 import com.example.kosmos.data.repository.ProjectRepository
@@ -12,12 +14,16 @@ import com.example.kosmos.core.models.Task
 import com.example.kosmos.core.models.TaskComment
 import com.example.kosmos.core.models.TaskPriority
 import com.example.kosmos.core.models.TaskStatus
+import com.example.kosmos.shared.utils.ErrorMapper
 import com.example.kosmos.core.models.User
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,7 +33,8 @@ class TaskViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val authRepository: AuthRepository,
     private val projectRepository: ProjectRepository,
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val feedbackManager: UserFeedbackManager
 ) : ViewModel() {
 
     private val currentUser = authRepository.getCurrentUser()
@@ -35,12 +42,42 @@ class TaskViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(TaskUiState(currentUserId = currentUser?.id))
     val uiState: StateFlow<TaskUiState> = _uiState.asStateFlow()
 
+    // Pending task count for bottom nav badge (TODO + IN_PROGRESS)
+    private val _pendingCount = MutableStateFlow(0)
+    val pendingCount: StateFlow<Int> = _pendingCount.asStateFlow()
+
     private var currentProjectId: String? = null
 
     // Track flow collection jobs for proper cleanup
     private var chatRoomFlowJob: Job? = null
     private var tasksFlowJob: Job? = null
     private var projectMembersJob: Job? = null
+
+    // Debounced search query flow
+    private val _searchQuery = MutableStateFlow("")
+
+    init {
+        // Load pending tasks count for current user
+        currentUser?.let { user ->
+            viewModelScope.launch {
+                taskRepository.getPendingTasksCountFlow(user.id).collect { count ->
+                    _pendingCount.value = count
+                }
+            }
+        }
+
+        // Setup debounced search
+        viewModelScope.launch {
+            _searchQuery
+                .debounce(300) // 300ms debounce for better UX
+                .distinctUntilChanged()
+                .collect { query ->
+                    _uiState.value = _uiState.value.copy(searchQuery = query)
+                    // Trigger search when query changes
+                    performSearch(query)
+                }
+        }
+    }
 
     fun loadTasks(chatRoomId: String) {
         // Cancel previous jobs
@@ -51,51 +88,52 @@ class TaskViewModel @Inject constructor(
             try {
                 // Get chatRoom to extract projectId
                 chatRepository.getChatRoomByIdFlow(chatRoomId).collect { chatRoom ->
-                    if (chatRoom != null && currentProjectId != chatRoom.projectId) {
-                        currentProjectId = chatRoom.projectId
+                    if (chatRoom != null) {
+                        val projectId = chatRoom.projectId
 
-                        // Update UI state with current context
-                        _uiState.value = _uiState.value.copy(
-                            currentProjectId = chatRoom.projectId,
-                            currentChatRoomId = chatRoomId
-                        )
+                        if (currentProjectId != projectId) {
+                            currentProjectId = projectId
 
-                        // Load project members for assignment
-                        if (chatRoom.projectId.isNotEmpty()) {
-                            loadUsersForAssignment(chatRoom.projectId)
+                            // Update UI state with current context
+                            _uiState.value = _uiState.value.copy(
+                                currentProjectId = projectId,
+                                currentChatRoomId = chatRoomId
+                            )
+
+                            // Load project members for assignment
+                            if (projectId.isNotEmpty()) {
+                                loadUsersForAssignment(projectId)
+                            }
+                        }
+
+                        // REMOVED: Sync call - InitialSyncManager handles all sync in MainActivity
+                        // ViewModels should ONLY observe Flows, never trigger syncs
+                        // Syncing in viewModelScope causes cancellations when navigating away
+
+                        // Collect from Room Flow with projectId filter (prevents cross-project contamination)
+                        tasksFlowJob?.cancel()
+                        tasksFlowJob = viewModelScope.launch {
+                            try {
+                                taskRepository.getTasksForChatRoomFlow(projectId, chatRoomId).collect { tasks ->
+                                    _uiState.value = _uiState.value.copy(
+                                        tasks = tasks,
+                                        isLoading = false,
+                                        error = null
+                                    )
+                                }
+                            } catch (e: Exception) {
+                                if (e is CancellationException) throw e
+                                _uiState.value = _uiState.value.copy(
+                                    isLoading = false,
+                                    error = "Failed to load tasks: ${e.message}"
+                                )
+                            }
                         }
                     }
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 android.util.Log.e("TaskViewModel", "Failed to load chat room", e)
-            }
-        }
-
-        // Trigger Supabase sync in background
-        viewModelScope.launch {
-            try {
-                taskRepository.syncTasksForChatRoom(chatRoomId)
-            } catch (e: Exception) {
-                // Log but don't block - local data will still be displayed
-                android.util.Log.w("TaskViewModel", "Failed to sync tasks from Supabase", e)
-            }
-        }
-
-        // Collect from Room Flow (will update when sync completes)
-        tasksFlowJob = viewModelScope.launch {
-            try {
-                taskRepository.getTasksForChatRoomFlow(chatRoomId).collect { tasks ->
-                    _uiState.value = _uiState.value.copy(
-                        tasks = tasks,
-                        isLoading = false,
-                        error = null
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Failed to load tasks: ${e.message}"
-                )
             }
         }
     }
@@ -126,6 +164,7 @@ class TaskViewModel @Inject constructor(
             try {
                 taskRepository.loadMoreTasks(projectId)
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 android.util.Log.w("TaskViewModel", "Failed to sync tasks from Supabase", e)
             }
         }
@@ -141,6 +180,7 @@ class TaskViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = "Failed to load tasks: ${e.message}"
@@ -156,6 +196,7 @@ class TaskViewModel @Inject constructor(
      * @param title Task title
      * @param description Task description
      * @param priority Task priority
+     * @param status Task status (defaults to TODO)
      * @param assignedToId User ID to assign task to
      * @param dueDate Due date timestamp
      * @param tags Task tags
@@ -166,6 +207,7 @@ class TaskViewModel @Inject constructor(
         title: String,
         description: String,
         priority: TaskPriority = TaskPriority.MEDIUM,
+        status: TaskStatus = TaskStatus.TODO,
         assignedToId: String? = null,
         dueDate: Long? = null,
         tags: List<String> = emptyList(),
@@ -194,63 +236,107 @@ class TaskViewModel @Inject constructor(
                 // Set loading state
                 _uiState.value = _uiState.value.copy(isCreatingTask = true, error = null)
 
-                currentUser?.let { user ->
-                    val task = Task(
-                        projectId = projectId,
-                        chatRoomId = chatRoomId,
-                        title = title.trim(),
-                        description = description.trim(),
-                        priority = priority,
-                        assignedToId = assignedToId,
-                        assignedToName = assignedToId?.let { getUserDisplayName(it) },
-                        createdById = user.id,
-                        createdByName = user.displayName ?: "Current User",
-                        status = TaskStatus.TODO,
-                        dueDate = dueDate,
-                        tags = tags,
-                        estimatedHours = estimatedHours,
-                        actualHours = actualHours,
-                        parentTaskId = parentTaskId
+                if (currentUser == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isCreatingTask = false,
+                        error = "You must be logged in to create tasks"
                     )
+                    return@launch
+                }
 
-                    val result = taskRepository.createTask(task, user.id)
-                    if (result.isSuccess) {
-                        _uiState.value = _uiState.value.copy(
-                            showCreateTaskDialog = false,
-                            lastCreatedTaskId = task.id,
-                            isCreatingTask = false,
-                            error = null
-                        )
-                        clearCreateTaskForm()
-                    } else {
-                        _uiState.value = _uiState.value.copy(
-                            isCreatingTask = false,
-                            error = "Failed to create task: ${result.exceptionOrNull()?.message}"
-                        )
-                    }
+                val user = currentUser
+                val task = Task(
+                    projectId = projectId,
+                    chatRoomId = chatRoomId,
+                    title = title.trim(),
+                    description = description.trim(),
+                    priority = priority,
+                    assignedToId = assignedToId,
+                    assignedToName = assignedToId?.let { getUserDisplayName(it) },
+                    createdById = user.id,
+                    createdByName = user.displayName ?: "Current User",
+                    status = status,
+                    dueDate = dueDate,
+                    tags = tags,
+                    estimatedHours = estimatedHours,
+                    actualHours = actualHours,
+                    parentTaskId = parentTaskId
+                )
+
+                val result = taskRepository.createTask(task, user.id)
+                if (result.isSuccess) {
+                    val createdTaskId = result.getOrNull() ?: task.id
+                    _uiState.value = _uiState.value.copy(
+                        showCreateTaskDialog = false,
+                        lastCreatedTaskId = createdTaskId,
+                        isCreatingTask = false,
+                        error = null
+                    )
+                    clearCreateTaskForm()
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isCreatingTask = false,
+                        error = "Failed to create task: ${result.exceptionOrNull()?.message}"
+                    )
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                if (e is PermissionChecker.PermissionDeniedException) {
+                    feedbackManager.permissionDenied("create task", e.message ?: "Permission denied")
+                    _uiState.value = _uiState.value.copy(isCreatingTask = false)
+                    return@launch
+                }
+                val msg = ErrorMapper.mapError(e, "create task")
+                feedbackManager.error(msg)
                 _uiState.value = _uiState.value.copy(
                     isCreatingTask = false,
-                    error = "Failed to create task: ${e.message}"
+                    error = msg
                 )
             }
         }
     }
 
+    /**
+     * Check if current user can mark task as complete
+     * Only the assignee can mark a task as DONE
+     * @param task Task to check
+     * @return true if user can mark complete, false otherwise
+     */
+    fun canMarkTaskComplete(task: Task): Boolean {
+        val userId = currentUser?.id ?: return false
+        // Allow if user is assignee, or if task is unassigned (anyone can complete)
+        return task.assignedToId == userId || task.assignedToId == null
+    }
+
     fun updateTaskStatus(taskId: String, status: TaskStatus) {
         viewModelScope.launch {
             try {
-                val result = taskRepository.updateTaskStatus(taskId, status)
+                // Permission check: Only assignee can mark task as DONE
+                if (status == TaskStatus.DONE) {
+                    val task = _uiState.value.tasks.find { it.id == taskId }
+                    if (task != null && !canMarkTaskComplete(task)) {
+                        _uiState.value = _uiState.value.copy(
+                            error = "Only the assigned user can mark this task as complete"
+                        )
+                        return@launch
+                    }
+                }
+
+                val result = taskRepository.updateTaskStatus(taskId, status, currentUser?.id ?: "")
                 if (result.isFailure) {
                     _uiState.value = _uiState.value.copy(
                         error = "Failed to update task: ${result.exceptionOrNull()?.message}"
                     )
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = "Failed to update task: ${e.message}"
-                )
+                if (e is CancellationException) throw e
+                if (e is PermissionChecker.PermissionDeniedException) {
+                    feedbackManager.permissionDenied("update task status", e.message ?: "Permission denied")
+                    return@launch
+                }
+                val msg = ErrorMapper.mapError(e, "update task")
+                feedbackManager.error(msg)
+                _uiState.value = _uiState.value.copy(error = msg)
             }
         }
     }
@@ -266,9 +352,14 @@ class TaskViewModel @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
-                    _uiState.value = _uiState.value.copy(
-                        error = "Failed to assign task: ${e.message}"
-                    )
+                    if (e is CancellationException) throw e
+                    if (e is PermissionChecker.PermissionDeniedException) {
+                        feedbackManager.permissionDenied("assign task", e.message ?: "Permission denied")
+                        return@launch
+                    }
+                    val msg = "Failed to assign task: ${e.message}"
+                    feedbackManager.error(msg)
+                    _uiState.value = _uiState.value.copy(error = msg)
                 }
             }
         }
@@ -277,16 +368,26 @@ class TaskViewModel @Inject constructor(
     fun deleteTask(taskId: String) {
         viewModelScope.launch {
             try {
-                val result = taskRepository.deleteTask(taskId)
+                val task = _uiState.value.tasks.find { it.id == taskId }
+                if (task == null) {
+                    _uiState.value = _uiState.value.copy(error = "Task not found")
+                    return@launch
+                }
+                val result = taskRepository.deleteTask(taskId, currentUser?.id ?: "")
                 if (result.isFailure) {
                     _uiState.value = _uiState.value.copy(
                         error = "Failed to delete task: ${result.exceptionOrNull()?.message}"
                     )
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = "Failed to delete task: ${e.message}"
-                )
+                if (e is CancellationException) throw e
+                if (e is PermissionChecker.PermissionDeniedException) {
+                    feedbackManager.permissionDenied("delete task", e.message ?: "Permission denied")
+                    return@launch
+                }
+                val msg = ErrorMapper.mapError(e, "delete task")
+                feedbackManager.error(msg)
+                _uiState.value = _uiState.value.copy(error = msg)
             }
         }
     }
@@ -346,7 +447,7 @@ class TaskViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val result = taskRepository.deleteTask(task.id)
+                val result = taskRepository.deleteTask(task.id, currentUser?.id ?: "")
                 if (result.isSuccess) {
                     _uiState.value = _uiState.value.copy(
                         showDeleteConfirmation = false,
@@ -361,10 +462,18 @@ class TaskViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                if (e is PermissionChecker.PermissionDeniedException) {
+                    feedbackManager.permissionDenied("delete task", e.message ?: "Permission denied")
+                    _uiState.value = _uiState.value.copy(showDeleteConfirmation = false, taskToDelete = null)
+                    return@launch
+                }
+                val msg = ErrorMapper.mapError(e, "delete task")
+                feedbackManager.error(msg)
                 _uiState.value = _uiState.value.copy(
                     showDeleteConfirmation = false,
                     taskToDelete = null,
-                    error = "Failed to delete task: ${e.message}"
+                    error = msg
                 )
             }
         }
@@ -407,7 +516,7 @@ class TaskViewModel @Inject constructor(
                         parentTaskId = parentTaskId
                     )
 
-                    val result = taskRepository.updateTask(updatedTask)
+                    val result = taskRepository.updateTask(updatedTask, currentUser?.id ?: "")
                     if (result.isSuccess) {
                         _uiState.value = _uiState.value.copy(
                             showEditTaskDialog = false,
@@ -422,9 +531,14 @@ class TaskViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = "Failed to update task: ${e.message}"
-                )
+                if (e is CancellationException) throw e
+                if (e is PermissionChecker.PermissionDeniedException) {
+                    feedbackManager.permissionDenied("update task", e.message ?: "Permission denied")
+                    return@launch
+                }
+                val msg = ErrorMapper.mapError(e, "update task")
+                feedbackManager.error(msg)
+                _uiState.value = _uiState.value.copy(error = msg)
             }
         }
     }
@@ -486,10 +600,11 @@ class TaskViewModel @Inject constructor(
             try {
                 // Get all project members from Flow
                 projectRepository.getProjectMembersFlow(projectId).collect { members ->
-                    // Load user details for each member
+                    // Load user details for each member (Room first, Supabase fallback)
                     val users = mutableListOf<User>()
                     members.forEach { member ->
                         val user = userRepository.getUserById(member.userId)
+                            ?: userRepository.getUserByIdFromSupabase(member.userId).getOrNull()
                         if (user != null) {
                             users.add(user)
                         }
@@ -501,6 +616,7 @@ class TaskViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
                     error = "Failed to load project members: ${e.message}"
                 )
@@ -602,7 +718,7 @@ class TaskViewModel @Inject constructor(
                         updatedAt = System.currentTimeMillis()
                     )
 
-                    val result = taskRepository.updateTask(updatedTask)
+                    val result = taskRepository.updateTask(updatedTask, currentUser?.id ?: "")
                     if (result.isSuccess) {
                         // Update editing task in state if we're editing this task
                         if (_uiState.value.editingTask?.id == taskId) {
@@ -616,9 +732,118 @@ class TaskViewModel @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     _uiState.value = _uiState.value.copy(
                         error = "Failed to add comment: ${e.message}"
                     )
+                }
+            }
+        }
+    }
+
+    /**
+     * Delete a comment from a task
+     * @param taskId Task ID
+     * @param commentId Comment ID to delete
+     */
+    fun deleteComment(taskId: String, commentId: String) {
+        currentUser?.let { user ->
+            viewModelScope.launch {
+                try {
+                    val task = _uiState.value.editingTask
+                        ?: _uiState.value.tasks.find { it.id == taskId }
+                        ?: return@launch
+
+                    // Find the comment to verify ownership
+                    val comment = task.comments.find { it.id == commentId }
+                    if (comment == null) {
+                        _uiState.value = _uiState.value.copy(error = "Comment not found")
+                        return@launch
+                    }
+
+                    // Only allow deletion by comment author
+                    if (comment.authorId != user.id) {
+                        _uiState.value = _uiState.value.copy(error = "You can only delete your own comments")
+                        return@launch
+                    }
+
+                    val updatedTask = task.copy(
+                        comments = task.comments.filterNot { it.id == commentId },
+                        updatedAt = System.currentTimeMillis()
+                    )
+
+                    val result = taskRepository.updateTask(updatedTask, user.id)
+                    if (result.isSuccess) {
+                        if (_uiState.value.editingTask?.id == taskId) {
+                            _uiState.value = _uiState.value.copy(editingTask = updatedTask)
+                        }
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            error = "Failed to delete comment: ${result.exceptionOrNull()?.message}"
+                        )
+                    }
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    _uiState.value = _uiState.value.copy(error = "Failed to delete comment: ${e.message}")
+                }
+            }
+        }
+    }
+
+    /**
+     * Edit a comment on a task
+     * @param taskId Task ID
+     * @param commentId Comment ID to edit
+     * @param newContent Updated comment content
+     */
+    fun editComment(taskId: String, commentId: String, newContent: String) {
+        if (newContent.isBlank()) return
+
+        currentUser?.let { user ->
+            viewModelScope.launch {
+                try {
+                    val task = _uiState.value.editingTask
+                        ?: _uiState.value.tasks.find { it.id == taskId }
+                        ?: return@launch
+
+                    // Find the comment to verify ownership
+                    val comment = task.comments.find { it.id == commentId }
+                    if (comment == null) {
+                        _uiState.value = _uiState.value.copy(error = "Comment not found")
+                        return@launch
+                    }
+
+                    // Only allow editing by comment author
+                    if (comment.authorId != user.id) {
+                        _uiState.value = _uiState.value.copy(error = "You can only edit your own comments")
+                        return@launch
+                    }
+
+                    val updatedComment = comment.copy(
+                        content = newContent.trim(),
+                        timestamp = System.currentTimeMillis() // Update timestamp on edit
+                    )
+
+                    val updatedTask = task.copy(
+                        comments = task.comments.map {
+                            if (it.id == commentId) updatedComment else it
+                        },
+                        updatedAt = System.currentTimeMillis()
+                    )
+
+                    val result = taskRepository.updateTask(updatedTask, user.id)
+                    if (result.isSuccess) {
+                        if (_uiState.value.editingTask?.id == taskId) {
+                            _uiState.value = _uiState.value.copy(editingTask = updatedTask)
+                        }
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            error = "Failed to edit comment: ${result.exceptionOrNull()?.message}"
+                        )
+                    }
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    _uiState.value = _uiState.value.copy(error = "Failed to edit comment: ${e.message}")
                 }
             }
         }
@@ -644,6 +869,7 @@ class TaskViewModel @Inject constructor(
                         )
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         error = "Failed to load tasks: ${e.message}"
@@ -651,6 +877,87 @@ class TaskViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    /**
+     * Sync all user tasks from Supabase
+     *
+     * @Deprecated Use InitialSyncManager in MainActivity instead.
+     * ViewModels should ONLY observe Flows, never trigger syncs.
+     * Syncing in viewModelScope causes cancellations when navigating away.
+     * For pull-to-refresh, just re-collect the Flow - InitialSyncManager handles sync.
+     */
+    @Deprecated(
+        message = "Use InitialSyncManager.syncAllData() instead. ViewModels should not trigger syncs.",
+        level = DeprecationLevel.WARNING
+    )
+    fun syncAllUserTasks() {
+        currentUser?.let { user ->
+            viewModelScope.launch {
+                try {
+                    taskRepository.syncUserTasks(user.id)
+                    // Flow will automatically update UI with synced data
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                    _uiState.value = _uiState.value.copy(
+                        error = "Failed to sync tasks: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Search tasks by title, description, or tags
+     * Will trigger debounced search automatically (300ms delay)
+     */
+    fun searchTasks(query: String) {
+        _searchQuery.value = query
+    }
+
+    /**
+     * Perform the actual search after debouncing
+     * Searches through user's tasks if no project is selected
+     */
+    private fun performSearch(query: String) {
+        // Cancel previous search job
+        tasksFlowJob?.cancel()
+
+        if (query.isBlank()) {
+            // If no search query, reload all tasks
+            currentUser?.let { user ->
+                loadAllUserTasks()
+            }
+            return
+        }
+
+        // Perform search based on current context
+        tasksFlowJob = viewModelScope.launch {
+            try {
+                currentUser?.let { user ->
+                    taskRepository.searchTasksByUser(user.id, query).collect { tasks ->
+                        _uiState.value = _uiState.value.copy(
+                            tasks = tasks,
+                            isLoading = false,
+                            error = null
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Search failed: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Filter tasks by filter type (All / My Tasks)
+     */
+    fun filterTasks(filter: TaskFilter) {
+        _uiState.value = _uiState.value.copy(taskFilter = filter)
     }
 }
 
@@ -681,5 +988,11 @@ data class TaskUiState(
     val lastCreatedTaskId: String? = null,
     val isCreatingTask: Boolean = false,
     val currentProjectId: String? = null,  // Current project context for task creation
-    val currentChatRoomId: String? = null  // Current chat room context
+    val currentChatRoomId: String? = null,  // Current chat room context
+    val searchQuery: String = "",
+    val taskFilter: TaskFilter = TaskFilter.ALL
 )
+
+enum class TaskFilter {
+    ALL, MY_TASKS
+}

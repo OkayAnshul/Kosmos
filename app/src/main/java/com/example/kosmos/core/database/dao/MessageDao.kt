@@ -38,4 +38,21 @@ interface MessageDao {
 
     @Query("DELETE FROM messages WHERE chatRoomId = :chatRoomId")
     suspend fun deleteMessagesForChatRoom(chatRoomId: String)
+
+    /**
+     * Search messages by content or sender name within a chat room
+     * @param chatRoomId Chat room ID to search within
+     * @param query Search query
+     * @return Flow of matching messages ordered by timestamp (newest first)
+     */
+    @Query("""
+        SELECT * FROM messages
+        WHERE chatRoomId = :chatRoomId
+        AND (
+            content LIKE '%' || :query || '%'
+            OR senderName LIKE '%' || :query || '%'
+        )
+        ORDER BY timestamp DESC
+    """)
+    fun searchMessages(chatRoomId: String, query: String): Flow<List<Message>>
 }

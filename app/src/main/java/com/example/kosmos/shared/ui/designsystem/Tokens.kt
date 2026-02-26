@@ -10,21 +10,31 @@ import androidx.compose.ui.unit.dp
  * optimized for mobile-first, power-user experience.
  *
  * All spacing follows 4dp grid system for consistency.
+ *
+ * React Design Reference: documents/Kosmos/src/styles/theme.css
+ * Maps Tailwind spacing to Android dp values
  */
 object Tokens {
 
     /**
      * Spacing Scale (4dp grid)
      * Use these for margins, padding, gaps between elements
+     *
+     * Maps to Tailwind classes in React:
+     * - p-2 / gap-2 = 8px → xs
+     * - p-3 / gap-3 = 12px → sm
+     * - p-4 / gap-4 = 16px → md (MOST COMMON in React)
+     * - p-6 / gap-6 = 24px → lg
+     * - p-8 / gap-8 = 32px → xl
      */
     object Spacing {
         val xxs: Dp = 4.dp    // Inner chip padding, icon margins
-        val xs: Dp = 8.dp     // Component internal spacing
-        val sm: Dp = 12.dp    // Small gaps between related items
-        val md: Dp = 16.dp    // Standard spacing (default, most common)
-        val lg: Dp = 24.dp    // Section spacing
-        val xl: Dp = 32.dp    // Major section breaks
-        val xxl: Dp = 48.dp   // Screen top/bottom padding
+        val xs: Dp = 8.dp     // Component internal spacing (p-2)
+        val sm: Dp = 12.dp    // Small gaps between related items (p-3)
+        val md: Dp = 16.dp    // Standard spacing (default, most common) (p-4) ← PRIMARY in React
+        val lg: Dp = 24.dp    // Section spacing (p-6)
+        val xl: Dp = 32.dp    // Major section breaks (p-8)
+        val xxl: Dp = 48.dp   // Screen top/bottom padding (p-12)
     }
 
     /**
@@ -84,12 +94,17 @@ object Tokens {
     /**
      * Elevation Levels
      * Material Design 3 elevation scale
+     *
+     * Maps to React box-shadow values:
+     * - Card: "0 2px 6px rgba(0,0,0,0.2)" → level1 (2dp)
+     * - Card hover: "0 2px 8px rgba(0,0,0,0.3)" → level2 (3dp)
+     * - FAB: "0 4px 16px rgba(124, 58, 237, 0.5)" → level3 (6dp)
      */
     object Elevation {
         val level0: Dp = 0.dp    // Flat, no shadow
-        val level1: Dp = 1.dp    // Subtle raise (cards)
-        val level2: Dp = 3.dp    // Medium raise (buttons, chips)
-        val level3: Dp = 6.dp    // Higher raise (FAB, modal)
+        val level1: Dp = 2.dp    // Subtle raise (cards) - matches React "0 2px 6px"
+        val level2: Dp = 4.dp    // Medium raise (buttons, hover) - matches React "0 2px 8px"
+        val level3: Dp = 6.dp    // Higher raise (FAB, modal) - matches React "0 4px 16px"
         val level4: Dp = 8.dp    // Navigation drawer
         val level5: Dp = 12.dp   // Dialog, picker
     }
@@ -97,16 +112,22 @@ object Tokens {
     /**
      * Border Radius / Corner Rounding
      * Consistent rounded corners throughout the app
+     *
+     * Maps to Tailwind classes in React:
+     * - rounded-lg = 8px → sm
+     * - rounded-xl = 12px → md (PRIMARY in React - cards, inputs)
+     * - rounded-2xl = 16px → lg
+     * - rounded-full = 9999px → full (pills, badges, avatars)
      */
     object CornerRadius {
         val none: Dp = 0.dp
         val xs: Dp = 4.dp      // Small elements (badges, chips)
-        val sm: Dp = 8.dp      // Buttons, small cards
-        val md: Dp = 12.dp     // Standard cards, dialogs
-        val lg: Dp = 16.dp     // Large cards, bottom sheets
+        val sm: Dp = 8.dp      // Buttons, small cards (rounded-lg)
+        val md: Dp = 12.dp     // Standard cards, dialogs (rounded-xl) ← PRIMARY in React
+        val lg: Dp = 16.dp     // Large cards, bottom sheets (rounded-2xl)
         val xl: Dp = 24.dp     // Extra large cards
         val xxl: Dp = 28.dp    // Rounded sections
-        val full: Dp = 9999.dp // Fully rounded (pills, avatars)
+        val full: Dp = 9999.dp // Fully rounded (pills, avatars) (rounded-full)
     }
 
     /**

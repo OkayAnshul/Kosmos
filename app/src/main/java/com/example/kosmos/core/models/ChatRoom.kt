@@ -1,12 +1,28 @@
 package com.example.kosmos.core.models
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-@Entity(tableName = "chat_rooms")
+@Entity(
+    tableName = "chat_rooms",
+    foreignKeys = [
+        // NO_ACTION: REPLACE strategy in DAOs does DELETE+INSERT, CASCADE would wipe child records during sync
+        ForeignKey(
+            entity = Project::class,
+            parentColumns = ["id"],
+            childColumns = ["projectId"],
+            onDelete = ForeignKey.NO_ACTION
+        )
+    ],
+    indices = [
+        Index(value = ["projectId"])
+    ]
+)
 data class ChatRoom(
     @PrimaryKey
     val id: String = "",
@@ -42,6 +58,9 @@ data class ChatRoom(
 
     @SerialName("created_at")
     val createdAt: Long = System.currentTimeMillis(),
+
+    @SerialName("updated_at")
+    val updatedAt: Long = System.currentTimeMillis(),
 
     @SerialName("last_message_id")
     val lastMessageId: String? = null,

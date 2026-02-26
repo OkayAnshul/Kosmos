@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 /**
  * Wrapper for TaskEditScreenReact that connects to the backend.
@@ -233,6 +234,7 @@ fun TaskEditScreenReactWrapper(
             conflictServerTask = serverTask
             showConflictDialog = true
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             android.util.Log.e("TaskEditWrapper", "Failed to save task", e)
             errorMessage = "Failed to save task: ${e.message ?: "Unknown error"}"
         }
@@ -315,6 +317,7 @@ fun TaskEditScreenReactWrapper(
                     taskRepository.deleteTask(taskId, currentUser.id)
                     onBack()
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     android.util.Log.e("TaskEditWrapper", "Failed to delete task", e)
                     errorMessage = "Failed to delete task: ${e.message ?: "Unknown error"}"
                 }
@@ -442,6 +445,7 @@ private fun parseDateFromInput(dateString: String): Long {
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         sdf.parse(dateString)?.time ?: System.currentTimeMillis()
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         System.currentTimeMillis()
     }
 }

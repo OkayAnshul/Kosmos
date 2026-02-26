@@ -18,7 +18,8 @@ import com.example.kosmos.shared.ui.designsystem.Tokens
 import com.example.kosmos.shared.ui.designsystem.TypographyTokens
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
+import kotlin.math.roundToInt
 /**
  * Swipeable Layout Components
  *
@@ -194,23 +195,23 @@ private fun SwipeBackground(
                     Icon(
                         imageVector = action.icon,
                         contentDescription = action.label,
-                        tint = MaterialTheme.colorScheme.onPrimary
+                        tint = ColorTokens.ReactTheme.primaryForeground
                     )
                     Text(
                         text = action.label,
                         style = TypographyTokens.Custom.chipLabel,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = ColorTokens.ReactTheme.primaryForeground
                     )
                 } else {
                     Text(
                         text = action.label,
                         style = TypographyTokens.Custom.chipLabel,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = ColorTokens.ReactTheme.primaryForeground
                     )
                     Icon(
                         imageVector = action.icon,
                         contentDescription = action.label,
-                        tint = MaterialTheme.colorScheme.onPrimary
+                        tint = ColorTokens.ReactTheme.primaryForeground
                     )
                 }
             }
@@ -243,7 +244,7 @@ fun SwipeToDelete(
         leftAction = SwipeAction(
             icon = deleteIcon,
             label = deleteLabel,
-            color = MaterialTheme.colorScheme.error,
+            color = ColorTokens.ReactTheme.destructive,
             onAction = onDelete
         ),
         content = content
@@ -275,7 +276,7 @@ fun SwipeToArchive(
         rightAction = SwipeAction(
             icon = archiveIcon,
             label = archiveLabel,
-            color = MaterialTheme.colorScheme.primaryContainer,
+            color = ColorTokens.ReactTheme.secondary,
             onAction = onArchive
         ),
         content = content
@@ -306,10 +307,10 @@ fun SwipeActions(
     modifier: Modifier = Modifier,
     leftIcon: ImageVector = com.example.kosmos.shared.ui.designsystem.IconSet.Action.delete,
     leftLabel: String = "Delete",
-    leftColor: Color = MaterialTheme.colorScheme.error,
+    leftColor: Color = ColorTokens.ReactTheme.destructive,
     rightIcon: ImageVector = com.example.kosmos.shared.ui.designsystem.IconSet.Message.archive,
     rightLabel: String = "Archive",
-    rightColor: Color = MaterialTheme.colorScheme.primaryContainer,
+    rightColor: Color = ColorTokens.ReactTheme.secondary,
     content: @Composable () -> Unit
 ) {
     SwipeableLayout(
@@ -353,7 +354,7 @@ fun SwipeToComplete(
         rightAction = SwipeAction(
             icon = com.example.kosmos.shared.ui.designsystem.IconSet.Action.done,
             label = completeLabel,
-            color = MaterialTheme.colorScheme.primary,
+            color = ColorTokens.ReactTheme.primary,
             onAction = onComplete
         ),
         content = content
@@ -381,7 +382,7 @@ fun DismissibleItem(
     dismissDirection: SwipeDirection = SwipeDirection.LEFT,
     dismissLabel: String = "Dismiss",
     dismissIcon: ImageVector = com.example.kosmos.shared.ui.designsystem.IconSet.Navigation.close,
-    dismissColor: Color = MaterialTheme.colorScheme.surfaceVariant,
+    dismissColor: Color = ColorTokens.ReactTheme.secondary,
     content: @Composable () -> Unit
 ) {
     var isDismissed by remember { mutableStateOf(false) }

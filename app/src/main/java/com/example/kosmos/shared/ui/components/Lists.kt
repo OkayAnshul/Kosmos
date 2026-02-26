@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.example.kosmos.shared.ui.designsystem.IconSet
 import com.example.kosmos.shared.ui.designsystem.Tokens
 import com.example.kosmos.shared.ui.designsystem.TypographyTokens
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
 /**
  * List Components for Kosmos App
  *
@@ -167,7 +167,7 @@ fun ListItemTwoLine(
                 Text(
                     text = secondaryText,
                     style = TypographyTokens.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = ColorTokens.ReactTheme.mutedForeground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -248,14 +248,14 @@ fun ListItemThreeLine(
                 Text(
                     text = subtitle,
                     style = TypographyTokens.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = ColorTokens.ReactTheme.mutedForeground,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = metadata,
                     style = TypographyTokens.Custom.caption,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = ColorTokens.ReactTheme.mutedForeground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -289,7 +289,7 @@ fun SectionHeader(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant
+        color = ColorTokens.ReactTheme.secondary
     ) {
         Row(
             modifier = Modifier
@@ -301,7 +301,7 @@ fun SectionHeader(
             Text(
                 text = title.uppercase(),
                 style = TypographyTokens.Custom.overline,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = ColorTokens.ReactTheme.mutedForeground
             )
 
             if (action != null) {
@@ -370,7 +370,7 @@ fun ListItemWithSwitch(
                     Text(
                         text = secondaryText,
                         style = TypographyTokens.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = ColorTokens.ReactTheme.mutedForeground
                     )
                 }
             }
@@ -446,7 +446,7 @@ fun ListItemWithCheckbox(
                     Text(
                         text = secondaryText,
                         style = TypographyTokens.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = ColorTokens.ReactTheme.mutedForeground
                     )
                 }
             }
@@ -524,10 +524,10 @@ fun AvatarListItem(
                             .size(Tokens.Size.statusDotWithBorder)
                             .align(Alignment.BottomEnd),
                         shape = MaterialTheme.shapes.extraSmall,
-                        color = MaterialTheme.colorScheme.surface,
+                        color = ColorTokens.ReactTheme.card,
                         border = androidx.compose.foundation.BorderStroke(
                             width = 2.dp,
-                            color = MaterialTheme.colorScheme.surface
+                            color = ColorTokens.ReactTheme.card
                         )
                     ) {
                         Box(
@@ -539,9 +539,9 @@ fun AvatarListItem(
                                 modifier = Modifier.fillMaxSize(),
                                 shape = MaterialTheme.shapes.extraSmall,
                                 color = if (isOnline)
-                                    MaterialTheme.colorScheme.primary
+                                    ColorTokens.ReactTheme.primary
                                 else
-                                    MaterialTheme.colorScheme.outlineVariant
+                                    ColorTokens.ReactTheme.border
                             ) {}
                         }
                     }
@@ -562,7 +562,7 @@ fun AvatarListItem(
                 Text(
                     text = secondaryText,
                     style = TypographyTokens.Custom.userSecondaryInfo,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = ColorTokens.ReactTheme.mutedForeground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

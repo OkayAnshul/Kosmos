@@ -36,6 +36,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 
 /**
  * Manages Supabase Realtime subscriptions for live data updates
@@ -185,6 +186,7 @@ class SupabaseRealtimeManager @Inject constructor(
                     }
 
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to subscribe to messages for chat $chatRoomId", e)
             }
         }
@@ -203,6 +205,7 @@ class SupabaseRealtimeManager @Inject constructor(
                     activeChannels.remove(chatRoomId)
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to unsubscribe from chat $chatRoomId", e)
             }
         }
@@ -239,6 +242,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 Log.d(TAG, "Subscribed to typing indicators for chat $chatRoomId")
 
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to subscribe to typing indicators", e)
             }
         }
@@ -273,6 +277,7 @@ class SupabaseRealtimeManager @Inject constructor(
                     )
                     Log.d(TAG, "User $userId typing broadcast sent: $isTyping in chat $chatRoomId")
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Log.w(TAG, "Failed to broadcast typing (falling back to local)", e)
                 }
 
@@ -280,6 +285,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 _typingEvents.emit(TypingEvent(chatRoomId, userId, isTyping))
 
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to send typing indicator", e)
             }
         }
@@ -342,6 +348,7 @@ class SupabaseRealtimeManager @Inject constructor(
                     }
 
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to subscribe to tasks for project $projectId", e)
             }
         }
@@ -396,6 +403,7 @@ class SupabaseRealtimeManager @Inject constructor(
                     }
 
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to subscribe to activity for task $taskId", e)
             }
         }
@@ -414,6 +422,7 @@ class SupabaseRealtimeManager @Inject constructor(
                     activeTaskChannels.remove("tasks:$projectId")
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to unsubscribe from tasks for project $projectId", e)
             }
         }
@@ -432,6 +441,7 @@ class SupabaseRealtimeManager @Inject constructor(
                     activeTaskChannels.remove("activity:$taskId")
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to unsubscribe from activity for task $taskId", e)
             }
         }
@@ -481,6 +491,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 )
 
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to send task presence", e)
             }
         }
@@ -527,6 +538,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 )
 
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to send editing status", e)
             }
         }
@@ -570,6 +582,7 @@ class SupabaseRealtimeManager @Inject constructor(
                                         _connectionEvents.emit(ConnectionEvent.Inserted(conn))
                                     }
                                 } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
                                     Log.e(TAG, "Failed to parse connection insert", e)
                                 }
                             }
@@ -584,6 +597,7 @@ class SupabaseRealtimeManager @Inject constructor(
                                         _connectionEvents.emit(ConnectionEvent.Updated(conn))
                                     }
                                 } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
                                     Log.e(TAG, "Failed to parse connection update", e)
                                 }
                             }
@@ -599,6 +613,7 @@ class SupabaseRealtimeManager @Inject constructor(
                         }
                     }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to subscribe to user connections", e)
             }
         }
@@ -642,6 +657,7 @@ class SupabaseRealtimeManager @Inject constructor(
                                         _projectInviteEvents.emit(ProjectInviteEvent.Inserted(invite))
                                     }
                                 } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
                                     Log.e(TAG, "Failed to parse project invite insert", e)
                                 }
                             }
@@ -656,6 +672,7 @@ class SupabaseRealtimeManager @Inject constructor(
                                         _projectInviteEvents.emit(ProjectInviteEvent.Updated(invite))
                                     }
                                 } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
                                     Log.e(TAG, "Failed to parse project invite update", e)
                                 }
                             }
@@ -671,6 +688,7 @@ class SupabaseRealtimeManager @Inject constructor(
                         }
                     }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to subscribe to project invites", e)
             }
         }
@@ -716,6 +734,7 @@ class SupabaseRealtimeManager @Inject constructor(
                                         Log.d(TAG, "✅ New member synced to Room: ${member.userId}")
                                     }
                                 } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
                                     Log.e(TAG, "Failed to parse project member insert", e)
                                 }
                             }
@@ -732,6 +751,7 @@ class SupabaseRealtimeManager @Inject constructor(
                         }
                     }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to subscribe to project members for $projectId", e)
             }
         }
@@ -748,6 +768,7 @@ class SupabaseRealtimeManager @Inject constructor(
                     memberChannels.remove("project_members:$projectId")
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to unsubscribe from project members for $projectId", e)
             }
         }
@@ -764,6 +785,7 @@ class SupabaseRealtimeManager @Inject constructor(
                     activeChannels.remove("connections:$userId")
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to unsubscribe from user connections", e)
             }
         }
@@ -780,6 +802,7 @@ class SupabaseRealtimeManager @Inject constructor(
                     activeChannels.remove("invites:$userId")
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to unsubscribe from project invites", e)
             }
         }
@@ -807,6 +830,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 }
                 memberChannels.clear()
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Error disconnecting realtime channels", e)
             }
         }
@@ -834,6 +858,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 _errorEvents.emit(RealtimeError.ParseFailed("message", record.keys.toList()))
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Error handling message insert", e)
             // BUG-009: Emit error event for UI notification
             _errorEvents.emit(RealtimeError.OperationFailed("message_insert", e.message ?: "Unknown error"))
@@ -858,6 +883,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 _errorEvents.emit(RealtimeError.ParseFailed("message", record.keys.toList()))
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Error handling message update", e)
             _errorEvents.emit(RealtimeError.OperationFailed("message_update", e.message ?: "Unknown error"))
         }
@@ -881,6 +907,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 _errorEvents.emit(RealtimeError.ParseFailed("message_delete", listOf("id")))
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Error handling message delete", e)
             _errorEvents.emit(RealtimeError.OperationFailed("message_delete", e.message ?: "Unknown error"))
         }
@@ -905,6 +932,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 _errorEvents.emit(RealtimeError.ParseFailed("task", record.keys.toList()))
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Error handling task insert", e)
             _errorEvents.emit(RealtimeError.OperationFailed("task_insert", e.message ?: "Unknown error"))
         }
@@ -928,6 +956,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 _errorEvents.emit(RealtimeError.ParseFailed("task", record.keys.toList()))
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Error handling task update", e)
             _errorEvents.emit(RealtimeError.OperationFailed("task_update", e.message ?: "Unknown error"))
         }
@@ -951,6 +980,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 _errorEvents.emit(RealtimeError.ParseFailed("task_delete", listOf("id")))
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Error handling task delete", e)
             _errorEvents.emit(RealtimeError.OperationFailed("task_delete", e.message ?: "Unknown error"))
         }
@@ -984,6 +1014,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 _errorEvents.emit(RealtimeError.ParseFailed("task_activity", record.keys.toList()))
             }
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Error handling task activity insert", e)
             _errorEvents.emit(RealtimeError.OperationFailed("task_activity_insert", e.message ?: "Unknown error"))
         }
@@ -1024,6 +1055,7 @@ class SupabaseRealtimeManager @Inject constructor(
             Log.e(TAG, "Serialization error parsing message: ${e.message}, fields: ${record.keys}")
             null
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Unexpected error parsing message: ${e.message}, fields: ${record.keys}")
             null
         }
@@ -1062,6 +1094,7 @@ class SupabaseRealtimeManager @Inject constructor(
             Log.e(TAG, "Serialization error parsing task: ${e.message}, fields: ${record.keys}")
             null
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Unexpected error parsing task: ${e.message}, fields: ${record.keys}")
             null
         }
@@ -1094,6 +1127,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 try {
                     json.decodeFromString<List<FieldChange>>(changesJson)
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Log.w(TAG, "Failed to parse changes JSON: ${e.message}")
                     emptyList()
                 }
@@ -1104,6 +1138,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 try {
                     json.decodeFromString<Map<String, String>>(metadataJson)
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Log.w(TAG, "Failed to parse metadata JSON: ${e.message}")
                     emptyMap()
                 }
@@ -1120,6 +1155,7 @@ class SupabaseRealtimeManager @Inject constructor(
                 actionType = try {
                     ActivityActionType.valueOf(record["action_type"] as? String ?: "UPDATED")
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     ActivityActionType.UPDATED
                 },
                 timestamp = when (val ts = record["timestamp"]) {
@@ -1140,6 +1176,7 @@ class SupabaseRealtimeManager @Inject constructor(
             Log.e(TAG, "Serialization error parsing task activity: ${e.message}, fields: ${record.keys}")
             null
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Unexpected error parsing task activity: ${e.message}, fields: ${record.keys}")
             null
         }

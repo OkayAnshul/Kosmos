@@ -5,6 +5,7 @@ import com.example.kosmos.core.models.ProjectMember
 import com.example.kosmos.core.models.ProjectRole
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.decodeFromString
+import kotlinx.coroutines.CancellationException
 
 /**
  * Checks permissions for project members
@@ -107,6 +108,7 @@ object PermissionChecker {
                     }
                 }.toSet()
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 // If parsing fails, fall back to default permissions
                 member.role.getDefaultPermissions()
             }

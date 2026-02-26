@@ -53,8 +53,12 @@ class InitialSyncManager @Inject constructor(
     private val projectRepository: ProjectRepository,
     private val chatRepository: ChatRepository,
     private val taskRepository: TaskRepository,
+    private val userConnectionRepository: com.example.kosmos.data.repository.UserConnectionRepository,
+    private val projectInviteRepository: com.example.kosmos.data.repository.ProjectInviteRepository,
+    private val projectJoinRequestRepository: com.example.kosmos.data.repository.ProjectJoinRequestRepository,
     private val syncTimestampDao: com.example.kosmos.core.database.dao.SyncTimestampDao,  // Incremental sync: Track last sync timestamps
-    private val fkRetryQueue: FKRetryQueue  // NEW: FK violation retry queue
+    private val fkRetryQueue: FKRetryQueue,  // NEW: FK violation retry queue
+    private val realtimeManager: com.example.kosmos.data.realtime.SupabaseRealtimeManager
 ) {
 
     companion object {
@@ -267,6 +271,19 @@ class InitialSyncManager @Inject constructor(
                             }
                         }
 
+                        // 3d. Sync time entries for project (Bug M fix: needed for fresh installs)
+                        supervisorScope {
+                            try {
+                                taskRepository.syncTimeEntriesForProject(projectId)
+                                Log.d(TAG, "  ✅ Time entries synced for ${project.name}")
+                            } catch (e: kotlinx.coroutines.CancellationException) {
+                                Log.w(TAG, "  ⚠️ Time entries sync cancelled for ${project.name}")
+                            } catch (e: Exception) {
+                                Log.w(TAG, "  ⚠️ Time entries sync failed for ${project.name} (non-critical)", e)
+                                // Don't set projectHadError — time entries are best-effort
+                            }
+                        }
+
                         if (projectHadError) projectSyncErrors++
                         projectsSynced++
 
@@ -277,6 +294,24 @@ class InitialSyncManager @Inject constructor(
                 } catch (e: Exception) {
                     Log.e(TAG, "❌ Project data sync failed", e)
                 }
+            }
+        }
+
+        // Step 4: Sync user-level data (connections, invites, join requests)
+        supervisorScope {
+            try {
+                Log.d(TAG, "📥 Syncing user connections, invites, join requests...")
+                userConnectionRepository.syncFromSupabase(userId)
+                projectInviteRepository.syncPendingForUser(userId)
+                projectJoinRequestRepository.syncForUser(userId)
+                // Start real-time subscriptions for connections and invites
+                realtimeManager.subscribeToUserConnections(userId)
+                realtimeManager.subscribeToProjectInvites(userId)
+                Log.d(TAG, "✅ User connections/invites/join requests synced + realtime subscribed")
+            } catch (e: CancellationException) {
+                Log.w(TAG, "⚠️ User connections sync cancelled")
+            } catch (e: Exception) {
+                Log.w(TAG, "⚠️ User connections sync failed (non-critical)", e)
             }
         }
 
@@ -318,6 +353,9 @@ class InitialSyncManager @Inject constructor(
             val chatsDeferred = async { chatRepository.syncProjectChatRooms(projectId) }
 
             val results = awaitAll(membersDeferred, tasksDeferred, chatsDeferred)
+
+            // Subscribe to real-time project member changes so all members see live membership
+            realtimeManager.subscribeToProjectMembers(projectId)
 
             // Check if any failed
             val failures = results.filter { it.isFailure }

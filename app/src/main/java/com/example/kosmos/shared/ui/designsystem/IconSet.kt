@@ -325,6 +325,8 @@ object IconSet {
         val expandLess = Icons.Filled.ExpandLess
         val chevronRight = Icons.Filled.ChevronRight
         val chevronLeft = Icons.Filled.ChevronLeft
+        val arrowForward = Icons.AutoMirrored.Filled.ArrowForward
+        val arrowBack = Icons.AutoMirrored.Filled.ArrowBack
     }
 
     /**

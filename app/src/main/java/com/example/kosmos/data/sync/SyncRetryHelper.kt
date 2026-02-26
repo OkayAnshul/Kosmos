@@ -3,6 +3,7 @@ package com.example.kosmos.data.sync
 import android.util.Log
 import io.github.jan.supabase.postgrest.exception.PostgrestRestException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
 
 /**
  * Helper for handling Supabase sync failures with intelligent retry logic
@@ -67,6 +68,7 @@ object SyncRetryHelper {
                     return result
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 lastException = e
                 Log.e(TAG, "❌ Unexpected error during retry attempt $attempt for $entityName", e)
                 return Result.failure(e)

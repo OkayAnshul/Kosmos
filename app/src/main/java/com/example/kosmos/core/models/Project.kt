@@ -1,10 +1,67 @@
 package com.example.kosmos.core.models
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.People
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.UUID
+
+/**
+ * Project category enum for categorizing projects
+ */
+@Serializable
+enum class ProjectCategory {
+    TECH,
+    SOCIAL,
+    BUSINESS,
+    OTHER;
+
+    /**
+     * Get human-readable display name for the category
+     */
+    fun getDisplayName(): String = when(this) {
+        TECH -> "Technology"
+        SOCIAL -> "Social/Community"
+        BUSINESS -> "Business"
+        OTHER -> "Other"
+    }
+
+    /**
+     * Get icon for the category
+     */
+    fun getIcon(): ImageVector = when(this) {
+        TECH -> Icons.Default.Code
+        SOCIAL -> Icons.Default.People
+        BUSINESS -> Icons.Default.Business
+        OTHER -> Icons.Default.Category
+    }
+
+    /**
+     * Get required fields for this category
+     */
+    fun getRequiredFields(): List<String> = when(this) {
+        TECH -> listOf("name", "description")
+        SOCIAL -> listOf("name", "description", "projectMotive")
+        BUSINESS -> listOf("name", "description", "businessModel")
+        OTHER -> listOf("name")
+    }
+
+    /**
+     * Get optional fields for this category
+     */
+    fun getOptionalFields(): List<String> = when(this) {
+        TECH -> listOf("githubUrl", "techStack", "openSourceLicense", "deadline", "tags")
+        SOCIAL -> listOf("targetAudience", "deadline", "tags")
+        BUSINESS -> listOf("websiteUrl", "industryTags", "deadline", "tags")
+        OTHER -> listOf("projectMotive", "deadline", "tags")
+    }
+}
 
 /**
  * Project entity representing a project management workspace
@@ -37,6 +94,12 @@ data class Project(
     val updatedAt: Long = System.currentTimeMillis(),
 
     /**
+     * P1-11: Version field for optimistic locking
+     * Incremented on every update to detect conflicts
+     */
+    val version: Int = 1,
+
+    /**
      * Optional cover image URL for the project
      */
     @SerialName("image_url")
@@ -51,6 +114,88 @@ data class Project(
      * Project settings in JSON format (can store various preferences)
      */
     val settings: String? = null,
+
+    // ========================================================================
+    // PROJECT CREATION WIZARD FIELDS
+    // Added: 2026-01-06 for multi-step project creation feature
+    // ========================================================================
+
+    /**
+     * Project category (tech, social, business, other)
+     * Determines which fields are required/optional
+     */
+    val category: ProjectCategory = ProjectCategory.OTHER,
+
+    /**
+     * Project deadline timestamp (milliseconds)
+     * Null if no deadline set
+     */
+    val deadline: Long? = null,
+
+    /**
+     * Project website URL
+     * Mainly used for BUSINESS category projects
+     */
+    @SerialName("website_url")
+    val websiteUrl: String? = null,
+
+    /**
+     * GitHub repository URL
+     * Mainly used for TECH category projects
+     */
+    @SerialName("github_url")
+    val githubUrl: String? = null,
+
+    /**
+     * Project motive/goals description
+     * Mainly used for SOCIAL and OTHER category projects
+     */
+    @SerialName("project_motive")
+    val projectMotive: String? = null,
+
+    /**
+     * Technology stack (stored as JSON array string)
+     * Example: ["Kotlin", "Android", "Jetpack Compose"]
+     * Mainly used for TECH category projects
+     */
+    @SerialName("tech_stack")
+    val techStack: String? = null,
+
+    /**
+     * General tags (stored as JSON array string)
+     * Example: ["project-management", "collaboration"]
+     */
+    val tags: String? = null,
+
+    /**
+     * Business model description
+     * Mainly used for BUSINESS category projects
+     */
+    @SerialName("business_model")
+    val businessModel: String? = null,
+
+    /**
+     * Target audience description
+     * Mainly used for SOCIAL category projects
+     */
+    @SerialName("target_audience")
+    val targetAudience: String? = null,
+
+    /**
+     * Industry tags (stored as JSON array string)
+     * Example: ["fintech", "healthcare", "education"]
+     * Mainly used for BUSINESS category projects
+     */
+    @SerialName("industry_tags")
+    val industryTags: String? = null,
+
+    /**
+     * Open source license type
+     * Example: "MIT", "Apache 2.0", "GPL v3"
+     * Mainly used for TECH category projects
+     */
+    @SerialName("open_source_license")
+    val openSourceLicense: String? = null,
 
     // ========================================================================
     // METADATA COLUMNS: Cached statistics for performance optimization

@@ -15,6 +15,10 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE id IN (:userIds)")
     suspend fun getUsersByIds(userIds: List<String>): List<User>
 
+    // Phase 4 TODO FIX: Added for @mention extraction in NotificationRulesEngine
+    @Query("SELECT * FROM users WHERE username = :username LIMIT 1")
+    suspend fun getUserByUsername(username: String): User?
+
     @Query("SELECT * FROM users ORDER BY displayName ASC")
     fun getAllUsersFlow(): Flow<List<User>>
 

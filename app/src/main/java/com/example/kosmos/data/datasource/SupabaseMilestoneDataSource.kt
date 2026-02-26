@@ -4,6 +4,8 @@ import kotlinx.coroutines.CancellationException
 import android.util.Log
 import com.example.kosmos.core.models.Milestone
 import io.github.jan.supabase.SupabaseClient
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
@@ -36,21 +38,19 @@ class SupabaseMilestoneDataSource @Inject constructor(
         return try {
             Log.d(TAG, "Inserting milestone: ${milestone.id}")
 
-            supabase.from(TABLE_NAME).insert(
-                mapOf(
-                    "id" to milestone.id,
-                    "project_id" to milestone.projectId,
-                    "name" to milestone.name,
-                    "description" to milestone.description,
-                    "due_date" to milestone.dueDate,
-                    "status" to milestone.status.name.lowercase(),
-                    "color" to milestone.color,
-                    "sort_order" to milestone.sortOrder,
-                    "created_at" to milestone.createdAt,
-                    "created_by" to milestone.createdBy,
-                    "updated_at" to milestone.updatedAt
-                )
-            )
+            supabase.from(TABLE_NAME).insert(buildJsonObject {
+                put("id", milestone.id)
+                put("project_id", milestone.projectId)
+                put("name", milestone.name)
+                put("description", milestone.description)
+                put("due_date", milestone.dueDate)
+                put("status", milestone.status.name.lowercase())
+                put("color", milestone.color)
+                put("sort_order", milestone.sortOrder)
+                put("created_at", milestone.createdAt)
+                put("created_by", milestone.createdBy)
+                put("updated_at", milestone.updatedAt)
+            })
 
             Log.d(TAG, "Successfully inserted milestone: ${milestone.id}")
             Result.success(milestone)
@@ -74,17 +74,15 @@ class SupabaseMilestoneDataSource @Inject constructor(
         return try {
             Log.d(TAG, "Updating milestone: ${milestone.id}")
 
-            supabase.from(TABLE_NAME).update(
-                mapOf(
-                    "name" to milestone.name,
-                    "description" to milestone.description,
-                    "due_date" to milestone.dueDate,
-                    "status" to milestone.status.name.lowercase(),
-                    "color" to milestone.color,
-                    "sort_order" to milestone.sortOrder,
-                    "updated_at" to System.currentTimeMillis()
-                )
-            ) {
+            supabase.from(TABLE_NAME).update(buildJsonObject {
+                put("name", milestone.name)
+                put("description", milestone.description)
+                put("due_date", milestone.dueDate)
+                put("status", milestone.status.name.lowercase())
+                put("color", milestone.color)
+                put("sort_order", milestone.sortOrder)
+                put("updated_at", System.currentTimeMillis())
+            }) {
                 filter {
                     eq("id", milestone.id)
                 }

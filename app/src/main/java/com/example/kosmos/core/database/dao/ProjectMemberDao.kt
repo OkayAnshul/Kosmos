@@ -22,6 +22,9 @@ interface ProjectMemberDao {
     @Query("SELECT * FROM project_members WHERE projectId = :projectId AND role = :role AND isActive = 1")
     fun getMembersByRole(projectId: String, role: ProjectRole): Flow<List<ProjectMember>>
 
+    @Query("SELECT * FROM project_members WHERE projectId = :projectId AND role = :role AND isActive = 1")
+    suspend fun getMembersByRoleSync(projectId: String, role: String): List<ProjectMember>
+
     @Query("SELECT * FROM project_members WHERE userId = :userId AND isActive = 1 ORDER BY lastActivityAt DESC")
     fun getUserMemberships(userId: String): Flow<List<ProjectMember>>
 
@@ -69,4 +72,39 @@ interface ProjectMemberDao {
         AND pm1.isActive = 1 AND pm2.isActive = 1
     """)
     suspend fun getSharedProjectCount(userId1: String, userId2: String): Int
+
+    /**
+     * Get all project IDs where user is an active member
+     * Used for finding recent collaborators
+     *
+     * @param userId User ID
+     * @return List of project IDs
+     */
+    @Query("SELECT DISTINCT projectId FROM project_members WHERE userId = :userId AND isActive = 1")
+    suspend fun getUserProjectIds(userId: String): List<String>
+
+    /**
+     * Get collaborator user IDs from specified projects
+     * Returns other members (excluding specified user) ordered by recent activity
+     * Used for suggesting recent collaborators in project creation wizard
+     *
+     * @param projectIds List of project IDs to search
+     * @param excludeUserId User ID to exclude (typically the requesting user)
+     * @param limit Maximum number of collaborators to return
+     * @return List of user IDs ordered by lastActivityAt DESC
+     */
+    @Query("""
+        SELECT DISTINCT userId
+        FROM project_members
+        WHERE projectId IN (:projectIds)
+        AND userId != :excludeUserId
+        AND isActive = 1
+        ORDER BY lastActivityAt DESC
+        LIMIT :limit
+    """)
+    suspend fun getCollaboratorIds(
+        projectIds: List<String>,
+        excludeUserId: String,
+        limit: Int
+    ): List<String>
 }

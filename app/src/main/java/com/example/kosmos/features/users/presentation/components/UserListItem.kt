@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.kosmos.core.models.User
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
 /**
  * User List Item Component
  * Displays user information in a list row format
@@ -18,11 +18,12 @@ import com.example.kosmos.core.models.User
 fun UserListItem(
     user: User,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    trailingContent: @Composable (() -> Unit)? = null
 ) {
     Surface(
         modifier = modifier.clickable(onClick = onClick),
-        color = MaterialTheme.colorScheme.surface
+        color = ColorTokens.ReactTheme.card
     ) {
         Row(
             modifier = Modifier
@@ -48,7 +49,7 @@ fun UserListItem(
                 Text(
                     text = user.displayName,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = ColorTokens.ReactTheme.foreground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -58,7 +59,7 @@ fun UserListItem(
                     Text(
                         text = "@${user.username}",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = ColorTokens.ReactTheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -68,7 +69,7 @@ fun UserListItem(
                 Text(
                     text = user.email,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = ColorTokens.ReactTheme.mutedForeground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -78,15 +79,19 @@ fun UserListItem(
                     Text(
                         text = "Online",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = ColorTokens.ReactTheme.primary
                     )
                 } else if (user.lastSeen > 0) {
                     Text(
                         text = formatLastSeen(user.lastSeen),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = ColorTokens.ReactTheme.mutedForeground
                     )
                 }
+            }
+
+            if (trailingContent != null) {
+                trailingContent()
             }
         }
     }

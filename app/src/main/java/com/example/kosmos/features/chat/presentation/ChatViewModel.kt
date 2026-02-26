@@ -8,6 +8,7 @@ import com.example.kosmos.data.repository.AuthRepository
 import com.example.kosmos.data.repository.ChatRepository
 import com.example.kosmos.data.repository.UserRepository
 import com.example.kosmos.data.repository.VoiceRepository
+import com.example.kosmos.shared.utils.ErrorMapper
 import com.example.kosmos.core.models.ChatRoom
 import com.example.kosmos.core.models.Message
 import com.example.kosmos.core.models.MessageType
@@ -22,10 +23,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -39,6 +43,10 @@ class ChatViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
+    // Unread count across all chats for bottom nav badge
+    private val _unreadCount = MutableStateFlow(0)
+    val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
+
     val currentUser = authRepository.getCurrentUser()
     private var currentChatRoomId: String = ""
 
@@ -47,6 +55,10 @@ class ChatViewModel @Inject constructor(
     private var messagesJob: Job? = null
     private var messageEventsJob: Job? = null
     private var typingEventsJob: Job? = null
+    private var searchJob: Job? = null
+
+    // Debounced search query flow
+    private val _searchQuery = MutableStateFlow("")
 
     // Voice recording components - disabled for MVP (Phase 5)
     // private var voiceRecordingHelper: VoiceRecordingHelper? = null
@@ -55,6 +67,28 @@ class ChatViewModel @Inject constructor(
     // init {
     //     voiceRecordingHelper = VoiceRecordingHelper(context)
     // }
+
+    init {
+        // Load total unread count across all user's chats
+        currentUser?.let { user ->
+            viewModelScope.launch {
+                chatRepository.getTotalUnreadCountFlow(user.id).collect { count ->
+                    _unreadCount.value = count
+                }
+            }
+        }
+
+        // Setup debounced search
+        viewModelScope.launch {
+            _searchQuery
+                .debounce(300) // 300ms debounce for better UX
+                .distinctUntilChanged()
+                .collect { query ->
+                    _uiState.value = _uiState.value.copy(searchQuery = query)
+                    performSearch(query)
+                }
+        }
+    }
 
     fun loadChat(chatRoomId: String) {
         currentChatRoomId = chatRoomId
@@ -79,6 +113,7 @@ class ChatViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
                     error = "Failed to load chat room: ${e.message}"
                 )
@@ -99,6 +134,7 @@ class ChatViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = "Failed to load messages: ${e.message}"
@@ -130,8 +166,9 @@ class ChatViewModel @Inject constructor(
                     replyingToMessage = null // Clear reply after sending
                 )
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
-                    error = "Failed to send message: ${e.message}"
+                    error = ErrorMapper.mapError(e, "send message")
                 )
             }
         }
@@ -189,6 +226,7 @@ class ChatViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e("ChatViewModel", "Error sending voice message", e)
                 _uiState.value = _uiState.value.copy(
                     error = "Failed to send voice message: ${e.message}"
@@ -201,6 +239,7 @@ class ChatViewModel @Inject constructor(
                     audioFile.delete()
                     Log.d("ChatViewModel", "Temporary audio file deleted")
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Log.w("ChatViewModel", "Failed to delete temporary audio file", e)
                 }
             }
@@ -263,6 +302,7 @@ class ChatViewModel @Inject constructor(
                         hasMoreMessages = olderMessages.isNotEmpty()
                     )
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     _uiState.value = _uiState.value.copy(
                         isLoadingMore = false,
                         error = "Failed to load older messages"
@@ -282,6 +322,7 @@ class ChatViewModel @Inject constructor(
                             chatRepository.markMessageAsRead(message.id, user.id)
                         }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     // Handle silently
                 }
             }
@@ -376,6 +417,7 @@ class ChatViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e("ChatViewModel", "Error editing message", e)
                 _uiState.value = _uiState.value.copy(
                     error = "Failed to edit message: ${e.message}"
@@ -403,6 +445,7 @@ class ChatViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e("ChatViewModel", "Error deleting message", e)
                 _uiState.value = _uiState.value.copy(
                     error = "Failed to delete message: ${e.message}"
@@ -429,6 +472,7 @@ class ChatViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e("ChatViewModel", "Error toggling reaction", e)
                 _uiState.value = _uiState.value.copy(
                     error = "Failed to react to message: ${e.message}"
@@ -489,6 +533,70 @@ class ChatViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Search messages in the current chat room
+     * Will trigger debounced search automatically (300ms delay)
+     * @param query Search query
+     */
+    fun searchMessages(query: String) {
+        _searchQuery.value = query
+    }
+
+    /**
+     * Perform the actual search after debouncing
+     */
+    private fun performSearch(query: String) {
+        if (currentChatRoomId.isEmpty()) {
+            return
+        }
+
+        // Cancel previous search job
+        searchJob?.cancel()
+
+        if (query.isBlank()) {
+            // If no search query, clear search results
+            _uiState.value = _uiState.value.copy(
+                isSearching = false,
+                searchResults = emptyList()
+            )
+            return
+        }
+
+        // Perform search
+        searchJob = viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(isSearching = true)
+
+                chatRepository.searchMessages(currentChatRoomId, query).collect { results ->
+                    _uiState.value = _uiState.value.copy(
+                        isSearching = false,
+                        searchResults = results
+                    )
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                Log.e("ChatViewModel", "Search failed", e)
+                _uiState.value = _uiState.value.copy(
+                    isSearching = false,
+                    error = "Search failed: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Clear search and return to normal message view
+     */
+    fun clearSearch() {
+        _searchQuery.value = ""
+        searchJob?.cancel()
+        _uiState.value = _uiState.value.copy(
+            searchQuery = "",
+            isSearching = false,
+            searchResults = emptyList()
+        )
+    }
+
     override fun onCleared() {
         super.onCleared()
 
@@ -497,6 +605,7 @@ class ChatViewModel @Inject constructor(
         messagesJob?.cancel()
         messageEventsJob?.cancel()
         typingEventsJob?.cancel()
+        searchJob?.cancel()
 
         // Stop realtime subscriptions
         if (currentChatRoomId.isNotEmpty()) {
@@ -529,5 +638,9 @@ data class ChatUiState(
     // Reply/Threading
     val replyingToMessage: Message? = null,
     // Typing indicators
-    val typingUsers: Set<String> = emptySet()
+    val typingUsers: Set<String> = emptySet(),
+    // Search
+    val searchQuery: String = "",
+    val isSearching: Boolean = false,
+    val searchResults: List<Message> = emptyList()
 )

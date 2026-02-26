@@ -120,7 +120,7 @@ private fun TaskCardContent(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surface,
+        color = ColorTokens.ReactTheme.card,
         tonalElevation = Tokens.Elevation.level1
     ) {
         Column(
@@ -159,9 +159,9 @@ private fun TaskCardContent(
                 text = task.title,
                 style = TypographyTokens.typography.titleMedium,
                 color = if (task.status == TaskStatus.DONE)
-                    MaterialTheme.colorScheme.onSurfaceVariant
+                    ColorTokens.ReactTheme.mutedForeground
                 else
-                    MaterialTheme.colorScheme.onSurface,
+                    ColorTokens.ReactTheme.foreground,
                 textDecoration = if (task.status == TaskStatus.DONE)
                     TextDecoration.LineThrough
                 else
@@ -175,7 +175,7 @@ private fun TaskCardContent(
                 Text(
                     text = task.description,
                     style = TypographyTokens.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = ColorTokens.ReactTheme.mutedForeground,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -195,14 +195,14 @@ private fun TaskCardContent(
                     ) {
                         Icon(
                             imageVector = IconSet.Navigation.projects,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            contentDescription = "",
+                            tint = ColorTokens.ReactTheme.primary,
                             modifier = Modifier.size(Tokens.Size.iconSmall)
                         )
                         Text(
                             text = task.projectName,
                             style = TypographyTokens.Custom.caption,
-                            color = MaterialTheme.colorScheme.primary
+                            color = ColorTokens.ReactTheme.primary
                         )
                     }
                 }
@@ -217,11 +217,11 @@ private fun TaskCardContent(
                     ) {
                         Icon(
                             imageVector = IconSet.Time.calendar,
-                            contentDescription = null,
+                            contentDescription = "",
                             tint = if (task.isOverdue)
                                 ColorTokens.Error.light
                             else
-                                MaterialTheme.colorScheme.onSurfaceVariant,
+                                ColorTokens.ReactTheme.mutedForeground,
                             modifier = Modifier.size(Tokens.Size.iconSmall)
                         )
                         Text(
@@ -230,7 +230,7 @@ private fun TaskCardContent(
                             color = if (task.isOverdue)
                                 ColorTokens.Error.light
                             else
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                                ColorTokens.ReactTheme.mutedForeground
                         )
                     }
                 }
@@ -243,14 +243,14 @@ private fun TaskCardContent(
                     ) {
                         Icon(
                             imageVector = IconSet.User.profile,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            contentDescription = "",
+                            tint = ColorTokens.ReactTheme.mutedForeground,
                             modifier = Modifier.size(Tokens.Size.iconSmall)
                         )
                         Text(
                             text = task.assigneeCount.toString(),
                             style = TypographyTokens.Custom.caption,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = ColorTokens.ReactTheme.mutedForeground
                         )
                     }
                 }
@@ -278,7 +278,7 @@ fun BoardTaskCard(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surface,
+        color = ColorTokens.ReactTheme.card,
         tonalElevation = Tokens.Elevation.level1
     ) {
         Column(
@@ -296,7 +296,7 @@ fun BoardTaskCard(
             Text(
                 text = task.title,
                 style = TypographyTokens.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = ColorTokens.ReactTheme.foreground,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
@@ -315,7 +315,7 @@ fun BoardTaskCard(
                         color = if (task.isOverdue)
                             ColorTokens.Error.light
                         else
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                            ColorTokens.ReactTheme.mutedForeground
                     )
                 }
 
@@ -325,14 +325,14 @@ fun BoardTaskCard(
                 if (task.assigneeCount > 0) {
                     Surface(
                         shape = MaterialTheme.shapes.extraSmall,
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = ColorTokens.ReactTheme.secondary,
                         modifier = Modifier.size(20.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 text = task.assigneeCount.toString(),
                                 style = TypographyTokens.Custom.caption,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                color = ColorTokens.ReactTheme.primaryForeground
                             )
                         }
                     }
@@ -415,7 +415,7 @@ fun StatusChip(
             "Done"
         )
         TaskStatus.CANCELLED -> Triple(
-            MaterialTheme.colorScheme.onSurfaceVariant,
+            ColorTokens.ReactTheme.mutedForeground,
             IconSet.Navigation.close,
             "Cancelled"
         )
@@ -436,7 +436,7 @@ fun StatusChip(
         ) {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
+                contentDescription = "",
                 tint = color,
                 modifier = Modifier.size(Tokens.Size.iconSmall)
             )
@@ -468,7 +468,7 @@ fun TaskFilterChips(
         Text(
             text = "Status",
             style = TypographyTokens.Custom.caption,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = ColorTokens.ReactTheme.mutedForeground,
             modifier = Modifier.padding(start = Tokens.Spacing.xs)
         )
 
@@ -495,7 +495,7 @@ fun TaskFilterChips(
         Text(
             text = "Priority",
             style = TypographyTokens.Custom.caption,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = ColorTokens.ReactTheme.mutedForeground,
             modifier = Modifier.padding(start = Tokens.Spacing.xs)
         )
 

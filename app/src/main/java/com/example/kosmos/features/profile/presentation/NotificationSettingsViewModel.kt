@@ -1,150 +1,220 @@
 package com.example.kosmos.features.profile.presentation
 
-import android.content.Context
-import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.kosmos.core.models.DoNotDisturbSettings
+import com.example.kosmos.core.models.NotificationSettings
+import com.example.kosmos.core.models.UserSettings
+import com.example.kosmos.data.repository.AuthRepository
+import com.example.kosmos.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 /**
  * ViewModel for Notification Settings Screen
  * Manages user notification preferences and settings
+ * Now persists to Supabase database instead of SharedPreferences
  */
 @HiltViewModel
 class NotificationSettingsViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
+    private val userRepository: UserRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
-
-    private val prefs: SharedPreferences = context.getSharedPreferences(
-        "notification_settings",
-        Context.MODE_PRIVATE
-    )
 
     private val _uiState = MutableStateFlow(NotificationSettingsUiState())
     val uiState: StateFlow<NotificationSettingsUiState> = _uiState.asStateFlow()
+
+    private val currentUserId: String?
+        get() = authRepository.getCurrentUser()?.id
 
     init {
         loadSettings()
     }
 
     private fun loadSettings() {
-        _uiState.update {
-            it.copy(
-                allNotificationsEnabled = prefs.getBoolean("all_notifications", true),
-                messageNotifications = prefs.getBoolean("message_notifications", true),
-                taskNotifications = prefs.getBoolean("task_notifications", true),
-                projectUpdateNotifications = prefs.getBoolean("project_updates", true),
-                mentionNotifications = prefs.getBoolean("mention_notifications", true),
-                mentionsOnlyMode = prefs.getBoolean("mentions_only_mode", false),
-                soundEnabled = prefs.getBoolean("sound_enabled", true),
-                vibrationEnabled = prefs.getBoolean("vibration_enabled", true),
-                dndEnabled = prefs.getBoolean("dnd_enabled", false),
-                dndStartHour = prefs.getInt("dnd_start_hour", 22),
-                dndStartMinute = prefs.getInt("dnd_start_minute", 0),
-                dndEndHour = prefs.getInt("dnd_end_hour", 8),
-                dndEndMinute = prefs.getInt("dnd_end_minute", 0),
-                isLoading = false
+        viewModelScope.launch {
+            // Wait for AuthRepository's async init to complete if needed
+            val userId = currentUserId ?: run {
+                val user = authRepository.userFlow.filterNotNull().first()
+                user.id
+            }
+
+            _uiState.update { it.copy(isLoading = true) }
+
+            val result = userRepository.getUserSettings(userId)
+
+            if (result.isSuccess) {
+                val settings = result.getOrNull() ?: UserSettings()
+                val notif = settings.notifications
+
+                _uiState.update {
+                    it.copy(
+                        allNotificationsEnabled = notif.enabled,
+                        messageNotifications = notif.messages,
+                        taskNotifications = notif.tasks,
+                        projectUpdateNotifications = notif.projectUpdates,
+                        mentionNotifications = notif.mentions,
+                        mentionsOnlyMode = notif.mentionsOnlyMode,
+                        soundEnabled = notif.sound,
+                        vibrationEnabled = notif.vibration,
+                        dndEnabled = notif.dnd.enabled,
+                        dndStartHour = notif.dnd.startHour,
+                        dndStartMinute = notif.dnd.startMinute,
+                        dndEndHour = notif.dnd.endHour,
+                        dndEndMinute = notif.dnd.endMinute,
+                        isLoading = false
+                    )
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = result.exceptionOrNull()?.message
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun saveSettings() {
+        val userId = currentUserId ?: return
+
+        // P1-03 FIX: Add try/catch for error handling
+        try {
+            // Get current settings from database to preserve privacy settings
+            val currentSettings = userRepository.getUserSettings(userId).getOrNull() ?: UserSettings()
+
+            // Get current UI state
+            val state = _uiState.value
+
+            // Create updated settings object (preserve privacy, update notifications)
+            val updatedSettings = currentSettings.copy(
+                notifications = NotificationSettings(
+                    enabled = state.allNotificationsEnabled,
+                    messages = state.messageNotifications,
+                    tasks = state.taskNotifications,
+                    projectUpdates = state.projectUpdateNotifications,
+                    mentions = state.mentionNotifications,
+                    mentionsOnlyMode = state.mentionsOnlyMode,
+                    sound = state.soundEnabled,
+                    vibration = state.vibrationEnabled,
+                    dnd = DoNotDisturbSettings(
+                        enabled = state.dndEnabled,
+                        startHour = state.dndStartHour,
+                        startMinute = state.dndStartMinute,
+                        endHour = state.dndEndHour,
+                        endMinute = state.dndEndMinute
+                    )
+                )
             )
+
+            // Save to database
+            val result = userRepository.updateUserSettings(userId, updatedSettings)
+            if (result.isFailure) {
+                _uiState.update {
+                    it.copy(error = "Failed to save settings: ${result.exceptionOrNull()?.message}")
+                }
+            }
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            _uiState.update {
+                it.copy(error = "Failed to save notification settings: ${e.message}")
+            }
         }
     }
 
     fun toggleAllNotifications(enabled: Boolean) {
         viewModelScope.launch {
-            prefs.edit().putBoolean("all_notifications", enabled).apply()
             _uiState.update { it.copy(allNotificationsEnabled = enabled) }
+            saveSettings()
         }
     }
 
     fun toggleMessageNotifications(enabled: Boolean) {
         viewModelScope.launch {
-            prefs.edit().putBoolean("message_notifications", enabled).apply()
             _uiState.update { it.copy(messageNotifications = enabled) }
+            saveSettings()
         }
     }
 
     fun toggleTaskNotifications(enabled: Boolean) {
         viewModelScope.launch {
-            prefs.edit().putBoolean("task_notifications", enabled).apply()
             _uiState.update { it.copy(taskNotifications = enabled) }
+            saveSettings()
         }
     }
 
     fun toggleProjectUpdateNotifications(enabled: Boolean) {
         viewModelScope.launch {
-            prefs.edit().putBoolean("project_updates", enabled).apply()
             _uiState.update { it.copy(projectUpdateNotifications = enabled) }
+            saveSettings()
         }
     }
 
     fun toggleMentionNotifications(enabled: Boolean) {
         viewModelScope.launch {
-            prefs.edit().putBoolean("mention_notifications", enabled).apply()
             _uiState.update { it.copy(mentionNotifications = enabled) }
+            saveSettings()
         }
     }
 
     fun toggleMentionsOnlyMode(enabled: Boolean) {
         viewModelScope.launch {
-            prefs.edit().putBoolean("mentions_only_mode", enabled).apply()
             _uiState.update { it.copy(mentionsOnlyMode = enabled) }
+            saveSettings()
         }
     }
 
     fun toggleSound(enabled: Boolean) {
         viewModelScope.launch {
-            prefs.edit().putBoolean("sound_enabled", enabled).apply()
             _uiState.update { it.copy(soundEnabled = enabled) }
+            saveSettings()
         }
     }
 
     fun toggleVibration(enabled: Boolean) {
         viewModelScope.launch {
-            prefs.edit().putBoolean("vibration_enabled", enabled).apply()
             _uiState.update { it.copy(vibrationEnabled = enabled) }
+            saveSettings()
         }
     }
 
     fun toggleDoNotDisturb(enabled: Boolean) {
         viewModelScope.launch {
-            prefs.edit().putBoolean("dnd_enabled", enabled).apply()
             _uiState.update { it.copy(dndEnabled = enabled) }
+            saveSettings()
         }
     }
 
     fun updateDndStartTime(hour: Int, minute: Int) {
         viewModelScope.launch {
-            prefs.edit()
-                .putInt("dnd_start_hour", hour)
-                .putInt("dnd_start_minute", minute)
-                .apply()
             _uiState.update {
                 it.copy(
                     dndStartHour = hour,
                     dndStartMinute = minute
                 )
             }
+            saveSettings()
         }
     }
 
     fun updateDndEndTime(hour: Int, minute: Int) {
         viewModelScope.launch {
-            prefs.edit()
-                .putInt("dnd_end_hour", hour)
-                .putInt("dnd_end_minute", minute)
-                .apply()
             _uiState.update {
                 it.copy(
                     dndEndHour = hour,
                     dndEndMinute = minute
                 )
             }
+            saveSettings()
         }
     }
 }

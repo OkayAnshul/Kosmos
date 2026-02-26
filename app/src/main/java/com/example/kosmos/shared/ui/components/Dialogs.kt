@@ -1,16 +1,89 @@
 package com.example.kosmos.shared.ui.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.kosmos.shared.ui.designsystem.IconSet
 import com.example.kosmos.shared.ui.designsystem.Tokens
 import com.example.kosmos.shared.ui.designsystem.TypographyTokens
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
+
+/**
+ * Unified dialog styling defaults for Kosmos dark theme.
+ * All dialogs/popups should use these values for visual consistency.
+ */
+object KosmosDialogDefaults {
+    val containerColor get() = ColorTokens.ReactTheme.card
+    val shape: Shape = RoundedCornerShape(Tokens.CornerRadius.lg) // 16dp
+    val elevation = Tokens.Elevation.level3 // 6dp
+    val titleStyle get() = TypographyTokens.Custom.dialogTitle
+    val titleColor get() = ColorTokens.ReactTheme.foreground
+    val subtitleColor get() = ColorTokens.ReactTheme.mutedForeground
+    val dividerColor get() = ColorTokens.ReactTheme.border.copy(alpha = 0.3f)
+    val primaryButtonColor get() = ColorTokens.ReactTheme.primary
+    val dismissButtonColor get() = ColorTokens.ReactTheme.mutedForeground
+
+    /** Standard OutlinedTextField colors for dialogs */
+    @Composable
+    fun textFieldColors() = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = ColorTokens.ReactTheme.foreground,
+        unfocusedTextColor = ColorTokens.ReactTheme.foreground,
+        focusedContainerColor = ColorTokens.ReactTheme.secondary,
+        unfocusedContainerColor = ColorTokens.ReactTheme.secondary,
+        focusedBorderColor = ColorTokens.ReactTheme.primary,
+        unfocusedBorderColor = ColorTokens.ReactTheme.border,
+        cursorColor = ColorTokens.ReactTheme.primary,
+        focusedLabelColor = ColorTokens.ReactTheme.primary,
+        unfocusedLabelColor = ColorTokens.ReactTheme.mutedForeground,
+        errorBorderColor = ColorTokens.ReactTheme.destructive,
+        focusedPlaceholderColor = ColorTokens.ReactTheme.mutedForeground,
+        unfocusedPlaceholderColor = ColorTokens.ReactTheme.mutedForeground
+    )
+}
+
+/**
+ * Reusable dialog container with Kosmos dark theme styling.
+ * Wraps Dialog + Surface with standard appearance.
+ *
+ * @param onDismissRequest Dismiss handler
+ * @param modifier Modifier for the Surface
+ * @param properties Dialog properties
+ * @param content Dialog content
+ */
+@Composable
+fun KosmosDialogSurface(
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    properties: androidx.compose.ui.window.DialogProperties = androidx.compose.ui.window.DialogProperties(),
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = properties
+    ) {
+        Surface(
+            modifier = modifier.fillMaxWidth(),
+            shape = KosmosDialogDefaults.shape,
+            color = KosmosDialogDefaults.containerColor,
+            tonalElevation = KosmosDialogDefaults.elevation
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(Tokens.Spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.md),
+                content = content
+            )
+        }
+    }
+}
 
 /**
  * Dialog Components for Kosmos App
@@ -116,7 +189,7 @@ fun BottomSheetWithHeader(
                         Text(
                             text = subtitle,
                             style = TypographyTokens.Custom.caption,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = ColorTokens.ReactTheme.mutedForeground
                         )
                     }
                 }
@@ -179,53 +252,67 @@ fun ConfirmationDialog(
     icon: ImageVector? = null,
     isDestructive: Boolean = false
 ) {
-    AlertDialog(
+    KosmosDialogSurface(
         onDismissRequest = onDismiss,
-        modifier = modifier,
-        icon = if (icon != null) {
-            {
+        modifier = modifier
+    ) {
+        // Icon
+        if (icon != null) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     tint = if (isDestructive)
-                        MaterialTheme.colorScheme.error
+                        ColorTokens.ReactTheme.destructive
                     else
-                        MaterialTheme.colorScheme.primary
+                        ColorTokens.ReactTheme.primary,
+                    modifier = Modifier.size(32.dp)
                 )
             }
-        } else null,
-        title = {
-            Text(
-                text = title,
-                style = TypographyTokens.Custom.dialogTitle
+        }
+
+        // Title
+        Text(
+            text = title,
+            style = KosmosDialogDefaults.titleStyle,
+            color = KosmosDialogDefaults.titleColor
+        )
+
+        // Message
+        Text(
+            text = message,
+            style = TypographyTokens.Custom.dialogContent,
+            color = KosmosDialogDefaults.subtitleColor
+        )
+
+        // Buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+        ) {
+            SecondaryButton(
+                text = dismissText,
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f)
             )
-        },
-        text = {
-            Text(
-                text = message,
-                style = TypographyTokens.Custom.dialogContent
-            )
-        },
-        confirmButton = {
             if (isDestructive) {
-                TextButtonStandard(
+                DestructiveButton(
                     text = confirmText,
-                    onClick = onConfirm
+                    onClick = onConfirm,
+                    modifier = Modifier.weight(1f)
                 )
             } else {
-                TextButtonStandard(
+                PrimaryButton(
                     text = confirmText,
-                    onClick = onConfirm
+                    onClick = onConfirm,
+                    modifier = Modifier.weight(1f)
                 )
             }
-        },
-        dismissButton = {
-            TextButtonStandard(
-                text = dismissText,
-                onClick = onDismiss
-            )
         }
-    )
+    }
 }
 
 /**
@@ -253,10 +340,10 @@ fun AlertDialogStandard(
     type: AlertType = AlertType.INFO
 ) {
     val iconColor = when (type) {
-        AlertType.INFO -> MaterialTheme.colorScheme.primary
-        AlertType.WARNING -> MaterialTheme.colorScheme.tertiary
-        AlertType.ERROR -> MaterialTheme.colorScheme.error
-        AlertType.SUCCESS -> MaterialTheme.colorScheme.primary
+        AlertType.INFO -> ColorTokens.ReactTheme.primary
+        AlertType.WARNING -> ColorTokens.ReactTheme.accent
+        AlertType.ERROR -> ColorTokens.ReactTheme.destructive
+        AlertType.SUCCESS -> ColorTokens.ReactTheme.primary
     }
 
     val defaultIcon = when (type) {
@@ -266,35 +353,40 @@ fun AlertDialogStandard(
         AlertType.SUCCESS -> IconSet.Status.success
     }
 
-    AlertDialog(
+    KosmosDialogSurface(
         onDismissRequest = onDismiss,
-        modifier = modifier,
-        icon = {
+        modifier = modifier
+    ) {
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
             Icon(
                 imageVector = icon ?: defaultIcon,
                 contentDescription = null,
-                tint = iconColor
-            )
-        },
-        title = {
-            Text(
-                text = title,
-                style = TypographyTokens.Custom.dialogTitle
-            )
-        },
-        text = {
-            Text(
-                text = message,
-                style = TypographyTokens.Custom.dialogContent
-            )
-        },
-        confirmButton = {
-            TextButtonStandard(
-                text = buttonText,
-                onClick = onDismiss
+                tint = iconColor,
+                modifier = Modifier.size(32.dp)
             )
         }
-    )
+
+        Text(
+            text = title,
+            style = KosmosDialogDefaults.titleStyle,
+            color = KosmosDialogDefaults.titleColor
+        )
+
+        Text(
+            text = message,
+            style = TypographyTokens.Custom.dialogContent,
+            color = KosmosDialogDefaults.subtitleColor
+        )
+
+        PrimaryButton(
+            text = buttonText,
+            onClick = onDismiss,
+            fullWidth = true
+        )
+    }
 }
 
 /**
@@ -325,7 +417,7 @@ fun LoadingDialog(
         Surface(
             modifier = modifier,
             shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surface,
+            color = ColorTokens.ReactTheme.card,
             tonalElevation = Tokens.Elevation.level3
         ) {
             Column(
@@ -426,40 +518,44 @@ fun InputDialog(
 ) {
     var inputValue by remember { mutableStateOf(initialValue) }
 
-    AlertDialog(
+    KosmosDialogSurface(
         onDismissRequest = onDismiss,
-        modifier = modifier,
-        title = {
-            Text(
-                text = title,
-                style = TypographyTokens.Custom.dialogTitle
+        modifier = modifier
+    ) {
+        Text(
+            text = title,
+            style = KosmosDialogDefaults.titleStyle,
+            color = KosmosDialogDefaults.titleColor
+        )
+
+        OutlinedTextField(
+            value = inputValue,
+            onValueChange = { inputValue = it },
+            label = { Text(label) },
+            placeholder = { Text(placeholder) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            colors = KosmosDialogDefaults.textFieldColors(),
+            shape = RoundedCornerShape(Tokens.CornerRadius.md)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+        ) {
+            SecondaryButton(
+                text = dismissText,
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f)
             )
-        },
-        text = {
-            Column {
-                TextFieldStandard(
-                    value = inputValue,
-                    onValueChange = { inputValue = it },
-                    label = label,
-                    placeholder = placeholder,
-                    singleLine = true
-                )
-            }
-        },
-        confirmButton = {
-            TextButtonStandard(
+            PrimaryButton(
                 text = confirmText,
                 onClick = { onConfirm(inputValue) },
-                enabled = inputValue.isNotBlank()
-            )
-        },
-        dismissButton = {
-            TextButtonStandard(
-                text = dismissText,
-                onClick = onDismiss
+                enabled = inputValue.isNotBlank(),
+                modifier = Modifier.weight(1f)
             )
         }
-    )
+    }
 }
 
 /**
@@ -485,64 +581,64 @@ fun <T> ListSelectionDialog(
     selectedOption: T? = null,
     optionLabel: (T) -> String = { it.toString() }
 ) {
-    AlertDialog(
+    KosmosDialogSurface(
         onDismissRequest = onDismiss,
-        modifier = modifier,
-        title = {
-            Text(
-                text = title,
-                style = TypographyTokens.Custom.dialogTitle
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
-            ) {
-                options.forEach { option ->
-                    val isSelected = option == selectedOption
-                    Surface(
-                        onClick = {
-                            onOptionSelected(option)
-                            onDismiss()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.small,
-                        color = if (isSelected)
-                            MaterialTheme.colorScheme.primaryContainer
-                        else
-                            MaterialTheme.colorScheme.surface
+        modifier = modifier
+    ) {
+        Text(
+            text = title,
+            style = KosmosDialogDefaults.titleStyle,
+            color = KosmosDialogDefaults.titleColor
+        )
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
+        ) {
+            options.forEach { option ->
+                val isSelected = option == selectedOption
+                Surface(
+                    onClick = {
+                        onOptionSelected(option)
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(Tokens.CornerRadius.md),
+                    color = if (isSelected)
+                        ColorTokens.ReactTheme.secondary
+                    else
+                        ColorTokens.ReactTheme.card
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(Tokens.Spacing.md),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(Tokens.Spacing.md),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = optionLabel(option),
-                                style = TypographyTokens.typography.bodyLarge,
-                                modifier = Modifier.weight(1f)
+                        Text(
+                            text = optionLabel(option),
+                            style = TypographyTokens.typography.bodyLarge,
+                            color = ColorTokens.ReactTheme.foreground,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (isSelected) {
+                            Icon(
+                                imageVector = IconSet.Status.checkmark,
+                                contentDescription = "Selected",
+                                tint = ColorTokens.ReactTheme.primary
                             )
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = IconSet.Status.checkmark,
-                                    contentDescription = "Selected",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
                         }
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButtonStandard(
-                text = "Cancel",
-                onClick = onDismiss
-            )
         }
-    )
+
+        SecondaryButton(
+            text = "Cancel",
+            onClick = onDismiss,
+            fullWidth = true
+        )
+    }
 }
 
 /**

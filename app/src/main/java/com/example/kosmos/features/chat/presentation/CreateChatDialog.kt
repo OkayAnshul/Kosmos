@@ -17,17 +17,24 @@ import com.example.kosmos.core.models.User
 import com.example.kosmos.shared.ui.components.*
 import com.example.kosmos.shared.ui.designsystem.IconSet
 import com.example.kosmos.shared.ui.designsystem.Tokens
-
+import com.example.kosmos.shared.utils.ValidationUtils
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
+import com.example.kosmos.shared.ui.components.KosmosDialogDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
 /**
  * Create Chat Dialog - Multi-User Selection for Group Chats
  *
  * Flow: Search users → Select multiple → Enter chat name (if >1 people) → Create
  * Supports both direct chats (1 person) and group chats (multiple people)
+ *
+ * P1-07: Now includes proper validation using ValidationUtils
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateChatDialog(
     projectMembers: List<User>,
+    isLoading: Boolean = false,
+    error: String? = null,
     onDismiss: () -> Unit,
     onCreate: (chatName: String?, selectedUserIds: List<String>) -> Unit,
     modifier: Modifier = Modifier
@@ -36,6 +43,9 @@ fun CreateChatDialog(
     var selectedUsers by remember { mutableStateOf(setOf<User>()) }
     var chatName by remember { mutableStateOf("") }
     var showNameInput by remember { mutableStateOf(false) }
+
+    // P1-07: Validation error for chat name
+    var chatNameError by remember { mutableStateOf<String?>(null) }
 
     // Filter members based on search
     val filteredMembers = remember(projectMembers, searchQuery) {
@@ -59,7 +69,7 @@ fun CreateChatDialog(
                 .fillMaxWidth(0.95f)
                 .fillMaxHeight(0.85f),
             shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surface,
+            color = ColorTokens.ReactTheme.card,
             tonalElevation = Tokens.Elevation.level3
         ) {
             Column(
@@ -83,7 +93,7 @@ fun CreateChatDialog(
                             Text(
                                 text = "${selectedUsers.size} selected",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
+                                color = ColorTokens.ReactTheme.primary
                             )
                         }
                     }
@@ -93,7 +103,7 @@ fun CreateChatDialog(
                     }
                 }
 
-                HorizontalDivider()
+                HorizontalDivider(color = ColorTokens.ReactTheme.border.copy(alpha = 0.3f))
 
                 if (!showNameInput) {
                     // Step 1: User Selection
@@ -184,75 +194,135 @@ fun CreateChatDialog(
                         Text(
                             text = "Creating group with ${selectedUsers.size} members",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = ColorTokens.ReactTheme.mutedForeground
                         )
 
                         OutlinedTextField(
                             value = chatName,
-                            onValueChange = { chatName = it },
-                            label = { Text("Group Name") },
+                            onValueChange = {
+                                chatName = it
+                                chatNameError = ValidationUtils.validateChatName(it, required = true)
+                            },
+                            label = { Text("Group Name *") },
                             placeholder = { Text("Enter a name for the group") },
+                            supportingText = {
+                                if (chatNameError != null) {
+                                    Text(
+                                        text = chatNameError!!,
+                                        color = ColorTokens.ReactTheme.destructive
+                                    )
+                                } else {
+                                    Text(
+                                        text = "${chatName.length}/100 characters",
+                                        color = ColorTokens.ReactTheme.mutedForeground
+                                    )
+                                }
+                            },
+                            isError = chatNameError != null,
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
+                            singleLine = true,
+                            colors = KosmosDialogDefaults.textFieldColors(),
+                            shape = RoundedCornerShape(Tokens.CornerRadius.md)
                         )
 
                         Text(
                             text = "Members: ${selectedUsers.joinToString(", ") { it.displayName }}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = ColorTokens.ReactTheme.mutedForeground
                         )
                     }
                 }
 
-                HorizontalDivider()
+                HorizontalDivider(color = ColorTokens.ReactTheme.border.copy(alpha = 0.3f))
 
                 // Bottom actions
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(Tokens.Spacing.md),
-                    horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+                Column(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    if (showNameInput) {
-                        OutlinedButton(
-                            onClick = { showNameInput = false },
-                            modifier = Modifier.weight(1f)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(Tokens.Spacing.md),
+                        horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+                    ) {
+                        if (showNameInput) {
+                            OutlinedButton(
+                                onClick = { showNameInput = false },
+                                modifier = Modifier.weight(1f),
+                                enabled = !isLoading
+                            ) {
+                                Text("Back")
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                if (!showNameInput && selectedUsers.size > 1) {
+                                    // Group chat needs a name
+                                    showNameInput = true
+                                } else {
+                                    // P1-07: Validate before creating
+                                    if (selectedUsers.size > 1) {
+                                        // Validate group name
+                                        val nameValidation = ValidationUtils.validateChatName(chatName, required = true)
+                                        chatNameError = nameValidation
+
+                                        if (nameValidation != null) {
+                                            // Validation failed, don't create
+                                            return@Button
+                                        }
+                                    }
+
+                                    // Direct chat or named group
+                                    val finalName = if (selectedUsers.size == 1) {
+                                        null // Direct chat uses user's name
+                                    } else {
+                                        chatName.ifBlank {
+                                            selectedUsers.joinToString(", ") { it.displayName.split(" ").first() }
+                                        }
+                                    }
+                                    onCreate(finalName, selectedUsers.map { it.id })
+                                }
+                            },
+                            enabled = selectedUsers.isNotEmpty() &&
+                                      (!showNameInput || (chatName.isNotBlank() && chatNameError == null)) &&
+                                      !isLoading,
+                            modifier = Modifier.weight(if (showNameInput) 1f else 1f)
                         ) {
-                            Text("Back")
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = ColorTokens.ReactTheme.primaryForeground,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(Tokens.Spacing.xs))
+                                Text("Creating...")
+                            } else {
+                                Icon(
+                                    imageVector = IconSet.Message.send,
+                                    contentDescription = "",
+                                    modifier = Modifier.size(Tokens.Size.iconSmall)
+                                )
+                                Spacer(modifier = Modifier.width(Tokens.Spacing.xs))
+                                Text(
+                                    if (showNameInput) "Create Group"
+                                    else if (selectedUsers.size == 1) "Start Chat"
+                                    else "Continue"
+                                )
+                            }
                         }
                     }
 
-                    Button(
-                        onClick = {
-                            if (!showNameInput && selectedUsers.size > 1) {
-                                // Group chat needs a name
-                                showNameInput = true
-                            } else {
-                                // Direct chat or named group
-                                val finalName = if (selectedUsers.size == 1) {
-                                    null // Direct chat uses user's name
-                                } else {
-                                    chatName.ifBlank {
-                                        selectedUsers.joinToString(", ") { it.displayName.split(" ").first() }
-                                    }
-                                }
-                                onCreate(finalName, selectedUsers.map { it.id })
-                            }
-                        },
-                        enabled = selectedUsers.isNotEmpty() &&
-                                  (!showNameInput || chatName.isNotBlank()),
-                        modifier = Modifier.weight(if (showNameInput) 1f else 1f)
-                    ) {
-                        Icon(
-                            imageVector = IconSet.Message.send,
-                            contentDescription = null,
-                            modifier = Modifier.size(Tokens.Size.iconSmall)
-                        )
-                        Spacer(modifier = Modifier.width(Tokens.Spacing.xs))
+                    // Show error below button
+                    if (error != null) {
                         Text(
-                            if (showNameInput) "Create Group"
-                            else if (selectedUsers.size == 1) "Start Chat"
-                            else "Continue"
+                            text = error,
+                            color = ColorTokens.ReactTheme.destructive,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = Tokens.Spacing.xs)
+                                .padding(horizontal = Tokens.Spacing.md)
                         )
                     }
                 }
@@ -290,14 +360,14 @@ private fun UserSelectionItem(
             // User avatar placeholder
             Surface(
                 shape = MaterialTheme.shapes.extraLarge,
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = ColorTokens.ReactTheme.secondary,
                 modifier = Modifier.size(40.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
                         text = user.displayName.take(1).uppercase(),
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = ColorTokens.ReactTheme.primaryForeground
                     )
                 }
             }
@@ -311,7 +381,7 @@ private fun UserSelectionItem(
                 Text(
                     text = "@${user.username}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = ColorTokens.ReactTheme.mutedForeground
                 )
             }
 
@@ -319,7 +389,7 @@ private fun UserSelectionItem(
                 Icon(
                     IconSet.Status.checkmark,
                     contentDescription = "Selected",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = ColorTokens.ReactTheme.primary
                 )
             }
         }

@@ -5,6 +5,7 @@ import com.example.kosmos.core.models.VoiceMessage
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 
 /**
  * Repository for handling voice message operations
@@ -63,6 +64,7 @@ class VoiceRepository @Inject constructor(
             voiceMessageDao.insertVoiceMessage(voiceMessageWithId)
             Result.success(voiceMessageId)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -77,6 +79,7 @@ class VoiceRepository @Inject constructor(
             voiceMessageDao.updateVoiceMessage(voiceMessage)
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -106,6 +109,7 @@ class VoiceRepository @Inject constructor(
             voiceMessageDao.updateVoiceMessage(updatedVoiceMessage)
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -124,6 +128,7 @@ class VoiceRepository @Inject constructor(
             voiceMessageDao.updateVoiceMessage(updatedVoiceMessage)
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -136,6 +141,7 @@ class VoiceRepository @Inject constructor(
         return try {
             voiceMessageDao.getPendingTranscriptions()
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             emptyList()
         }
     }
@@ -150,6 +156,7 @@ class VoiceRepository @Inject constructor(
             voiceMessageDao.deleteVoiceMessageById(voiceMessageId)
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }
@@ -169,6 +176,7 @@ class VoiceRepository @Inject constructor(
             voiceMessageDao.updateVoiceMessage(updatedVoiceMessage)
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Result.failure(e)
         }
     }

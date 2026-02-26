@@ -8,7 +8,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -21,11 +20,8 @@ import com.example.kosmos.shared.ui.components.ErrorState
 import com.example.kosmos.shared.ui.components.LoadingIndicator
 import com.example.kosmos.shared.ui.components.SearchBarStandard
 import com.example.kosmos.shared.ui.components.IconButtonStandard
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
 
-/**
- * Invite Members Screen
- * Allows bulk selection and invitation of members to a project
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InviteMembersScreen(
@@ -38,14 +34,13 @@ fun InviteMembersScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedUsers by viewModel.selectedUsers.collectAsStateWithLifecycle()
     val selectedRole by viewModel.selectedRole.collectAsStateWithLifecycle()
+    val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
+    val connections by viewModel.connections.collectAsStateWithLifecycle()
 
-    // Load project members when screen opens
     LaunchedEffect(projectId) {
         viewModel.setProjectId(projectId)
-        viewModel.loadExistingMembers()
     }
 
-    // Handle successful invitation
     LaunchedEffect(uiState.invitationSuccess) {
         if (uiState.invitationSuccess) {
             onNavigateBack()
@@ -62,7 +57,7 @@ fun InviteMembersScreen(
                             Text(
                                 text = "${selectedUsers.size} selected",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                color = ColorTokens.ReactTheme.foreground.copy(alpha = 0.7f)
                             )
                         }
                     }
@@ -103,69 +98,114 @@ fun InviteMembersScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Search Bar
-            SearchBarStandard(
-                query = searchQuery,
-                onQueryChange = viewModel::onSearchQueryChange,
-                placeholder = "Search by name, @username, or email",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(Tokens.Spacing.md)
-            )
+            // Tab Row: Connections | Search
+            TabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = ColorTokens.ReactTheme.card,
+                contentColor = ColorTokens.ReactTheme.primary
+            ) {
+                Tab(
+                    selected = selectedTab == 0,
+                    onClick = { viewModel.selectTab(0) },
+                    text = { Text("Connections") }
+                )
+                Tab(
+                    selected = selectedTab == 1,
+                    onClick = { viewModel.selectTab(1) },
+                    text = { Text("Search") }
+                )
+            }
 
-            // Content
-            when {
-                uiState.isLoading && uiState.users.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        LoadingIndicator()
-                    }
-                }
-
-                uiState.error != null -> {
-                    uiState.error?.let { error ->
-                        ErrorState(
-                            title = "Error",
-                            message = error,
-                            onRetry = viewModel::retrySearch
+            when (selectedTab) {
+                0 -> {
+                    // Connections Tab
+                    if (connections.isEmpty()) {
+                        EmptyState(
+                            icon = IconSet.User.personAdd,
+                            title = "No connections yet",
+                            message = "Connect with users to quickly invite them to projects"
+                        )
+                    } else {
+                        UserResultsList(
+                            users = connections,
+                            selectedUserIds = selectedUsers.map { it.id }.toSet(),
+                            existingMemberIds = uiState.existingMemberIds,
+                            pendingInviteUserIds = uiState.pendingInviteUserIds,
+                            onUserToggle = viewModel::toggleUserSelection
                         )
                     }
                 }
-
-                uiState.users.isEmpty() && searchQuery.isBlank() -> {
-                    EmptyState(
-                        icon = IconSet.User.personAdd,
-                        title = "Search for users to invite",
-                        message = "Enter a name or email to find users"
+                1 -> {
+                    // Search Tab
+                    SearchBarStandard(
+                        query = searchQuery,
+                        onQueryChange = viewModel::onSearchQueryChange,
+                        placeholder = "Search by name, @username, or email",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(Tokens.Spacing.md)
                     )
-                }
 
-                uiState.users.isEmpty() && searchQuery.isNotBlank() -> {
-                    EmptyState(
-                        icon = IconSet.Action.search,
-                        title = "No users found",
-                        message = "No results for \"$searchQuery\""
-                    )
-                }
+                    when {
+                        uiState.isLoading && uiState.users.isEmpty() -> {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                LoadingIndicator()
+                            }
+                        }
 
-                else -> {
-                    UserResultsList(
-                        users = uiState.users,
-                        selectedUserIds = selectedUsers.map { it.id }.toSet(),
-                        existingMemberIds = uiState.existingMemberIds,
-                        onUserToggle = viewModel::toggleUserSelection
-                    )
+                        uiState.error != null -> {
+                            uiState.error?.let { error ->
+                                ErrorState(
+                                    title = "Error",
+                                    message = error,
+                                    onRetry = viewModel::retrySearch
+                                )
+                            }
+                        }
+
+                        uiState.users.isEmpty() && searchQuery.isBlank() -> {
+                            EmptyState(
+                                icon = IconSet.User.personAdd,
+                                title = "Search for users to invite",
+                                message = "Enter a name or email to find users"
+                            )
+                        }
+
+                        uiState.users.isEmpty() && uiState.searchHint != null -> {
+                            EmptyState(
+                                icon = IconSet.Action.search,
+                                title = uiState.searchHint!!,
+                                message = "Enter more characters to search"
+                            )
+                        }
+
+                        uiState.users.isEmpty() && searchQuery.isNotBlank() -> {
+                            EmptyState(
+                                icon = IconSet.Action.search,
+                                title = "No users found",
+                                message = "No results for \"$searchQuery\""
+                            )
+                        }
+
+                        else -> {
+                            UserResultsList(
+                                users = uiState.users,
+                                selectedUserIds = selectedUsers.map { it.id }.toSet(),
+                                existingMemberIds = uiState.existingMemberIds,
+                                pendingInviteUserIds = uiState.pendingInviteUserIds,
+                                onUserToggle = viewModel::toggleUserSelection
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-/**
- * Bottom bar with role selection and invite button
- */
 @Composable
 private fun InviteBottomBar(
     selectedCount: Int,
@@ -184,7 +224,6 @@ private fun InviteBottomBar(
                 .padding(Tokens.Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
         ) {
-            // Role selection
             Text(
                 text = "Select role for invited members:",
                 style = MaterialTheme.typography.labelMedium
@@ -206,14 +245,12 @@ private fun InviteBottomBar(
                 )
             }
 
-            // Note about admin
             Text(
                 text = "Note: ADMIN role can only be assigned by other admins in project settings.",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = ColorTokens.ReactTheme.mutedForeground
             )
 
-            // Invite button
             Button(
                 onClick = onInviteClick,
                 modifier = Modifier.fillMaxWidth(),
@@ -222,38 +259,34 @@ private fun InviteBottomBar(
                 if (isInviting) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(Tokens.Size.iconSmall),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = ColorTokens.ReactTheme.primaryForeground,
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(Tokens.Spacing.xs))
                 }
-                Text("Invite $selectedCount member${if (selectedCount != 1) "s" else ""}")
+                Text("Send ${selectedCount} invite${if (selectedCount != 1) "s" else ""}")
             }
         }
     }
 }
 
-/**
- * User Results List with multi-select
- */
 @Composable
 private fun UserResultsList(
     users: List<User>,
     selectedUserIds: Set<String>,
     existingMemberIds: Set<String>,
+    pendingInviteUserIds: Set<String>,
     onUserToggle: (User) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        // Results count header
         Text(
             text = "${users.size} user${if (users.size != 1) "s" else ""} found",
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = ColorTokens.ReactTheme.mutedForeground,
             modifier = Modifier.padding(horizontal = Tokens.Spacing.md, vertical = Tokens.Spacing.xs)
         )
 
-        // User list
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(vertical = Tokens.Spacing.xs)
@@ -263,12 +296,14 @@ private fun UserResultsList(
                 key = { user -> user.id }
             ) { user ->
                 val isExistingMember = user.id in existingMemberIds
+                val isPendingInvite = user.id in pendingInviteUserIds
                 val isSelected = user.id in selectedUserIds
 
                 UserSelectionItem(
                     user = user,
                     isSelected = isSelected,
                     isExistingMember = isExistingMember,
+                    isPendingInvite = isPendingInvite,
                     onToggle = { onUserToggle(user) }
                 )
             }
@@ -276,20 +311,20 @@ private fun UserResultsList(
     }
 }
 
-/**
- * User item with checkbox for selection
- */
 @Composable
 private fun UserSelectionItem(
     user: User,
     isSelected: Boolean,
     isExistingMember: Boolean,
+    isPendingInvite: Boolean,
     onToggle: () -> Unit
 ) {
+    val isDisabled = isExistingMember || isPendingInvite
+
     Surface(
-        onClick = { if (!isExistingMember) onToggle() },
+        onClick = { if (!isDisabled) onToggle() },
         modifier = Modifier.fillMaxWidth(),
-        enabled = !isExistingMember
+        enabled = !isDisabled
     ) {
         Row(
             modifier = Modifier
@@ -298,9 +333,9 @@ private fun UserSelectionItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
-                checked = isSelected || isExistingMember,
-                onCheckedChange = { if (!isExistingMember) onToggle() },
-                enabled = !isExistingMember
+                checked = isSelected || isDisabled,
+                onCheckedChange = { if (!isDisabled) onToggle() },
+                enabled = !isDisabled
             )
 
             Spacer(modifier = Modifier.width(Tokens.Spacing.sm))
@@ -312,23 +347,35 @@ private fun UserSelectionItem(
                     fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
                 )
                 Text(
-                    text = if (isExistingMember) "Already a member" else "@${user.username}",
+                    text = when {
+                        isExistingMember -> "Already a member"
+                        isPendingInvite -> "Invite sent"
+                        else -> "@${user.username}"
+                    },
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (isExistingMember)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                    color = when {
+                        isExistingMember -> ColorTokens.ReactTheme.primary
+                        isPendingInvite -> ColorTokens.Priority.medium
+                        else -> ColorTokens.ReactTheme.mutedForeground
+                    }
                 )
             }
 
-            if (isExistingMember) {
-                Icon(
-                    IconSet.Status.success,
-                    contentDescription = "Already member",
-                    tint = MaterialTheme.colorScheme.primary
-                )
+            when {
+                isExistingMember -> {
+                    Icon(
+                        IconSet.Status.success,
+                        contentDescription = "Already member",
+                        tint = ColorTokens.ReactTheme.primary
+                    )
+                }
+                isPendingInvite -> {
+                    AssistChip(
+                        onClick = {},
+                        label = { Text("Pending", style = MaterialTheme.typography.labelSmall) }
+                    )
+                }
             }
         }
     }
 }
-

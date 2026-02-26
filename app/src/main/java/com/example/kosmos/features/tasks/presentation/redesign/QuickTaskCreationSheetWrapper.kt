@@ -6,6 +6,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kosmos.features.tasks.presentation.TaskViewModel
 import com.example.kosmos.shared.ui.mappers.TaskDataMapper.toDomainStatus
 import com.example.kosmos.shared.ui.mappers.TaskDataMapper.toDomainPriority
+import kotlinx.coroutines.CancellationException
 
 /**
  * Wrapper composable that connects QuickTaskCreationSheet to TaskViewModel
@@ -15,6 +16,7 @@ import com.example.kosmos.shared.ui.mappers.TaskDataMapper.toDomainPriority
 fun QuickTaskCreationSheetWrapper(
     chatRoomId: String? = null,
     projectId: String,
+    parentTaskId: String? = null,
     onDismiss: () -> Unit,
     onCreate: (String) -> Unit, // Returns taskId on success
     viewModel: TaskViewModel = hiltViewModel(),
@@ -60,9 +62,11 @@ fun QuickTaskCreationSheetWrapper(
                 title = quickTaskData.title,
                 description = quickTaskData.description ?: "",
                 priority = quickTaskData.priority.toDomainPriority(),
+                status = quickTaskData.status.toDomainStatus(),
                 dueDate = parseDateString(quickTaskData.dueDate),
                 assignedToId = quickTaskData.assigneeIds.firstOrNull(),
-                tags = emptyList()
+                tags = quickTaskData.tags,
+                parentTaskId = parentTaskId
             )
 
             // Success and errors will be handled by LaunchedEffects watching state
@@ -77,12 +81,10 @@ fun QuickTaskCreationSheetWrapper(
     // Handle task creation success
     LaunchedEffect(uiState.lastCreatedTaskId) {
         uiState.lastCreatedTaskId?.let { taskId ->
-            // Notify caller with the actual task ID
-            onCreate(taskId)
-            // Dismiss the sheet
-            onDismiss()
-            // Clear the state
+            // Clear the state first to prevent re-triggering
             viewModel.clearLastCreatedTask()
+            // Notify caller with the actual task ID (caller handles dismissal and navigation)
+            onCreate(taskId)
         }
     }
 
@@ -133,6 +135,7 @@ private fun parseDateString(dateString: String?): Long? {
                     sdf.parse(dateString)?.time
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 // If parsing fails, return null (no due date)
                 null
             }

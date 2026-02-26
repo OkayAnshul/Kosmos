@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.example.kosmos.shared.ui.designsystem.Tokens
 import com.example.kosmos.shared.ui.designsystem.TypographyTokens
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
 /**
  * Button Components for Kosmos App
  *
@@ -245,7 +245,7 @@ fun LoadingButton(
             CircularProgressIndicator(
                 modifier = Modifier.size(Tokens.Size.iconMedium),
                 strokeWidth = 2.dp,
-                color = MaterialTheme.colorScheme.onPrimary
+                color = ColorTokens.ReactTheme.primaryForeground
             )
             Spacer(modifier = Modifier.width(Tokens.Spacing.xs))
         }
@@ -370,8 +370,8 @@ fun DestructiveButton(
             .heightIn(min = Tokens.TouchTarget.minimum),
         enabled = enabled,
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.error,
-            contentColor = MaterialTheme.colorScheme.onError
+            containerColor = ColorTokens.ReactTheme.destructive,
+            contentColor = ColorTokens.ReactTheme.destructiveForeground
         ),
         contentPadding = PaddingValues(
             horizontal = Tokens.Spacing.md,

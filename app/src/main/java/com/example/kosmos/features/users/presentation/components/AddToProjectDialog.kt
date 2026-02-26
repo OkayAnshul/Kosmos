@@ -1,9 +1,9 @@
 package com.example.kosmos.features.users.presentation.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -14,7 +14,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.kosmos.core.models.Project
 import com.example.kosmos.core.models.ProjectRole
-
+import com.example.kosmos.shared.ui.components.KosmosDialogDefaults
+import com.example.kosmos.shared.ui.components.KosmosDialogSurface
+import com.example.kosmos.shared.ui.components.LoadingButton
+import com.example.kosmos.shared.ui.components.SecondaryButton
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
+import com.example.kosmos.shared.ui.designsystem.Tokens
 /**
  * Dialog for adding a user to a project
  * Shows list of user's projects and role selection
@@ -33,167 +38,84 @@ fun AddToProjectDialog(
     var selectedRole by remember { mutableStateOf(ProjectRole.MEMBER) }
     var showRolePicker by remember { mutableStateOf(false) }
 
-    AlertDialog(
+    KosmosDialogSurface(
         onDismissRequest = onDismiss,
-        modifier = modifier
+        modifier = modifier,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
-            modifier = Modifier
-                .wideDialogWidth()
-                .wideDialogHeight(),
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 6.dp
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+        // Title
+        Text(
+            text = "Add to Project",
+            style = KosmosDialogDefaults.titleStyle,
+            color = KosmosDialogDefaults.titleColor
+        )
+
+        if (error != null) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(Tokens.CornerRadius.md),
+                color = ColorTokens.ReactTheme.destructive.copy(alpha = 0.1f)
             ) {
-                // Title
-                Text(
-                    text = "Add to Project",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-
-                if (error != null) {
-                    // Error State
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Error,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Text(
-                                text = error,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        }
-                    }
-                }
-
-                // Content
-                when {
-                    isLoading -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    }
-
-                    projects.isEmpty() -> {
-                        EmptyProjectsState(modifier = Modifier.weight(1f))
-                    }
-
-                    else -> {
-                        // Project List
-                        Text(
-                            text = "Select a project",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        LazyColumn(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(projects) { project ->
-                                ProjectItem(
-                                    project = project,
-                                    isSelected = selectedProjectId == project.id,
-                                    onClick = {
-                                        selectedProjectId = project.id
-                                    }
-                                )
-                            }
-                        }
-
-                        // Role Selection
-                        if (selectedProjectId != null) {
-                            HorizontalDivider()
-
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "Select role",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    RoleChip(
-                                        role = ProjectRole.MEMBER,
-                                        isSelected = selectedRole == ProjectRole.MEMBER,
-                                        onClick = { selectedRole = ProjectRole.MEMBER }
-                                    )
-                                    RoleChip(
-                                        role = ProjectRole.MANAGER,
-                                        isSelected = selectedRole == ProjectRole.MANAGER,
-                                        onClick = { selectedRole = ProjectRole.MANAGER }
-                                    )
-                                }
-
-                                // Note about admin role
-                                Text(
-                                    text = "Note: ADMIN role can only be assigned by other admins in project settings.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Action Buttons
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
+                    modifier = Modifier.padding(Tokens.Spacing.sm),
+                    horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancel")
-                    }
-
-                    Button(
-                        onClick = {
-                            selectedProjectId?.let { projectId ->
-                                onAddToProject(projectId, selectedRole)
-                            }
-                        },
-                        enabled = selectedProjectId != null && !isLoading
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        Text("Add to Project")
-                    }
+                    Icon(Icons.Default.Error, contentDescription = "", tint = ColorTokens.ReactTheme.destructive)
+                    Text(text = error, style = MaterialTheme.typography.bodySmall, color = ColorTokens.ReactTheme.destructive)
                 }
             }
+        }
+
+        HorizontalDivider(color = KosmosDialogDefaults.dividerColor)
+
+        when {
+            isLoading -> {
+                Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = ColorTokens.ReactTheme.primary)
+                }
+            }
+            projects.isEmpty() -> { EmptyProjectsState() }
+            else -> {
+                Text(text = "Select a project", style = MaterialTheme.typography.titleSmall, color = KosmosDialogDefaults.subtitleColor)
+
+                Column(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp),
+                    verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
+                ) {
+                    projects.forEach { project ->
+                        ProjectItem(
+                            project = project,
+                            isSelected = selectedProjectId == project.id,
+                            onClick = { selectedProjectId = project.id }
+                        )
+                    }
+                }
+
+                if (selectedProjectId != null) {
+                    HorizontalDivider(color = KosmosDialogDefaults.dividerColor)
+                    Text(text = "Select role", style = MaterialTheme.typography.titleSmall, color = KosmosDialogDefaults.subtitleColor)
+                    Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)) {
+                        RoleChip(role = ProjectRole.MEMBER, isSelected = selectedRole == ProjectRole.MEMBER, onClick = { selectedRole = ProjectRole.MEMBER })
+                        RoleChip(role = ProjectRole.MANAGER, isSelected = selectedRole == ProjectRole.MANAGER, onClick = { selectedRole = ProjectRole.MANAGER })
+                    }
+                    Text(text = "Note: ADMIN role can only be assigned by other admins in project settings.", style = MaterialTheme.typography.bodySmall, color = KosmosDialogDefaults.subtitleColor)
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+        ) {
+            SecondaryButton(text = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+            LoadingButton(
+                text = "Add to Project",
+                onClick = { selectedProjectId?.let { onAddToProject(it, selectedRole) } },
+                isLoading = isLoading,
+                modifier = Modifier.weight(1f),
+                enabled = selectedProjectId != null && !isLoading
+            )
         }
     }
 }
@@ -212,13 +134,19 @@ private fun ProjectItem(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
+        shape = RoundedCornerShape(Tokens.CornerRadius.md),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer
+                ColorTokens.ReactTheme.primary.copy(alpha = 0.15f)
             } else {
-                MaterialTheme.colorScheme.surfaceVariant
+                ColorTokens.ReactTheme.secondary
             }
-        )
+        ),
+        border = if (isSelected) {
+            BorderStroke(2.dp, ColorTokens.ReactTheme.primary)
+        } else {
+            null
+        }
     ) {
         Row(
             modifier = Modifier
@@ -236,9 +164,9 @@ private fun ProjectItem(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     color = if (isSelected) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
+                        ColorTokens.ReactTheme.primaryForeground
                     } else {
-                        MaterialTheme.colorScheme.onSurface
+                        ColorTokens.ReactTheme.foreground
                     }
                 )
 
@@ -247,9 +175,9 @@ private fun ProjectItem(
                         text = project.description,
                         style = MaterialTheme.typography.bodySmall,
                         color = if (isSelected) {
-                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            ColorTokens.ReactTheme.primaryForeground.copy(alpha = 0.7f)
                         } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                            ColorTokens.ReactTheme.mutedForeground
                         },
                         maxLines = 2
                     )
@@ -260,7 +188,7 @@ private fun ProjectItem(
                 Icon(
                     Icons.Default.CheckCircle,
                     contentDescription = "Selected",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = ColorTokens.ReactTheme.primary
                 )
             }
         }
@@ -290,7 +218,7 @@ private fun RoleChip(
             {
                 Icon(
                     Icons.Default.Check,
-                    contentDescription = null,
+                    contentDescription = "",
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -315,26 +243,21 @@ private fun EmptyProjectsState(modifier: Modifier = Modifier) {
         ) {
             Icon(
                 Icons.Default.FolderOff,
-                contentDescription = null,
+                contentDescription = "",
                 modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = ColorTokens.ReactTheme.mutedForeground
             )
             Text(
                 text = "No Projects",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = ColorTokens.ReactTheme.mutedForeground
             )
             Text(
                 text = "You need to be a member of at least one project to add users.",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = ColorTokens.ReactTheme.mutedForeground
             )
         }
     }
 }
 
-/**
- * Extension for dialog sizing
- */
-private fun Modifier.wideDialogWidth(): Modifier = this.widthIn(min = 280.dp, max = 560.dp)
-private fun Modifier.wideDialogHeight(): Modifier = this.heightIn(min = 200.dp, max = 600.dp)

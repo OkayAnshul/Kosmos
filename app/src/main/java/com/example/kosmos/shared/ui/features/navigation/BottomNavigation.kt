@@ -1,31 +1,33 @@
 package com.example.kosmos.shared.ui.features.navigation
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
 import com.example.kosmos.shared.ui.designsystem.IconSet
 import com.example.kosmos.shared.ui.designsystem.TypographyTokens
 
 /**
  * Bottom Navigation for Kosmos App
  *
- * Persistent bottom navigation with 4 main tabs:
- * - Projects: All user projects
- * - Chats: Recent chats across projects
- * - Tasks: My tasks view (cross-project)
- * - More: Profile, settings, search
+ * 3 main tabs: Projects, Chats, Tasks
+ * Profile/Settings accessible via bottom sheet on ProjectList screen.
  *
- * Features:
- * - Badge counts for unread messages and pending tasks
- * - Smooth tab switching with state preservation
- * - Filled/outlined icon variants based on selection
+ * Design: SCREEN_THEME_GUIDE.md
+ * - bar bg: ReactTheme.card (#18181D)
+ * - top border: 1dp ReactTheme.border (#2A2A32)
+ * - selected: ReactTheme.primary (#7C3AED)
+ * - unselected: ReactTheme.mutedForeground (#9CA3AF)
  */
 
-/**
- * Bottom Navigation Destinations
- */
 sealed class BottomNavDestination(
     val route: String,
     val label: String,
@@ -53,6 +55,13 @@ sealed class BottomNavDestination(
         unselectedIcon = IconSet.Navigation.tasksOutlined
     )
 
+    object Discover : BottomNavDestination(
+        route = "discover",
+        label = "Discover",
+        selectedIcon = IconSet.Action.search,
+        unselectedIcon = IconSet.Action.search
+    )
+
     object More : BottomNavDestination(
         route = "more",
         label = "More",
@@ -61,25 +70,15 @@ sealed class BottomNavDestination(
     )
 
     companion object {
-        val destinations = listOf(Projects, Chats, Tasks, More)
+        val destinations = listOf(Projects, Chats, Tasks, Discover)
+        val allDestinations = listOf(Projects, Chats, Tasks, Discover, More)
 
         fun fromRoute(route: String?): BottomNavDestination {
-            return destinations.find { it.route == route } ?: Projects
+            return allDestinations.find { it.route == route } ?: Projects
         }
     }
 }
 
-/**
- * Bottom Navigation Bar
- *
- * Main bottom navigation component with badges
- *
- * @param selectedDestination Currently selected destination
- * @param onDestinationSelected Destination selection handler
- * @param modifier Modifier
- * @param unreadChatsCount Unread chats badge count
- * @param pendingTasksCount Pending tasks badge count
- */
 @Composable
 fun KosmosBottomNavigation(
     selectedDestination: BottomNavDestination,
@@ -88,58 +87,107 @@ fun KosmosBottomNavigation(
     unreadChatsCount: Int = 0,
     pendingTasksCount: Int = 0
 ) {
-    NavigationBar(modifier = modifier) {
-        BottomNavDestination.destinations.forEach { destination ->
-            val selected = selectedDestination == destination
+    // Ensure we only render for valid destinations (not More)
+    val safeSelected = if (selectedDestination in BottomNavDestination.destinations) {
+        selectedDestination
+    } else {
+        BottomNavDestination.Projects
+    }
 
-            // Determine badge count
-            val badgeCount = when (destination) {
-                is BottomNavDestination.Chats -> unreadChatsCount
-                is BottomNavDestination.Tasks -> pendingTasksCount
-                else -> 0
-            }
+    NavigationBar(
+        modifier = modifier
+            .border(
+                width = 1.dp,
+                color = ColorTokens.ReactTheme.border,
+                shape = RectangleShape
+            ),
+        containerColor = ColorTokens.ReactTheme.card,
+        contentColor = ColorTokens.ReactTheme.foreground,
+        tonalElevation = 0.dp
+    ) {
+        // Projects
+        NavBarItem(
+            destination = BottomNavDestination.Projects,
+            selected = safeSelected == BottomNavDestination.Projects,
+            badgeCount = 0,
+            onSelect = onDestinationSelected
+        )
 
-            NavigationBarItem(
-                selected = selected,
-                onClick = { onDestinationSelected(destination) },
-                icon = {
-                    BadgedBox(
-                        badge = {
-                            if (badgeCount > 0) {
-                                Badge {
-                                    Text(
-                                        text = if (badgeCount > 99) "99+" else badgeCount.toString(),
-                                        style = TypographyTokens.Custom.badgeNumber
-                                    )
-                                }
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = if (selected) destination.selectedIcon else destination.unselectedIcon,
-                            contentDescription = destination.label
-                        )
-                    }
-                },
-                label = {
-                    Text(
-                        text = destination.label,
-                        style = TypographyTokens.Custom.bottomNavLabel
-                    )
-                },
-                alwaysShowLabel = true
-            )
-        }
+        // Chats
+        NavBarItem(
+            destination = BottomNavDestination.Chats,
+            selected = safeSelected == BottomNavDestination.Chats,
+            badgeCount = unreadChatsCount,
+            onSelect = onDestinationSelected
+        )
+
+        // Tasks
+        NavBarItem(
+            destination = BottomNavDestination.Tasks,
+            selected = safeSelected == BottomNavDestination.Tasks,
+            badgeCount = pendingTasksCount,
+            onSelect = onDestinationSelected
+        )
+
+        // Discover
+        NavBarItem(
+            destination = BottomNavDestination.Discover,
+            selected = safeSelected == BottomNavDestination.Discover,
+            badgeCount = 0,
+            onSelect = onDestinationSelected
+        )
     }
 }
 
-/**
- * Bottom Navigation State
- *
- * State holder for bottom navigation
- *
- * @param initialDestination Initial selected destination
- */
+@Composable
+private fun RowScope.NavBarItem(
+    destination: BottomNavDestination,
+    selected: Boolean,
+    badgeCount: Int,
+    onSelect: (BottomNavDestination) -> Unit
+) {
+    NavigationBarItem(
+        selected = selected,
+        onClick = { onSelect(destination) },
+        colors = NavigationBarItemDefaults.colors(
+            selectedIconColor = ColorTokens.ReactTheme.primary,
+            selectedTextColor = ColorTokens.ReactTheme.primary,
+            unselectedIconColor = ColorTokens.ReactTheme.mutedForeground,
+            unselectedTextColor = ColorTokens.ReactTheme.mutedForeground,
+            indicatorColor = ColorTokens.ReactTheme.primary.copy(alpha = 0.15f)
+        ),
+        icon = {
+            BadgedBox(
+                badge = {
+                    if (badgeCount > 0) {
+                        Badge(
+                            containerColor = ColorTokens.ReactTheme.primary,
+                            contentColor = ColorTokens.ReactTheme.primaryForeground
+                        ) {
+                            Text(
+                                text = if (badgeCount > 99) "99+" else badgeCount.toString(),
+                                style = TypographyTokens.Custom.badgeNumber
+                            )
+                        }
+                    }
+                }
+            ) {
+                Icon(
+                    imageVector = if (selected) destination.selectedIcon else destination.unselectedIcon,
+                    contentDescription = destination.label
+                )
+            }
+        },
+        label = {
+            Text(
+                text = destination.label,
+                style = TypographyTokens.Custom.bottomNavLabel
+            )
+        },
+        alwaysShowLabel = true
+    )
+}
+
 @Composable
 fun rememberBottomNavState(
     initialDestination: BottomNavDestination = BottomNavDestination.Projects
@@ -149,9 +197,6 @@ fun rememberBottomNavState(
     }
 }
 
-/**
- * Bottom Navigation State Class
- */
 class BottomNavState(
     initialDestination: BottomNavDestination
 ) {
@@ -169,18 +214,12 @@ class BottomNavState(
     }
 }
 
-/**
- * Bottom Navigation Routes
- *
- * Route definitions for navigation graph
- */
 object BottomNavRoutes {
     const val PROJECTS = "projects"
-    const val CHATS = "chats_all" // Aggregated chats across projects
-    const val TASKS = "tasks_all" // My tasks across projects
+    const val CHATS = "chats_all"
+    const val TASKS = "tasks_all"
     const val MORE = "more"
 
-    // Sub-routes
     const val PROJECT_DETAIL = "project/{projectId}"
     const val CHAT_ROOM = "chat/{chatRoomId}"
     const val TASK_BOARD = "taskBoard/{chatRoomId}"

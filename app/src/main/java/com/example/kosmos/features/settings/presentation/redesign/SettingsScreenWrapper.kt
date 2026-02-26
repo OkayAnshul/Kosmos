@@ -12,6 +12,7 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CancellationException
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
@@ -63,6 +64,7 @@ fun SettingsScreenWrapper(
         try {
             BuildConfig.VERSION_NAME
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             "1.0.0"
         }
     }

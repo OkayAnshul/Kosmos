@@ -1,0 +1,328 @@
+I am working on a large-scale project called Kosmos, a feature-rich project management application. The codebase has grown complex, and I am facing multiple bugs, integration gaps, architectural inconsistencies, and real-time sync issues.
+
+I want you to act as a Senior Software Architect + Code Auditor + System Design Reviewer.
+
+Your task is to:
+
+Help me design a complete Architectural Documentation File.
+
+Help me define expected behavior for every module.
+
+Review the system against the architecture.
+
+Identify gaps, bugs, anti-patterns, race conditions, and sync issues.
+
+Suggest improvements for scalability, correctness, performance, and maintainability.
+
+Help me debug the system module-by-module instead of all at once.
+
+🧠 Project Overview
+
+Kosmos is an advanced project management application that includes:
+
+Offline-first MVVM architecture
+
+Room (local DB)
+
+Supabase (remote backend)
+
+Real-time sync across devices
+
+Multi-user collaboration
+
+Version control
+
+Task management
+
+Chatrooms
+
+Role-based access
+
+Activity tracking
+
+Notifications
+
+Member management
+
+User profiles and connections
+
+🏗 ARCHITECTURAL REQUIREMENTS
+1️⃣ Core Architecture
+
+Offline-first MVVM
+
+Room as local source of truth
+
+Supabase for cloud sync
+
+Real-time sync when online
+
+No sync conflicts between Room and Supabase
+
+No manual refresh required
+
+No app restart required
+
+Metadata sync must feel 0ms (instant UI update)
+
+Smooth and buttery real-time experience
+
+Questions to validate:
+
+Is local-first implemented correctly?
+
+Is there single source of truth?
+
+Are flows/state properly observed?
+
+Is sync bi-directional and conflict-safe?
+
+Is there optimistic UI?
+
+2️⃣ Version Control
+
+Fast and accurate
+
+UI updates instantly on version changes
+
+Proper history tracking
+
+No duplicate or inconsistent states
+
+Check:
+
+Is versioning atomic?
+
+Are updates transactional?
+
+Are there race conditions?
+
+3️⃣ UI System
+
+Real-time UI updates
+
+No stale state
+
+No unnecessary recompositions
+
+Proper state management
+
+Check:
+
+StateFlow vs LiveData correctness
+
+ViewModel responsibilities
+
+Repository consistency
+
+4️⃣ Project Management
+
+Each user can:
+
+Create project
+
+Invite members
+
+Define roles
+
+Set public/private
+
+Update project metadata
+
+Check:
+
+Role definitions clearly defined?
+
+Authorization rules consistent?
+
+Permissions enforced everywhere?
+
+5️⃣ Task Management
+
+Includes:
+
+Assignments
+
+Subtasks
+
+Commit system
+
+Journal entries
+
+Comments
+
+Due dates
+
+Tracking
+
+Status updates
+
+Priority system
+
+UI sync
+
+Check:
+
+Task lifecycle clearly defined?
+
+State transitions validated?
+
+Atomic updates?
+
+UI always reflecting latest state?
+
+6️⃣ Chatrooms
+
+Multiple chatrooms per project
+
+Real-time messaging
+
+Replies / threads
+
+Integrated with project system
+
+Check:
+
+Message ordering consistency?
+
+Sync reliability?
+
+Offline message queue?
+
+Duplicate prevention?
+
+7️⃣ Members Management
+
+Full integration with projects
+
+Role updates
+
+Removal
+
+Invite system
+
+Check:
+
+Access revoked correctly?
+
+Cache invalidation handled?
+
+8️⃣ User Profile System
+
+Full profile visibility for connections
+
+Partial visibility for non-connections
+
+Project invites integrated
+
+Connection management
+
+Check:
+
+Privacy rules enforced?
+
+Edge cases handled?
+
+9️⃣ Activity Tracking
+
+All major actions tracked
+
+Proper association with projects/users/tasks
+
+Real-time updates
+
+Check:
+
+Event-driven architecture?
+
+Performance impact?
+
+🔟 Notifications
+
+Triggered by important events
+
+Real-time
+
+No duplicate notifications
+
+Correct recipient targeting
+
+Check:
+
+Central notification engine?
+
+Event consistency?
+
+Background handling?
+
+🛠 WHAT I WANT FROM YOU
+
+Step-by-step:
+
+Help me create a Formal Architectural Document Template
+
+Define modules
+
+Define responsibilities
+
+Define data flow
+
+Define sync strategy
+
+Define state management
+
+Define conflict resolution rules
+
+Then help me:
+
+Audit module-by-module
+
+Define expected behavior
+
+Compare with implementation
+
+Identify bugs/gaps
+
+Suggest fixes
+
+Suggest:
+
+Design pattern improvements
+
+Event-driven improvements
+
+Sync strategy improvements
+
+Performance improvements
+
+Scaling considerations
+
+Help me design:
+
+Debugging strategy for large codebases
+
+Logging strategy
+
+Observability tools
+
+Test strategy (unit, integration, sync tests)
+
+If I missed anything critical in system design, identify it.
+
+🧪 Constraints
+
+Must remain offline-first.
+
+Must remain real-time.
+
+Must avoid manual refresh logic.
+
+Must avoid race conditions.
+
+Must scale to large teams.
+
+Must avoid architectural rewrite unless necessary.
+
+Must prioritize correctness + smooth UX.
+
+-- Maintain a document file in concise yet efficient manner.

@@ -19,7 +19,8 @@ import com.example.kosmos.shared.ui.designsystem.Tokens
 import com.example.kosmos.shared.ui.designsystem.TypographyTokens
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
+import kotlin.math.roundToInt
 /**
  * Card Components for Kosmos App
  *
@@ -149,7 +150,7 @@ fun SwipeableCard(
                     .fillMaxWidth()
                     .matchParentSize()
                     .alpha(0.8f),
-                color = MaterialTheme.colorScheme.primaryContainer
+                color = ColorTokens.ReactTheme.secondary
             ) {
                 Row(
                     modifier = Modifier
@@ -161,14 +162,14 @@ fun SwipeableCard(
                         Icon(
                             imageVector = swipeRightIcon,
                             contentDescription = swipeRightLabel,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            tint = ColorTokens.ReactTheme.primaryForeground
                         )
                     }
                     Spacer(modifier = Modifier.width(Tokens.Spacing.xs))
                     Text(
                         text = swipeRightLabel,
                         style = TypographyTokens.Custom.chipLabel,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = ColorTokens.ReactTheme.primaryForeground
                     )
                 }
             }
@@ -179,7 +180,7 @@ fun SwipeableCard(
                     .fillMaxWidth()
                     .matchParentSize()
                     .alpha(0.8f),
-                color = MaterialTheme.colorScheme.errorContainer
+                color = ColorTokens.ReactTheme.destructive
             ) {
                 Row(
                     modifier = Modifier
@@ -191,14 +192,14 @@ fun SwipeableCard(
                     Text(
                         text = swipeLeftLabel,
                         style = TypographyTokens.Custom.chipLabel,
-                        color = MaterialTheme.colorScheme.onErrorContainer
+                        color = ColorTokens.ReactTheme.destructiveForeground
                     )
                     Spacer(modifier = Modifier.width(Tokens.Spacing.xs))
                     if (swipeLeftIcon != null) {
                         Icon(
                             imageVector = swipeLeftIcon,
                             contentDescription = swipeLeftLabel,
-                            tint = MaterialTheme.colorScheme.onErrorContainer
+                            tint = ColorTokens.ReactTheme.destructiveForeground
                         )
                     }
                 }
@@ -350,7 +351,7 @@ fun ActionCard(
                         imageVector = icon,
                         contentDescription = null,
                         modifier = Modifier.size(Tokens.Size.iconLarge),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = ColorTokens.ReactTheme.primary
                     )
                 }
                 Text(
@@ -414,14 +415,14 @@ fun SelectableCard(
         modifier = modifier,
         colors = CardDefaults.cardColors(
             containerColor = if (selected)
-                MaterialTheme.colorScheme.primaryContainer
+                ColorTokens.ReactTheme.secondary
             else
-                MaterialTheme.colorScheme.surface
+                ColorTokens.ReactTheme.card
         ),
         border = if (selected)
             androidx.compose.foundation.BorderStroke(
                 width = Tokens.BorderWidth.medium,
-                color = MaterialTheme.colorScheme.primary
+                color = ColorTokens.ReactTheme.primary
             )
         else null,
         elevation = CardDefaults.cardElevation(
@@ -438,7 +439,7 @@ fun SelectableCard(
                 Icon(
                     imageVector = com.example.kosmos.shared.ui.designsystem.IconSet.Status.checkmark,
                     contentDescription = "Selected",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = ColorTokens.ReactTheme.primary,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(Tokens.Spacing.xs)
@@ -481,14 +482,14 @@ fun InfoCard(
         ) {
             Surface(
                 shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = ColorTokens.ReactTheme.secondary,
                 modifier = Modifier.size(Tokens.Size.avatarMedium)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        tint = ColorTokens.ReactTheme.primaryForeground,
                         modifier = Modifier.size(Tokens.Size.iconMedium)
                     )
                 }
@@ -498,18 +499,18 @@ fun InfoCard(
                 Text(
                     text = title,
                     style = TypographyTokens.Custom.caption,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = ColorTokens.ReactTheme.mutedForeground
                 )
                 Text(
                     text = value,
                     style = TypographyTokens.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = ColorTokens.ReactTheme.foreground
                 )
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
                         style = TypographyTokens.Custom.caption,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = ColorTokens.ReactTheme.mutedForeground
                     )
                 }
             }

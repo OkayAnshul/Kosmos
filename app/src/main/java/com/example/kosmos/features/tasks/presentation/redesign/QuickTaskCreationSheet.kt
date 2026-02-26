@@ -1,8 +1,9 @@
 package com.example.kosmos.features.tasks.presentation.redesign
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,6 +19,7 @@ import com.example.kosmos.shared.ui.designsystem.ColorTokens
 import com.example.kosmos.shared.ui.designsystem.IconSet
 import com.example.kosmos.shared.ui.designsystem.Tokens
 import com.example.kosmos.shared.ui.designsystem.TypographyTokens
+import com.example.kosmos.shared.utils.ValidationUtils
 
 /**
  * Quick Task Creation Sheet
@@ -36,6 +38,8 @@ import com.example.kosmos.shared.ui.designsystem.TypographyTokens
  * - Keyboard navigation
  * - Smart suggestions
  * - Template support (future)
+ *
+ * P1-07: Now includes proper validation using ValidationUtils
  */
 
 /**
@@ -70,12 +74,18 @@ fun QuickTaskCreationSheet(
     var selectedProjectName by remember { mutableStateOf(initialProjectName) }
     var dueDate by remember { mutableStateOf<String?>(null) }
     var selectedAssignees by remember { mutableStateOf<List<String>>(emptyList()) }
+    var tagInput by remember { mutableStateOf("") }
+    var tags by remember { mutableStateOf<List<String>>(emptyList()) }
 
     var showProjectPicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showAssigneePicker by remember { mutableStateOf(false) }
 
-    val canCreate = title.isNotBlank() && !isCreating
+    // P1-07: Validation errors
+    var titleError by remember { mutableStateOf<String?>(null) }
+    var descriptionError by remember { mutableStateOf<String?>(null) }
+
+    val canCreate = title.isNotBlank() && !isCreating && titleError == null && descriptionError == null
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -109,9 +119,15 @@ fun QuickTaskCreationSheet(
             // Title input
             TextFieldStandard(
                 value = title,
-                onValueChange = { title = it },
+                onValueChange = {
+                    title = it
+                    // Validate on change
+                    titleError = ValidationUtils.validateTaskTitle(it)
+                },
                 label = "Task Title",
                 placeholder = "What needs to be done?",
+                supportingText = titleError ?: if (title.isNotBlank()) "${title.length}/200 characters" else null,
+                isError = titleError != null,
                 imeAction = ImeAction.Next,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -119,9 +135,15 @@ fun QuickTaskCreationSheet(
             // Description input
             TextFieldMultiline(
                 value = description,
-                onValueChange = { description = it },
+                onValueChange = {
+                    description = it
+                    // Validate on change
+                    descriptionError = ValidationUtils.validateTaskDescription(it)
+                },
                 label = "Description (optional)",
                 placeholder = "Add more details...",
+                supportingText = descriptionError ?: if (description.isNotBlank()) "${description.length}/2000 characters" else null,
+                isError = descriptionError != null,
                 minLines = 3,
                 maxLines = 5,
                 modifier = Modifier.fillMaxWidth()
@@ -134,7 +156,7 @@ fun QuickTaskCreationSheet(
                 Text(
                     text = "Status",
                     style = TypographyTokens.Custom.inputLabel,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = ColorTokens.ReactTheme.mutedForeground
                 )
 
                 ChipGroup(
@@ -161,7 +183,7 @@ fun QuickTaskCreationSheet(
                 Text(
                     text = "Priority",
                     style = TypographyTokens.Custom.inputLabel,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = ColorTokens.ReactTheme.mutedForeground
                 )
 
                 Row(
@@ -187,7 +209,7 @@ fun QuickTaskCreationSheet(
                 Text(
                     text = "Optional",
                     style = TypographyTokens.Custom.caption,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = ColorTokens.ReactTheme.mutedForeground
                 )
 
                 // Project selection
@@ -210,19 +232,47 @@ fun QuickTaskCreationSheet(
                     isValueSet = dueDate != null
                 )
 
-                // Assignees
+                // Assignee (single select)
                 if (availableAssignees.isNotEmpty()) {
                     SelectableListItem(
                         icon = IconSet.User.profile,
-                        label = "Assignees",
+                        label = "Assignee",
                         value = when {
                             selectedAssignees.isEmpty() -> "Assign to..."
-                            selectedAssignees.size == 1 -> availableAssignees.find { it.id == selectedAssignees.first() }?.name ?: "1 assignee"
-                            else -> "${selectedAssignees.size} assignees"
+                            else -> availableAssignees.find { it.id == selectedAssignees.first() }?.name ?: "1 assignee"
                         },
                         onClick = { showAssigneePicker = true },
                         isValueSet = selectedAssignees.isNotEmpty()
                     )
+                }
+
+                // Tags input
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
+                ) {
+                    TextFieldStandard(
+                        value = tagInput,
+                        onValueChange = { tagInput = it },
+                        label = "Tags",
+                        placeholder = "Type tag and press Enter",
+                        imeAction = ImeAction.Done,
+                        onImeAction = {
+                            val trimmed = tagInput.trim()
+                            if (trimmed.isNotBlank() && !tags.contains(trimmed)) {
+                                tags = tags + trimmed
+                                tagInput = ""
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (tags.isNotEmpty()) {
+                        ChipGroup(
+                            chips = tags,
+                            selectedChips = tags.toSet(),
+                            onChipClick = { tag -> tags = tags.filter { it != tag } },
+                            multiSelect = true
+                        )
+                    }
                 }
             }
 
@@ -243,17 +293,28 @@ fun QuickTaskCreationSheet(
                 LoadingButton(
                     text = "Create Task",
                     onClick = {
-                        onCreate(
-                            QuickTaskData(
-                                title = title,
-                                description = description.takeIf { it.isNotBlank() },
-                                status = selectedStatus,
-                                priority = selectedPriority,
-                                projectId = selectedProjectId,
-                                dueDate = dueDate,
-                                assigneeIds = selectedAssignees
+                        // P1-07: Validate all fields before creating
+                        val titleValidation = ValidationUtils.validateTaskTitle(title)
+                        val descValidation = ValidationUtils.validateTaskDescription(description)
+
+                        titleError = titleValidation
+                        descriptionError = descValidation
+
+                        // Only create if all validations pass
+                        if (titleValidation == null && descValidation == null) {
+                            onCreate(
+                                QuickTaskData(
+                                    title = title,
+                                    description = description.takeIf { it.isNotBlank() },
+                                    status = selectedStatus,
+                                    priority = selectedPriority,
+                                    projectId = selectedProjectId,
+                                    dueDate = dueDate,
+                                    assigneeIds = selectedAssignees,
+                                    tags = tags
+                                )
                             )
-                        )
+                        }
                     },
                     isLoading = isCreating,
                     modifier = Modifier.weight(1f),
@@ -267,28 +328,44 @@ fun QuickTaskCreationSheet(
 
     // Project picker dialog
     if (showProjectPicker) {
-        AlertDialog(
-            onDismissRequest = { showProjectPicker = false },
-            title = { Text("Select Project") },
-            text = {
-                LazyColumn {
-                    items(availableProjects.size) { index ->
-                        val project = availableProjects[index]
-                        TextButton(
-                            onClick = {
-                                selectedProjectId = project.id
-                                selectedProjectName = project.name
-                                showProjectPicker = false
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(project.name)
-                        }
+        KosmosDialogSurface(
+            onDismissRequest = { showProjectPicker = false }
+        ) {
+            Text(
+                text = "Select Project",
+                style = KosmosDialogDefaults.titleStyle,
+                color = KosmosDialogDefaults.titleColor
+            )
+
+            HorizontalDivider(color = KosmosDialogDefaults.dividerColor)
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
+            ) {
+                availableProjects.forEach { project ->
+                    Surface(
+                        onClick = {
+                            selectedProjectId = project.id
+                            selectedProjectName = project.name
+                            showProjectPicker = false
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(Tokens.CornerRadius.md),
+                        color = if (selectedProjectId == project.id)
+                            ColorTokens.ReactTheme.primary.copy(alpha = 0.15f)
+                        else
+                            ColorTokens.ReactTheme.secondary
+                    ) {
+                        Text(
+                            text = project.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = ColorTokens.ReactTheme.foreground,
+                            modifier = Modifier.padding(Tokens.Spacing.md)
+                        )
                     }
                 }
-            },
-            confirmButton = {}
-        )
+            }
+        }
     }
 
     // Date picker dialog
@@ -304,51 +381,80 @@ fun QuickTaskCreationSheet(
 
     // Assignee picker dialog
     if (showAssigneePicker) {
-        var tempSelectedAssignees by remember { mutableStateOf(selectedAssignees) }
+        var tempSelected by remember { mutableStateOf(selectedAssignees.firstOrNull()) }
 
-        AlertDialog(
-            onDismissRequest = { showAssigneePicker = false },
-            title = { Text("Assign To") },
-            text = {
-                LazyColumn {
-                    items(availableAssignees.size) { index ->
-                        val assignee = availableAssignees[index]
+        KosmosDialogSurface(
+            onDismissRequest = { showAssigneePicker = false }
+        ) {
+            Text(
+                text = "Assign To",
+                style = KosmosDialogDefaults.titleStyle,
+                color = KosmosDialogDefaults.titleColor
+            )
+
+            HorizontalDivider(color = KosmosDialogDefaults.dividerColor)
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
+            ) {
+                availableAssignees.forEach { assignee ->
+                    Surface(
+                        onClick = {
+                            tempSelected = if (tempSelected == assignee.id) null else assignee.id
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(Tokens.CornerRadius.md),
+                        color = if (tempSelected == assignee.id)
+                            ColorTokens.ReactTheme.primary.copy(alpha = 0.15f)
+                        else
+                            ColorTokens.ReactTheme.secondary
+                    ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(Tokens.Spacing.md),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
                         ) {
-                            Checkbox(
-                                checked = tempSelectedAssignees.contains(assignee.id),
-                                onCheckedChange = { checked ->
-                                    tempSelectedAssignees = if (checked) {
-                                        tempSelectedAssignees + assignee.id
-                                    } else {
-                                        tempSelectedAssignees - assignee.id
-                                    }
-                                }
+                            RadioButton(
+                                selected = tempSelected == assignee.id,
+                                onClick = {
+                                    tempSelected = if (tempSelected == assignee.id) null else assignee.id
+                                },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = ColorTokens.ReactTheme.primary,
+                                    unselectedColor = ColorTokens.ReactTheme.border
+                                )
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(assignee.name)
+                            Text(
+                                text = assignee.name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = ColorTokens.ReactTheme.foreground
+                            )
                         }
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    selectedAssignees = tempSelectedAssignees
-                    showAssigneePicker = false
-                }) {
-                    Text("Done")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAssigneePicker = false }) {
-                    Text("Cancel")
-                }
             }
-        )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+            ) {
+                SecondaryButton(
+                    text = "Cancel",
+                    onClick = { showAssigneePicker = false },
+                    modifier = Modifier.weight(1f)
+                )
+                PrimaryButton(
+                    text = "Done",
+                    onClick = {
+                        selectedAssignees = listOfNotNull(tempSelected)
+                        showAssigneePicker = false
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
     }
 }
 
@@ -373,7 +479,7 @@ private fun PriorityChip(
         onClick = onClick,
         modifier = modifier,
         shape = MaterialTheme.shapes.small,
-        color = if (isSelected) color.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+        color = if (isSelected) color.copy(alpha = 0.2f) else ColorTokens.ReactTheme.secondary,
         border = if (isSelected)
             androidx.compose.foundation.BorderStroke(2.dp, color)
         else null
@@ -392,7 +498,7 @@ private fun PriorityChip(
             Text(
                 text = label,
                 style = TypographyTokens.Custom.caption,
-                color = if (isSelected) color else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (isSelected) color else ColorTokens.ReactTheme.mutedForeground
             )
         }
     }
@@ -414,7 +520,7 @@ private fun SelectableListItem(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceVariant
+        color = ColorTokens.ReactTheme.secondary
     ) {
         Row(
             modifier = Modifier
@@ -425,11 +531,11 @@ private fun SelectableListItem(
         ) {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
+                contentDescription = "",
                 tint = if (isValueSet)
-                    MaterialTheme.colorScheme.primary
+                    ColorTokens.ReactTheme.primary
                 else
-                    MaterialTheme.colorScheme.onSurfaceVariant,
+                    ColorTokens.ReactTheme.mutedForeground,
                 modifier = Modifier.size(Tokens.Size.iconMedium)
             )
 
@@ -439,22 +545,22 @@ private fun SelectableListItem(
                 Text(
                     text = label,
                     style = TypographyTokens.Custom.caption,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = ColorTokens.ReactTheme.mutedForeground
                 )
                 Text(
                     text = value,
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (isValueSet)
-                        MaterialTheme.colorScheme.onSurface
+                        ColorTokens.ReactTheme.foreground
                     else
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                        ColorTokens.ReactTheme.mutedForeground
                 )
             }
 
             Icon(
                 imageVector = IconSet.Direction.right,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                contentDescription = "",
+                tint = ColorTokens.ReactTheme.mutedForeground,
                 modifier = Modifier.size(Tokens.Size.iconSmall)
             )
         }
@@ -471,7 +577,8 @@ data class QuickTaskData(
     val priority: TaskPriority,
     val projectId: String?,
     val dueDate: String?,
-    val assigneeIds: List<String>
+    val assigneeIds: List<String>,
+    val tags: List<String> = emptyList()
 )
 
 /**

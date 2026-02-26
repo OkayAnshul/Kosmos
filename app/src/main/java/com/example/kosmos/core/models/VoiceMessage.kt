@@ -1,12 +1,28 @@
 package com.example.kosmos.core.models
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-@Entity(tableName = "voice_messages")
+@Entity(
+    tableName = "voice_messages",
+    foreignKeys = [
+        // P0-05 FIX: Foreign key constraint prevents orphaned voice messages
+        ForeignKey(
+            entity = Message::class,
+            parentColumns = ["id"],
+            childColumns = ["messageId"],
+            onDelete = ForeignKey.CASCADE  // Delete voice message when parent message is deleted
+        )
+    ],
+    indices = [
+        Index(value = ["messageId"], unique = true)  // One voice message per message
+    ]
+)
 data class VoiceMessage(
     @PrimaryKey
     val id: String = "",

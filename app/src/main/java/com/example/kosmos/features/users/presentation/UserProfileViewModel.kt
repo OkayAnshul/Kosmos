@@ -8,7 +8,9 @@ import com.example.kosmos.core.models.ChatRoomType
 import com.example.kosmos.core.models.Project
 import com.example.kosmos.core.models.ProjectRole
 import com.example.kosmos.core.models.User
+import com.example.kosmos.core.models.ConnectionStatus
 import com.example.kosmos.data.repository.ChatRepository
+import com.example.kosmos.data.repository.UserConnectionRepository
 import com.example.kosmos.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 /**
  * ViewModel for User Profile Screen
@@ -26,7 +29,9 @@ class UserProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val chatRepository: ChatRepository,
     private val authRepository: com.example.kosmos.data.repository.AuthRepository,
-    private val projectRepository: com.example.kosmos.data.repository.ProjectRepository
+    private val projectRepository: com.example.kosmos.data.repository.ProjectRepository,
+    private val taskRepository: com.example.kosmos.data.repository.TaskRepository,
+    private val userConnectionRepository: UserConnectionRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UserProfileState())
@@ -38,7 +43,7 @@ class UserProfileViewModel @Inject constructor(
     init {
         // Get current user ID from auth repository
         viewModelScope.launch {
-            authRepository.currentUser.collect { user ->
+            authRepository.userFlow.collect { user ->
                 currentUserId = user?.id
             }
         }
@@ -63,13 +68,36 @@ class UserProfileViewModel @Inject constructor(
                                     projectRepository.getSharedProjectCount(myId, userId)
                                 } ?: 0
                             } catch (e: Exception) {
+                                if (e is CancellationException) throw e
                                 Log.e("UserProfileVM", "Failed to load shared project count: ${e.message}")
                                 0
+                            }
+
+                            // Calculate on-time rate
+                            val onTimeRate = try {
+                                taskRepository.calculateOnTimeRate(userId)
+                            } catch (e: Exception) {
+                                if (e is CancellationException) throw e
+                                Log.e("UserProfileVM", "Failed to calculate on-time rate: ${e.message}")
+                                null
+                            }
+
+                            // Load connection status
+                            val connectionStatus = try {
+                                currentUserId?.let { myId ->
+                                    userConnectionRepository.getConnectionStatus(myId, userId)
+                                }
+                            } catch (e: Exception) {
+                                if (e is CancellationException) throw e
+                                Log.e("UserProfileVM", "Failed to load connection status: ${e.message}")
+                                null
                             }
 
                             _uiState.value = UserProfileState(
                                 user = user,
                                 sharedProjectCount = sharedCount,
+                                onTimeRate = onTimeRate,
+                                connectionStatus = connectionStatus,
                                 isLoading = false,
                                 error = null
                             )
@@ -144,6 +172,7 @@ class UserProfileViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e("UserProfileVM", "Exception creating chat: ${e.message}")
                 _uiState.value = _uiState.value.copy(
                     isCreatingChat = false,
@@ -178,6 +207,7 @@ class UserProfileViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e("UserProfileVM", "Exception loading projects: ${e.message}")
                 _uiState.value = _uiState.value.copy(
                     myProjects = emptyList(),
@@ -241,6 +271,7 @@ class UserProfileViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e("UserProfileVM", "Exception adding user to project: ${e.message}")
                 _uiState.value = _uiState.value.copy(
                     isAddingToProject = false,
@@ -272,6 +303,36 @@ class UserProfileViewModel @Inject constructor(
     fun clearAddToProjectSuccess() {
         _uiState.value = _uiState.value.copy(addToProjectSuccess = false)
     }
+
+    fun sendConnectionRequest(targetUserId: String) {
+        viewModelScope.launch {
+            val userId = currentUserId ?: return@launch
+            val userName = authRepository.getCurrentUser()?.displayName ?: ""
+            _uiState.value = _uiState.value.copy(connectionStatus = ConnectionStatus.PENDING)
+            val result = userConnectionRepository.sendRequest(userId, targetUserId, userName)
+            if (result.isFailure) {
+                _uiState.value = _uiState.value.copy(
+                    connectionStatus = null,
+                    error = "Failed to send connection request"
+                )
+            }
+        }
+    }
+
+    fun removeConnection(targetUserId: String) {
+        viewModelScope.launch {
+            val userId = currentUserId ?: return@launch
+            val connection = userConnectionRepository.getConnectionBetween(userId, targetUserId)
+            if (connection != null) {
+                val result = userConnectionRepository.removeConnection(connection.id)
+                if (result.isSuccess) {
+                    _uiState.value = _uiState.value.copy(connectionStatus = null)
+                } else {
+                    _uiState.value = _uiState.value.copy(error = "Failed to remove connection")
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -280,6 +341,8 @@ class UserProfileViewModel @Inject constructor(
 data class UserProfileState(
     val user: User? = null,
     val sharedProjectCount: Int = 0,
+    val onTimeRate: Int? = null,
+    val connectionStatus: ConnectionStatus? = null,
     val isLoading: Boolean = false,
     val isCreatingChat: Boolean = false,
     val createdChatRoomId: String? = null,

@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
 /**
  * User Avatar Component
  * Displays user profile picture or initials with online status indicator
@@ -54,7 +54,7 @@ fun UserAvatar(
                     .clip(CircleShape)
                     .border(
                         width = 1.dp,
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                        color = ColorTokens.ReactTheme.border.copy(alpha = 0.2f),
                         shape = CircleShape
                     ),
                 contentScale = ContentScale.Crop
@@ -95,7 +95,7 @@ private fun AvatarPlaceholder(
             .background(backgroundColor)
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                color = ColorTokens.ReactTheme.border.copy(alpha = 0.2f),
                 shape = CircleShape
             ),
         contentAlignment = Alignment.Center
@@ -110,7 +110,7 @@ private fun AvatarPlaceholder(
         } else {
             Icon(
                 Icons.Default.Person,
-                contentDescription = null,
+                contentDescription = "",
                 tint = Color.White,
                 modifier = Modifier.size(size * 0.6f)
             )
@@ -130,7 +130,7 @@ private fun OnlineStatusIndicator(modifier: Modifier = Modifier) {
             .background(Color(0xFF4CAF50)) // Green
             .border(
                 width = 2.dp,
-                color = MaterialTheme.colorScheme.surface,
+                color = ColorTokens.ReactTheme.card,
                 shape = CircleShape
             )
     )

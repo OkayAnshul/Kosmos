@@ -94,7 +94,7 @@ fun EnhancedMessageBubble(
             Text(
                 text = senderName,
                 style = TypographyTokens.Custom.messageSender,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = ColorTokens.ReactTheme.mutedForeground,
                 modifier = Modifier.padding(
                     start = Tokens.Spacing.md,
                     bottom = Tokens.Spacing.xxs
@@ -102,7 +102,7 @@ fun EnhancedMessageBubble(
             )
         }
 
-        // Message bubble
+        // Message bubble - Stitch design (sent=blue, received=gray)
         Surface(
             modifier = Modifier.messageGesture(
                 onClick = onMessageClick,
@@ -111,9 +111,9 @@ fun EnhancedMessageBubble(
             ),
             shape = getMessageShape(isSentByCurrentUser, isFirstInGroup, isLastInGroup),
             color = if (isSentByCurrentUser)
-                ColorTokens.Message.sentLight
+                ColorTokens.ReactTheme.primary  // Blue for sent messages
             else
-                ColorTokens.Message.receivedLight,
+                ColorTokens.ReactTheme.card,  // Gray for received messages
             tonalElevation = if (isSentByCurrentUser) Tokens.Elevation.level1 else Tokens.Elevation.level0
         ) {
             Column(
@@ -131,14 +131,14 @@ fun EnhancedMessageBubble(
                     )
                 }
 
-                // Message text
+                // Message text - Stitch design (white on blue, primary on gray)
                 Text(
                     text = text,
                     style = TypographyTokens.Custom.messageBubbleText,
                     color = if (isSentByCurrentUser)
-                        ColorTokens.Message.onSentLight
+                        ColorTokens.ReactTheme.primaryForeground  // White text on blue
                     else
-                        ColorTokens.Message.onReceivedLight
+                        ColorTokens.ReactTheme.foreground  // Primary text on gray
                 )
 
                 // Metadata row (only on last message in group)
@@ -153,27 +153,27 @@ fun EnhancedMessageBubble(
                             Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Edited indicator
+                        // Edited indicator - Stitch design
                         if (isEdited) {
                             Text(
                                 text = "Edited",
                                 style = TypographyTokens.Custom.messageTimestamp,
                                 color = if (isSentByCurrentUser)
-                                    ColorTokens.Message.onSentLight.copy(alpha = 0.7f)
+                                    ColorTokens.ReactTheme.primaryForeground.copy(alpha = 0.7f)
                                 else
-                                    ColorTokens.Message.onReceivedLight.copy(alpha = 0.7f)
+                                    ColorTokens.ReactTheme.mutedForeground
                             )
                             Spacer(modifier = Modifier.width(Tokens.Spacing.xs))
                         }
 
-                        // Timestamp
+                        // Timestamp - Stitch design
                         Text(
                             text = timestamp,
                             style = TypographyTokens.Custom.messageTimestamp,
                             color = if (isSentByCurrentUser)
-                                ColorTokens.Message.onSentLight.copy(alpha = 0.7f)
+                                ColorTokens.ReactTheme.primaryForeground.copy(alpha = 0.7f)
                             else
-                                ColorTokens.Message.onReceivedLight.copy(alpha = 0.7f)
+                                ColorTokens.ReactTheme.mutedForeground
                         )
 
                         // Read receipts (for sent messages)
@@ -329,12 +329,13 @@ fun ReactionPill(
         onClick = onClick,
         shape = MaterialTheme.shapes.small,
         color = if (isSelected)
-            ColorTokens.Reaction.selectedLight
+            ColorTokens.ReactTheme.primary.copy(alpha = 0.2f)  // Light blue background when selected
         else
-            ColorTokens.Reaction.backgroundLight,
+            ColorTokens.ReactTheme.card,  // Gray background when not selected
         border = if (isSelected)
-            androidx.compose.foundation.BorderStroke(1.dp, ColorTokens.Reaction.selectedLight)
-        else null,
+            androidx.compose.foundation.BorderStroke(1.dp, ColorTokens.ReactTheme.primary)
+        else
+            androidx.compose.foundation.BorderStroke(1.dp, ColorTokens.ReactTheme.border),
         modifier = Modifier.heightIn(min = 24.dp)
     ) {
         Row(
@@ -353,9 +354,9 @@ fun ReactionPill(
                 text = count.toString(),
                 style = TypographyTokens.Custom.caption,
                 color = if (isSelected)
-                    ColorTokens.Reaction.onSelectedLight
+                    ColorTokens.ReactTheme.primary
                 else
-                    ColorTokens.Reaction.onBackgroundLight
+                    ColorTokens.ReactTheme.mutedForeground
             )
         }
     }
@@ -381,9 +382,9 @@ fun ReadReceiptIndicator(
     }
 
     val tint = if (readBy >= totalRecipients)
-        MaterialTheme.colorScheme.primary
+        ColorTokens.ReactTheme.primary  // Stitch blue when read
     else
-        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        ColorTokens.ReactTheme.primaryForeground.copy(alpha = 0.6f)  // White (on sent messages)
 
     Icon(
         imageVector = icon,
@@ -430,7 +431,7 @@ fun TypingIndicator(
         Text(
             text = text,
             style = TypographyTokens.Custom.caption,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = ColorTokens.ReactTheme.mutedForeground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -458,13 +459,13 @@ fun DateDivider(
     ) {
         Surface(
             shape = MaterialTheme.shapes.small,
-            color = MaterialTheme.colorScheme.surfaceVariant,
+            color = ColorTokens.ReactTheme.secondary,
             tonalElevation = Tokens.Elevation.level1
         ) {
             Text(
                 text = date,
                 style = TypographyTokens.Custom.caption,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = ColorTokens.ReactTheme.mutedForeground,
                 modifier = Modifier.padding(
                     horizontal = Tokens.Spacing.md,
                     vertical = Tokens.Spacing.xs
@@ -492,7 +493,7 @@ fun JumpToBottomFAB(
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.primaryContainer
+        containerColor = ColorTokens.ReactTheme.secondary
     ) {
         Row(
             modifier = Modifier.padding(horizontal = Tokens.Spacing.md),
@@ -534,7 +535,7 @@ fun ReplyPreviewBar(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = ColorTokens.ReactTheme.secondary,
         tonalElevation = Tokens.Elevation.level1
     ) {
         Row(
@@ -548,7 +549,7 @@ fun ReplyPreviewBar(
                 modifier = Modifier
                     .width(4.dp)
                     .height(40.dp),
-                color = MaterialTheme.colorScheme.primary,
+                color = ColorTokens.ReactTheme.primary,
                 shape = RoundedCornerShape(2.dp)
             ) {}
 
@@ -561,13 +562,13 @@ fun ReplyPreviewBar(
                 Text(
                     text = "Replying to $replyToSenderName",
                     style = TypographyTokens.Custom.caption,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = ColorTokens.ReactTheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = replyToContent,
                     style = TypographyTokens.Custom.caption,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = ColorTokens.ReactTheme.mutedForeground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = Tokens.Spacing.xxs)
@@ -615,14 +616,14 @@ fun ThreadIndicator(
         ) {
             Icon(
                 imageVector = IconSet.Message.reply,
-                contentDescription = null,
+                contentDescription = "",
                 modifier = Modifier.size(12.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = ColorTokens.ReactTheme.primary
             )
             Text(
                 text = replyToSenderName,
                 style = TypographyTokens.Custom.caption,
-                color = MaterialTheme.colorScheme.primary,
+                color = ColorTokens.ReactTheme.primary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

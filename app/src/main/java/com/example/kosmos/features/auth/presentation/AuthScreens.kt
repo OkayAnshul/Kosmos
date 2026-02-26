@@ -19,8 +19,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-
+import com.example.kosmos.shared.ui.designsystem.ColorTokens
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
@@ -56,13 +57,13 @@ fun LoginScreen(
             text = "Kosmos",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = ColorTokens.ReactTheme.primary
         )
 
         Text(
             text = "Connect & Collaborate",
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            color = ColorTokens.ReactTheme.foreground.copy(alpha = 0.7f),
             modifier = Modifier.padding(bottom = 48.dp)
         )
 
@@ -75,7 +76,7 @@ fun LoginScreen(
             },
             label = { Text("Email") },
             leadingIcon = {
-                Icon(Icons.Default.Email, contentDescription = null)
+                Icon(Icons.Default.Email, contentDescription = "")
             },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
@@ -87,7 +88,8 @@ fun LoginScreen(
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(bottom = 16.dp)
+                .testTag("login_email_field"),
             enabled = !uiState.isLoading
         )
 
@@ -100,7 +102,7 @@ fun LoginScreen(
             },
             label = { Text("Password") },
             leadingIcon = {
-                Icon(Icons.Default.Lock, contentDescription = null)
+                Icon(Icons.Default.Lock, contentDescription = "")
             },
             trailingIcon = {
                 IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
@@ -125,7 +127,8 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(passwordFocusRequester)
-                .padding(bottom = 24.dp),
+                .padding(bottom = 24.dp)
+                .testTag("login_password_field"),
             enabled = !uiState.isLoading
         )
 
@@ -133,15 +136,16 @@ fun LoginScreen(
         if (uiState.error != null) {
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
+                    containerColor = ColorTokens.ReactTheme.destructive
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
+                    .testTag("login_error_card")
             ) {
                 Text(
                     text = uiState.error,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    color = ColorTokens.ReactTheme.destructiveForeground,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(16.dp)
                 )
@@ -155,9 +159,10 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
+                .testTag("login_button")
         ) {
             if (uiState.isLoading) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(modifier = Modifier.testTag("login_progress_indicator"))
             } else {
                 Text("Login", style = MaterialTheme.typography.titleMedium)
             }
@@ -168,7 +173,8 @@ fun LoginScreen(
         // Sign up button
         TextButton(
             onClick = onNavigateToSignUp,
-            enabled = !uiState.isLoading
+            enabled = !uiState.isLoading,
+            modifier = Modifier.testTag("login_navigate_to_signup_button")
         ) {
             Text("Don't have an account? Sign Up")
         }
@@ -236,13 +242,13 @@ fun SignUpScreen(
             text = "Join Kosmos",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = ColorTokens.ReactTheme.primary
         )
 
         Text(
             text = "Create your developer profile",
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            color = ColorTokens.ReactTheme.foreground.copy(alpha = 0.7f),
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
@@ -261,7 +267,7 @@ fun SignUpScreen(
             value = displayName,
             onValueChange = { displayName = it },
             label = { Text("Display Name *") },
-            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+            leadingIcon = { Icon(Icons.Default.Person, contentDescription = "") },
             supportingText = { Text("Your full name") },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Text,
@@ -284,7 +290,7 @@ fun SignUpScreen(
                 }
             },
             label = { Text("Username *") },
-            leadingIcon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
+            leadingIcon = { Icon(Icons.Default.AccountCircle, contentDescription = "") },
             prefix = { Text("@") },
             supportingText = {
                 Text(
@@ -301,10 +307,10 @@ fun SignUpScreen(
                         CircularProgressIndicator(modifier = Modifier.size(20.dp))
                     }
                     username.length >= 3 && uiState.isUsernameAvailable == true -> {
-                        Icon(Icons.Default.CheckCircle, "Available", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Default.CheckCircle, "Available", tint = ColorTokens.ReactTheme.primary)
                     }
                     username.length >= 3 && uiState.isUsernameAvailable == false -> {
-                        Icon(Icons.Default.Error, "Not available", tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Default.Error, "Not available", tint = ColorTokens.ReactTheme.destructive)
                     }
                 }
             },
@@ -324,7 +330,7 @@ fun SignUpScreen(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email *") },
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+            leadingIcon = { Icon(Icons.Default.Email, contentDescription = "") },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
@@ -341,7 +347,7 @@ fun SignUpScreen(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password *") },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "") },
             trailingIcon = {
                 IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                     Icon(
@@ -368,7 +374,7 @@ fun SignUpScreen(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
             label = { Text("Confirm Password *") },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "") },
             trailingIcon = {
                 IconButton(onClick = { isConfirmPasswordVisible = !isConfirmPasswordVisible }) {
                     Icon(
@@ -381,7 +387,7 @@ fun SignUpScreen(
             isError = confirmPassword.isNotEmpty() && password != confirmPassword,
             supportingText = {
                 if (confirmPassword.isNotEmpty() && password != confirmPassword) {
-                    Text("Passwords do not match", color = MaterialTheme.colorScheme.error)
+                    Text("Passwords do not match", color = ColorTokens.ReactTheme.destructive)
                 }
             },
             keyboardOptions = KeyboardOptions(
@@ -411,7 +417,7 @@ fun SignUpScreen(
         ) {
             Icon(
                 if (showOptionalFields) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                contentDescription = null,
+                contentDescription = "",
                 modifier = Modifier.padding(end = 8.dp)
             )
             Text(if (showOptionalFields) "Hide Optional Fields" else "Add Optional Profile Info")
@@ -433,7 +439,7 @@ fun SignUpScreen(
             Text(
                 text = "Help others learn more about you",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = ColorTokens.ReactTheme.mutedForeground,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
@@ -444,7 +450,7 @@ fun SignUpScreen(
                 value = age,
                 onValueChange = { if (it.all { char -> char.isDigit() }) age = it },
                 label = { Text("Age") },
-                leadingIcon = { Icon(Icons.Default.Cake, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.Cake, contentDescription = "") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next
@@ -461,7 +467,7 @@ fun SignUpScreen(
                 value = role,
                 onValueChange = { role = it },
                 label = { Text("Role/Title") },
-                leadingIcon = { Icon(Icons.Default.Work, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.Work, contentDescription = "") },
                 placeholder = { Text("e.g., Android Developer") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
@@ -479,7 +485,7 @@ fun SignUpScreen(
                 value = location,
                 onValueChange = { location = it },
                 label = { Text("Location") },
-                leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = "") },
                 placeholder = { Text("e.g., San Francisco, CA") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
@@ -525,7 +531,7 @@ fun SignUpScreen(
                 value = githubUrl,
                 onValueChange = { githubUrl = it },
                 label = { Text("GitHub") },
-                leadingIcon = { Icon(Icons.Default.Code, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.Code, contentDescription = "") },
                 placeholder = { Text("github.com/username") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
@@ -543,7 +549,7 @@ fun SignUpScreen(
                 value = twitterUrl,
                 onValueChange = { twitterUrl = it },
                 label = { Text("Twitter/X") },
-                leadingIcon = { Icon(Icons.Default.Tag, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.Tag, contentDescription = "") },
                 placeholder = { Text("x.com/username") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
@@ -561,7 +567,7 @@ fun SignUpScreen(
                 value = linkedinUrl,
                 onValueChange = { linkedinUrl = it },
                 label = { Text("LinkedIn") },
-                leadingIcon = { Icon(Icons.Default.Business, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.Business, contentDescription = "") },
                 placeholder = { Text("linkedin.com/in/username") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
@@ -579,7 +585,7 @@ fun SignUpScreen(
                 value = websiteUrl,
                 onValueChange = { websiteUrl = it },
                 label = { Text("Website") },
-                leadingIcon = { Icon(Icons.Default.Language, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.Language, contentDescription = "") },
                 placeholder = { Text("yourwebsite.com") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
@@ -597,7 +603,7 @@ fun SignUpScreen(
                 value = portfolioUrl,
                 onValueChange = { portfolioUrl = it },
                 label = { Text("Portfolio") },
-                leadingIcon = { Icon(Icons.Default.FolderOpen, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.FolderOpen, contentDescription = "") },
                 placeholder = { Text("portfolio.com") },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Uri,
@@ -618,7 +624,7 @@ fun SignUpScreen(
         if (uiState.error != null) {
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
+                    containerColor = ColorTokens.ReactTheme.destructive
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -626,7 +632,7 @@ fun SignUpScreen(
             ) {
                 Text(
                     text = uiState.error,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    color = ColorTokens.ReactTheme.destructiveForeground,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(16.dp)
                 )
@@ -666,7 +672,7 @@ fun SignUpScreen(
                 .height(56.dp)
         ) {
             if (uiState.isLoading) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
+                CircularProgressIndicator(color = ColorTokens.ReactTheme.primaryForeground)
             } else {
                 Text("Create Account", style = MaterialTheme.typography.titleMedium)
             }

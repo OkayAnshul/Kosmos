@@ -11,6 +11,7 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 
 /**
  * Supabase Notification Service
@@ -77,6 +78,7 @@ class SupabaseNotificationService @Inject constructor(
             Result.success(Unit)
 
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "❌ Failed to send notification to user: $userId", e)
             Result.failure(e)
         }
@@ -102,6 +104,7 @@ class SupabaseNotificationService @Inject constructor(
             try {
                 sendNotification(userId, title, body, type, data)
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e(TAG, "Failed to send notification to user: $userId", e)
                 // Continue sending to other users
             }
@@ -124,6 +127,7 @@ class SupabaseNotificationService @Inject constructor(
             }
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Failed to mark notification as read: $notificationId", e)
             Result.failure(e)
         }
@@ -146,6 +150,7 @@ class SupabaseNotificationService @Inject constructor(
             }
             Result.success(Unit)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e(TAG, "Failed to mark all notifications as read for user: $userId", e)
             Result.failure(e)
         }
