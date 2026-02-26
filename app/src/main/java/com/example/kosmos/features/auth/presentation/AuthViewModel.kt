@@ -14,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -77,6 +78,7 @@ class AuthViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = e.message ?: "Login failed"
@@ -127,6 +129,7 @@ class AuthViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = e.message ?: "Sign up failed"
@@ -166,6 +169,7 @@ class AuthViewModel @Inject constructor(
                     isUsernameAvailable = !exists // Available if NOT exists
                 )
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
                     isCheckingUsername = false,
                     isUsernameAvailable = null
@@ -281,6 +285,7 @@ class AuthViewModel @Inject constructor(
                 authRepository.signOut()
                 _uiState.value = AuthUiState()
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
                     error = "Logout failed"
                 )
@@ -337,6 +342,7 @@ class AuthViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     passwordResetSent = false,
@@ -476,6 +482,7 @@ class AuthViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = e.message ?: "Failed to update profile"
