@@ -31,8 +31,10 @@ import com.example.kosmos.features.smart.services.ActionDetectionService
 import com.example.kosmos.features.smart.services.SmartReplyService
 import com.example.kosmos.shared.utils.NetworkMonitor
 import com.example.kosmos.shared.utils.NetworkMonitorImpl
+import com.example.kosmos.core.config.AppConfigRepository
 import com.example.kosmos.core.coroutines.DispatcherProvider
 import com.example.kosmos.core.coroutines.DefaultDispatcherProvider
+import com.example.kosmos.features.announcements.AnnouncementRepository
 
 import dagger.Module
 import dagger.Binds
@@ -429,6 +431,20 @@ object RepositoryModule {
 
     @Provides
     @Singleton
+    fun provideAppConfigRepository(
+        supabase: SupabaseClient,
+        sharedPreferences: android.content.SharedPreferences,
+        @dagger.hilt.android.qualifiers.ApplicationContext context: android.content.Context
+    ): AppConfigRepository = AppConfigRepository(supabase, sharedPreferences, context)
+
+    @Provides
+    @Singleton
+    fun provideAnnouncementRepository(
+        supabase: SupabaseClient
+    ): AnnouncementRepository = AnnouncementRepository(supabase)
+
+    @Provides
+    @Singleton
     fun provideProjectJoinRequestRepository(
         joinRequestDao: com.example.kosmos.core.database.dao.ProjectJoinRequestDao,
         projectMemberDao: ProjectMemberDao,
@@ -531,6 +547,7 @@ object SyncModule {
         supabaseProjectJoinRequestDataSource: com.example.kosmos.data.datasource.SupabaseProjectJoinRequestDataSource,
         supabaseTimeEntryDataSource: com.example.kosmos.data.datasource.SupabaseTimeEntryDataSource,
         supabaseDependencyDataSource: com.example.kosmos.data.datasource.SupabaseDependencyDataSource,
+        supabaseMilestoneDataSource: com.example.kosmos.data.datasource.SupabaseMilestoneDataSource,
         @com.example.kosmos.data.sync.ApplicationScope scope: kotlinx.coroutines.CoroutineScope
     ): com.example.kosmos.data.sync.SyncQueueManager {
         return com.example.kosmos.data.sync.SyncQueueManager(
@@ -549,6 +566,7 @@ object SyncModule {
             supabaseProjectJoinRequestDataSource = supabaseProjectJoinRequestDataSource,
             supabaseTimeEntryDataSource = supabaseTimeEntryDataSource,
             supabaseDependencyDataSource = supabaseDependencyDataSource,
+            supabaseMilestoneDataSource = supabaseMilestoneDataSource,
             scope = scope
         )
     }
