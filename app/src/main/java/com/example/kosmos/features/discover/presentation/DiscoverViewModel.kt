@@ -6,6 +6,8 @@ import com.example.kosmos.core.models.ConnectionStatus
 import com.example.kosmos.core.models.JoinRequestStatus
 import com.example.kosmos.core.models.Project
 import com.example.kosmos.core.models.User
+import com.example.kosmos.core.feedback.UserFeedbackManager
+import com.example.kosmos.core.feedback.safeCall
 import com.example.kosmos.data.repository.AuthRepository
 import com.example.kosmos.data.repository.ProjectJoinRequestRepository
 import com.example.kosmos.data.repository.ProjectRepository
@@ -39,7 +41,8 @@ class DiscoverViewModel @Inject constructor(
     private val projectRepository: ProjectRepository,
     private val userConnectionRepository: UserConnectionRepository,
     private val joinRequestRepository: ProjectJoinRequestRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val feedbackManager: UserFeedbackManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DiscoverUiState())
@@ -100,15 +103,15 @@ class DiscoverViewModel @Inject constructor(
     private suspend fun loadConnectionStatuses(userIds: List<String>) {
         val myId = currentUserId ?: return
         // Sync connections from Supabase so Room has fresh data
-        try {
+        safeCall(feedbackManager, tag = "DiscoverViewModel", action = "sync connections") {
             userConnectionRepository.syncFromSupabase(myId)
-        } catch (_: Exception) {}
+        }
         val statuses = mutableMapOf<String, ConnectionStatus>()
         userIds.forEach { userId ->
-            try {
+            safeCall(feedbackManager, tag = "DiscoverViewModel", action = "load connection status") {
                 val status = userConnectionRepository.getConnectionStatus(myId, userId)
                 if (status != null) statuses[userId] = status
-            } catch (_: Exception) {}
+            }
         }
         _uiState.update { it.copy(connectionStatuses = statuses) }
     }
@@ -118,15 +121,15 @@ class DiscoverViewModel @Inject constructor(
         val statuses = mutableMapOf<String, JoinRequestStatus>()
         val memberIds = mutableSetOf<String>()
         projectIds.forEach { projectId ->
-            try {
+            safeCall(feedbackManager, tag = "DiscoverViewModel", action = "load join request status") {
                 val request = joinRequestRepository.getMyRequestForProject(myId, projectId)
                 if (request != null) statuses[projectId] = request.status
-            } catch (_: Exception) {}
+            }
             // Check if already a member
-            try {
+            safeCall(feedbackManager, tag = "DiscoverViewModel", action = "check project membership") {
                 val members = projectRepository.getProjectMembers(projectId)
                 if (members.any { it.userId == myId }) memberIds.add(projectId)
-            } catch (_: Exception) {}
+            }
         }
         _uiState.update { it.copy(joinRequestStatuses = statuses, memberProjectIds = memberIds) }
     }

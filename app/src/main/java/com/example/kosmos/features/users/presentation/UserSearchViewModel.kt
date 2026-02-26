@@ -2,8 +2,12 @@ package com.example.kosmos.features.users.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.kosmos.core.feedback.UserFeedbackManager
+import com.example.kosmos.core.feedback.safeCall
+import com.example.kosmos.core.models.ConnectionStatus
 import com.example.kosmos.core.models.User
 import com.example.kosmos.data.repository.AuthRepository
+import com.example.kosmos.data.repository.UserConnectionRepository
 import com.example.kosmos.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
@@ -19,7 +23,9 @@ import javax.inject.Inject
 @HiltViewModel
 class UserSearchViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val userConnectionRepository: UserConnectionRepository,
+    private val feedbackManager: UserFeedbackManager
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -82,8 +88,17 @@ class UserSearchViewModel @Inject constructor(
             when {
                 result.isSuccess -> {
                     val users = result.getOrNull() ?: emptyList()
+                    // Load connection statuses
+                    val statuses = mutableMapOf<String, ConnectionStatus>()
+                    users.forEach { user ->
+                        safeCall(feedbackManager, tag = "UserSearchViewModel", action = "load connection status") {
+                            val status = userConnectionRepository.getConnectionStatus(currentUserId, user.id)
+                            if (status != null) statuses[user.id] = status
+                        }
+                    }
                     _uiState.value = UserSearchState(
                         users = users,
+                        connectionStatuses = statuses,
                         isLoading = false,
                         error = null
                     )
@@ -115,6 +130,7 @@ class UserSearchViewModel @Inject constructor(
  */
 data class UserSearchState(
     val users: List<User> = emptyList(),
+    val connectionStatuses: Map<String, ConnectionStatus> = emptyMap(),
     val isLoading: Boolean = false,
     val error: String? = null
 )

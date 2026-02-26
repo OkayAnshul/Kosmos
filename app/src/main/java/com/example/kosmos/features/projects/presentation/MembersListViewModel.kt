@@ -2,10 +2,17 @@ package com.example.kosmos.features.projects.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.kosmos.core.models.JoinRequestStatus
+import com.example.kosmos.core.models.ProjectJoinRequest
 import com.example.kosmos.core.models.ProjectMember
 import com.example.kosmos.core.models.ProjectRole
 import com.example.kosmos.core.models.User
+import com.example.kosmos.core.models.ProjectInvite
+import com.example.kosmos.core.feedback.UserFeedbackManager
+import com.example.kosmos.core.feedback.safeCall
 import com.example.kosmos.data.repository.AuthRepository
+import com.example.kosmos.data.repository.ProjectInviteRepository
+import com.example.kosmos.data.repository.ProjectJoinRequestRepository
 import com.example.kosmos.data.repository.ProjectRepository
 import com.example.kosmos.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,7 +31,10 @@ import javax.inject.Inject
 class MembersListViewModel @Inject constructor(
     private val projectRepository: ProjectRepository,
     private val userRepository: UserRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val projectInviteRepository: ProjectInviteRepository,
+    private val projectJoinRequestRepository: ProjectJoinRequestRepository,
+    private val feedbackManager: UserFeedbackManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MembersListUiState())
@@ -38,8 +48,14 @@ class MembersListViewModel @Inject constructor(
                 // Get current user
                 val currentUser = authRepository.getCurrentUser()
 
-                // Sync members from Supabase first
+                // Sync members, invites, and join requests from Supabase first
                 projectRepository.syncProjectMembers(projectId)
+                safeCall(feedbackManager, tag = "MembersListViewModel", action = "sync invitations") {
+                    projectInviteRepository.syncFromSupabase(projectId)
+                }
+                safeCall(feedbackManager, tag = "MembersListViewModel", action = "sync join requests") {
+                    projectJoinRequestRepository.syncFromSupabase(projectId)
+                }
 
                 // Load project members
                 val members = projectRepository.getProjectMembers(projectId)
@@ -70,6 +86,76 @@ class MembersListViewModel @Inject constructor(
                         error = "Error loading members: ${e.message}"
                     )
                 }
+            }
+        }
+    }
+
+    fun loadPendingInvites(projectId: String) {
+        viewModelScope.launch {
+            try {
+                projectInviteRepository.getProjectInvitesFlow(projectId).collect { invites ->
+                    val pending = invites.filter {
+                        it.status == com.example.kosmos.core.models.InviteStatus.PENDING
+                    }
+                    _uiState.update { it.copy(pendingInvites = pending) }
+                }
+            } catch (e: Exception) {
+                // Non-critical — don't block member loading
+            }
+        }
+    }
+
+    fun cancelInvite(inviteId: String) {
+        viewModelScope.launch {
+            try {
+                projectInviteRepository.cancelInvite(inviteId)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Failed to cancel invite: ${e.message}") }
+            }
+        }
+    }
+
+    fun loadJoinRequests(projectId: String) {
+        viewModelScope.launch {
+            safeCall(feedbackManager, tag = "MembersListViewModel", action = "load join requests") {
+                projectJoinRequestRepository.getRequestsForProjectFlow(projectId).collect { requests ->
+                    val pending = requests.filter { it.status == JoinRequestStatus.PENDING }
+                    val requestsWithUsers = pending.mapNotNull { request ->
+                        val user = userRepository.getUserById(request.requesterId)
+                        if (user != null) JoinRequestWithUser(request, user) else null
+                    }
+                    _uiState.update { it.copy(joinRequests = requestsWithUsers) }
+                }
+            }
+        }
+    }
+
+    fun approveJoinRequest(requestId: String, projectId: String) {
+        viewModelScope.launch {
+            try {
+                val reviewerId = authRepository.getCurrentUser()?.id ?: return@launch
+                val result = projectJoinRequestRepository.approveRequest(requestId, reviewerId)
+                if (result.isSuccess) {
+                    loadMembers(projectId)
+                } else {
+                    _uiState.update { it.copy(error = "Failed to approve: ${result.exceptionOrNull()?.message}") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Error: ${e.message}") }
+            }
+        }
+    }
+
+    fun rejectJoinRequest(requestId: String) {
+        viewModelScope.launch {
+            try {
+                val reviewerId = authRepository.getCurrentUser()?.id ?: return@launch
+                val result = projectJoinRequestRepository.rejectRequest(requestId, reviewerId)
+                if (result.isFailure) {
+                    _uiState.update { it.copy(error = "Failed to reject request") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Error: ${e.message}") }
             }
         }
     }
@@ -238,12 +324,19 @@ data class MemberWithUser(
     val user: User
 )
 
+data class JoinRequestWithUser(
+    val request: ProjectJoinRequest,
+    val user: User
+)
+
 /**
  * UI state for Members List screen
  */
 data class MembersListUiState(
     val members: List<MemberWithUser> = emptyList(),
     val filteredMembers: List<MemberWithUser> = emptyList(),
+    val pendingInvites: List<ProjectInvite> = emptyList(),
+    val joinRequests: List<JoinRequestWithUser> = emptyList(),
     val currentUserRole: ProjectRole = ProjectRole.MEMBER,
     val selectedRoleFilter: ProjectRole? = null,
     val searchQuery: String = "",

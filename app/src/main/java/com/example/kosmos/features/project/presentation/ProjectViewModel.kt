@@ -10,6 +10,8 @@ import com.example.kosmos.core.models.ProjectRole
 import com.example.kosmos.core.models.ProjectStats
 import com.example.kosmos.core.models.ProjectStatus
 import com.example.kosmos.core.models.User
+import com.example.kosmos.core.feedback.UserFeedbackManager
+import com.example.kosmos.core.feedback.safeCall
 import com.example.kosmos.data.repository.AuthRepository
 import com.example.kosmos.data.repository.ProjectCreationData
 import com.example.kosmos.data.repository.ProjectRepository
@@ -51,7 +53,9 @@ class ProjectViewModel @Inject constructor(
     private val projectRepository: ProjectRepository,
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
-    private val initialSyncManager: InitialSyncManager
+    private val initialSyncManager: InitialSyncManager,
+    private val userConnectionRepository: com.example.kosmos.data.repository.UserConnectionRepository,
+    private val feedbackManager: UserFeedbackManager
 ) : ViewModel() {
     companion object {
         private const val TAG = "ProjectViewModel"
@@ -73,7 +77,7 @@ class ProjectViewModel @Inject constructor(
     init {
         // Observe auth state reactively instead of capturing value
         viewModelScope.launch {
-            authRepository.currentUser
+            authRepository.userFlow
                 .filterNotNull()  // Wait until user is loaded
                 .collect { user ->
                     // User is now authenticated and loaded
@@ -83,6 +87,7 @@ class ProjectViewModel @Inject constructor(
                     // Preload users for project creation wizard
                     loadAllUsers()
                     loadRecentCollaborators()
+                    loadConnections()
                 }
         }
 
@@ -724,6 +729,11 @@ class ProjectViewModel @Inject constructor(
         return currentUser?.id ?: ""
     }
 
+    fun getCurrentUserName(): String {
+        val user = currentUser
+        return user?.displayName?.takeIf { it.isNotBlank() } ?: user?.username ?: ""
+    }
+
     /**
      * Set the current wizard step
      * @param step Step number (1-3)
@@ -812,6 +822,23 @@ class ProjectViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         recentCollaborators = emptyList()
                     )
+                }
+            }
+        }
+    }
+
+    /**
+     * Load accepted connections for current user (shown first in Step2)
+     */
+    fun loadConnections() {
+        currentUser?.let { user ->
+            viewModelScope.launch {
+                safeCall(feedbackManager, tag = "ProjectViewModel", action = "load connections") {
+                    val connectionIds = userConnectionRepository.getAcceptedIds(user.id)
+                    val connectionUsers = connectionIds.mapNotNull { id ->
+                        userRepository.getUserById(id)
+                    }
+                    _uiState.value = _uiState.value.copy(connectionUsers = connectionUsers)
                 }
             }
         }
@@ -1132,6 +1159,11 @@ data class ProjectUiState(
      * Recent collaborators for quick member selection
      */
     val recentCollaborators: List<User> = emptyList(),
+
+    /**
+     * Connected users for quick member selection (shown first)
+     */
+    val connectionUsers: List<User> = emptyList(),
 
     /**
      * All available users for member selection
