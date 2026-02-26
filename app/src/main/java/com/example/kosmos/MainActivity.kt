@@ -133,6 +133,24 @@ fun KosmosApp(
     // Collect unread notification count
     val unreadNotificationCount by notificationListener.unreadCount.collectAsStateWithLifecycle()
 
+    // Collect latest notification for in-app snackbar
+    val latestNotification by notificationListener.latestNotification.collectAsStateWithLifecycle()
+    val globalSnackbarHostState = remember { SnackbarHostState() }
+
+    // Show in-app snackbar when a new notification arrives
+    LaunchedEffect(latestNotification) {
+        val notification = latestNotification ?: return@LaunchedEffect
+        val result = globalSnackbarHostState.showSnackbar(
+            message = "${notification.title}: ${notification.body}",
+            actionLabel = "View",
+            duration = androidx.compose.material3.SnackbarDuration.Short
+        )
+        if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+            navController.navigate(Screen.NotificationList.route)
+        }
+        notificationListener.consumeLatestNotification()
+    }
+
     // Remote app config (pre-seeded from SharedPreferences, refreshed at startup)
     val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
     val appConfigRepo = remember(appContext) {
@@ -142,6 +160,55 @@ fun KosmosApp(
         ).appConfigRepository()
     }
     val appConfig by appConfigRepo.config.collectAsStateWithLifecycle()
+
+    // Collect UserFeedbackManager events and route to global Snackbar
+    val feedbackManager = remember(appContext) {
+        dagger.hilt.android.EntryPointAccessors.fromApplication(
+            appContext,
+            UserFeedbackEntryPoint::class.java
+        ).userFeedbackManager()
+    }
+    LaunchedEffect(Unit) {
+        feedbackManager.events.collect { event ->
+            when (event) {
+                is com.example.kosmos.core.feedback.FeedbackEvent.PermissionDenied -> {
+                    globalSnackbarHostState.showSnackbar(
+                        message = "Cannot ${event.action}: ${event.reason}",
+                        actionLabel = "OK",
+                        duration = androidx.compose.material3.SnackbarDuration.Long
+                    )
+                }
+                is com.example.kosmos.core.feedback.FeedbackEvent.SyncWarning -> {
+                    globalSnackbarHostState.showSnackbar(
+                        message = event.message,
+                        duration = androidx.compose.material3.SnackbarDuration.Short
+                    )
+                }
+                is com.example.kosmos.core.feedback.FeedbackEvent.Error -> {
+                    val result = globalSnackbarHostState.showSnackbar(
+                        message = event.message,
+                        actionLabel = if (event.retryAction != null) "Retry" else null,
+                        duration = androidx.compose.material3.SnackbarDuration.Long
+                    )
+                    if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                        event.retryAction?.invoke()
+                    }
+                }
+                is com.example.kosmos.core.feedback.FeedbackEvent.Success -> {
+                    globalSnackbarHostState.showSnackbar(
+                        message = event.message,
+                        duration = androidx.compose.material3.SnackbarDuration.Short
+                    )
+                }
+                is com.example.kosmos.core.feedback.FeedbackEvent.Info -> {
+                    globalSnackbarHostState.showSnackbar(
+                        message = event.message,
+                        duration = androidx.compose.material3.SnackbarDuration.Short
+                    )
+                }
+            }
+        }
+    }
 
     // Announcement overlay
     val announcementViewModel: AnnouncementViewModel = hiltViewModel()
@@ -232,8 +299,9 @@ fun KosmosApp(
         )
     }
 
+    Box(modifier = modifier.fillMaxSize()) {
     Surface(
-        modifier = modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         color = ColorTokens.ReactTheme.background
     ) {
         NavHost(
@@ -338,6 +406,7 @@ fun KosmosApp(
                     onNotificationsClick = {
                         navController.navigate(Screen.NotificationList.route)
                     },
+                    notificationBadgeCount = unreadNotificationCount,
                     modifier = Modifier.padding(innerPadding)
                 )
             }
@@ -695,33 +764,31 @@ fun KosmosApp(
         }
 
         composable(Screen.NotificationList.route) {
+            // Immediately reset the badge counter so the bell shows 0 without waiting for Supabase roundtrip
+            LaunchedEffect(Unit) { notificationListener.resetUnreadCount() }
             com.example.kosmos.features.notifications.NotificationListScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
                 onNotificationTap = { notificationId, data ->
-                    // GAP-005 FIX: Navigate to relevant task/chat based on notification data
                     val taskId = data["task_id"]
                     val chatId = data["chat_id"]
                     val projectId = data["project_id"]
+                    val connectionId = data["connection_id"]
+                    val inviteId = data["invite_id"]
+                    val requestId = data["request_id"]
 
                     when {
-                        // Task-related notification
-                        !taskId.isNullOrBlank() -> {
-                            navController.navigate(Screen.TaskDetail.createRoute(taskId))
-                        }
-                        // Chat-related notification
-                        !chatId.isNullOrBlank() -> {
-                            navController.navigate(Screen.Chat.createRoute(chatId))
-                        }
-                        // Project-related notification (fallback to project workspace)
-                        !projectId.isNullOrBlank() -> {
-                            navController.navigate(Screen.ProjectWorkspace.createRoute(projectId))
-                        }
-                        // No specific target - stay on notification list
+                        !taskId.isNullOrBlank() -> navController.navigate(Screen.TaskDetail.createRoute(taskId))
+                        !chatId.isNullOrBlank() -> navController.navigate(Screen.Chat.createRoute(chatId))
+                        !connectionId.isNullOrBlank() -> navController.navigate(Screen.Connections.route)
+                        !inviteId.isNullOrBlank() -> navController.navigate(Screen.Connections.route)
+                        !requestId.isNullOrBlank() && !projectId.isNullOrBlank() -> navController.navigate(Screen.ProjectWorkspace.createRoute(projectId))
+                        !projectId.isNullOrBlank() -> navController.navigate(Screen.ProjectWorkspace.createRoute(projectId))
                         else -> { /* No navigation needed */ }
                     }
-                }
+                },
+                onNavigateToConnections = { navController.navigate(Screen.Connections.route) }
             )
         }
 
@@ -845,6 +912,12 @@ fun KosmosApp(
         // }
         }
     }
+    // Global in-app notification snackbar (overlays all screens)
+    SnackbarHost(
+        hostState = globalSnackbarHostState,
+        modifier = Modifier.align(Alignment.BottomCenter)
+    )
+    } // end Box
 }
 
 sealed class Screen(val route: String) {

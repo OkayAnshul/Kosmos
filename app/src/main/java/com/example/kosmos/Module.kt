@@ -587,3 +587,10 @@ abstract class DispatcherModule {
         impl: DefaultDispatcherProvider
     ): DispatcherProvider
 }
+
+// === UserFeedbackManager EntryPoint (for KosmosApp composable) ===
+@dagger.hilt.EntryPoint
+@dagger.hilt.InstallIn(dagger.hilt.components.SingletonComponent::class)
+interface UserFeedbackEntryPoint {
+    fun userFeedbackManager(): com.example.kosmos.core.feedback.UserFeedbackManager
+}
