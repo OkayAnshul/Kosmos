@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -80,6 +81,7 @@ class MembersListViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -92,15 +94,11 @@ class MembersListViewModel @Inject constructor(
 
     fun loadPendingInvites(projectId: String) {
         viewModelScope.launch {
-            try {
+            safeCall(feedbackManager, tag = "MembersListViewModel", action = "load pending invites") {
                 projectInviteRepository.getProjectInvitesFlow(projectId).collect { invites ->
-                    val pending = invites.filter {
-                        it.status == com.example.kosmos.core.models.InviteStatus.PENDING
-                    }
+                    val pending = invites.filter { it.status == com.example.kosmos.core.models.InviteStatus.PENDING }
                     _uiState.update { it.copy(pendingInvites = pending) }
                 }
-            } catch (e: Exception) {
-                // Non-critical — don't block member loading
             }
         }
     }
@@ -110,6 +108,7 @@ class MembersListViewModel @Inject constructor(
             try {
                 projectInviteRepository.cancelInvite(inviteId)
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.update { it.copy(error = "Failed to cancel invite: ${e.message}") }
             }
         }
@@ -141,6 +140,7 @@ class MembersListViewModel @Inject constructor(
                     _uiState.update { it.copy(error = "Failed to approve: ${result.exceptionOrNull()?.message}") }
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.update { it.copy(error = "Error: ${e.message}") }
             }
         }
@@ -155,6 +155,7 @@ class MembersListViewModel @Inject constructor(
                     _uiState.update { it.copy(error = "Failed to reject request") }
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.update { it.copy(error = "Error: ${e.message}") }
             }
         }
@@ -247,6 +248,7 @@ class MembersListViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.update {
                     it.copy(
                         isUpdating = false,
@@ -301,6 +303,7 @@ class MembersListViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.update {
                     it.copy(
                         isUpdating = false,

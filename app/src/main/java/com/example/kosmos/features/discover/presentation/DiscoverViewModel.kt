@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -95,6 +96,7 @@ class DiscoverViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.update { it.copy(error = e.message, isLoading = false) }
             }
         }
@@ -144,6 +146,7 @@ class DiscoverViewModel @Inject constructor(
                     it.copy(connectionStatuses = it.connectionStatuses + (targetUserId to ConnectionStatus.PENDING))
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.update { it.copy(error = e.message) }
             }
         }
@@ -166,6 +169,7 @@ class DiscoverViewModel @Inject constructor(
                     it.copy(joinRequestStatuses = it.joinRequestStatuses + (projectId to JoinRequestStatus.PENDING))
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 _uiState.update { it.copy(error = e.message) }
             }
         }
