@@ -177,7 +177,8 @@ fun ProjectDetailsScreenReactWrapper(
             businessModel = project.businessModel,
             targetAudience = project.targetAudience,
             tags = parseTags(project.tags),
-            openSourceLicense = project.openSourceLicense
+            openSourceLicense = project.openSourceLicense,
+            industryTags = parseTags(project.industryTags)
         )
     } else {
         // Fallback if project not found (shouldn't happen, but safe handling)

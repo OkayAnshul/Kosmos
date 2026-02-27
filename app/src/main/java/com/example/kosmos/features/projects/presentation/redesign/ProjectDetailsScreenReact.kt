@@ -95,7 +95,8 @@ data class ProjectData(
     val businessModel: String? = null,
     val targetAudience: String? = null,
     val tags: List<String> = emptyList(),
-    val openSourceLicense: String? = null
+    val openSourceLicense: String? = null,
+    val industryTags: List<String> = emptyList()  // BUSINESS category: parsed from JSON array string
 )
 
 private val mockProject = ProjectData(
@@ -334,6 +335,10 @@ private fun OverviewTab(
                 project.techStack?.let { AboutDetailRow(Icons.Default.Code, "Tech Stack", it) }
                 project.businessModel?.let { AboutDetailRow(Icons.Default.Business, "Business Model", it) }
                 project.targetAudience?.let { AboutDetailRow(Icons.Default.People, "Target Audience", it) }
+                // industryTags: BUSINESS category only — parsed from JSON array stored in Project.industryTags
+                if (project.industryTags.isNotEmpty()) {
+                    AboutDetailRow(Icons.Default.TrendingUp, "Industry", project.industryTags.joinToString(" · "))
+                }
                 project.openSourceLicense?.let { AboutDetailRow(Icons.Default.Gavel, "License", it) }
                 project.githubUrl?.let { AboutDetailRow(Icons.Default.Link, "GitHub", it) }
                 project.websiteUrl?.let { AboutDetailRow(Icons.Default.Language, "Website", it) }
