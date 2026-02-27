@@ -98,7 +98,8 @@ fun ProjectListScreenReactWrapper(
             chatCount = stats?.chatCount ?: 0,
             taskCount = stats?.taskCount ?: 0,
             completedTasks = stats?.completedTaskCount ?: 0,
-            lastActivity = formatLastActivity(project.updatedAt ?: project.createdAt)
+            lastActivity = formatLastActivity(project.updatedAt ?: project.createdAt),
+            accentColor = project.color
         )
     }
 

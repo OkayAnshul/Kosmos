@@ -16,6 +16,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -55,8 +59,19 @@ data class ProjectCardData(
     val chatCount: Int,
     val taskCount: Int,
     val completedTasks: Int,
-    val lastActivity: String
+    val lastActivity: String,
+    val accentColor: String? = null  // hex string from Project.color, e.g. "#7C3AED"
 )
+
+/** Safely parse a hex color string. Falls back to primary purple if null or invalid. */
+private fun String?.toProjectAccentColor(): Color {
+    if (this == null) return Color(0xFF7C3AED)
+    return try {
+        Color(android.graphics.Color.parseColor(this))
+    } catch (e: IllegalArgumentException) {
+        Color(0xFF7C3AED)
+    }
+}
 
 private val mockProjects = listOf(
     ProjectCardData(
@@ -369,8 +384,17 @@ private fun ProjectCard(
     onSettings: () -> Unit = {},
     onArchive: () -> Unit = {}
 ) {
+    val accentColor = project.accentColor.toProjectAccentColor()
     KosmosCard(
-        onClick = onClick
+        onClick = onClick,
+        modifier = Modifier.drawBehind {
+            // 4dp left accent bar using project color
+            drawRect(
+                color = accentColor,
+                topLeft = Offset.Zero,
+                size = Size(4.dp.toPx(), size.height)
+            )
+        }
     ) {
         Column {
             // Header (line 31-51)
