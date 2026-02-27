@@ -16,6 +16,7 @@ import com.example.kosmos.data.repository.AuthRepository
 import com.example.kosmos.data.repository.ProjectRepository
 import com.example.kosmos.data.repository.TaskRepository
 import com.example.kosmos.features.tasks.components.CommitMessageDialog
+import com.example.kosmos.features.tasks.components.TaskPickerBottomSheet
 import com.example.kosmos.features.tasks.presentation.TaskDetailViewModel
 import com.example.kosmos.shared.ui.components.UserPickerDialog
 import com.example.kosmos.shared.ui.components.task.TaskFormatUtils
@@ -90,6 +91,7 @@ fun TaskDetailScreenReactWrapper(
     var showTimeTracker by remember { mutableStateOf(false) }
     var showManualEntry by remember { mutableStateOf(false) }
     var showJournalDialog by remember { mutableStateOf(false) }
+    var showDependencyPicker by remember { mutableStateOf(false) }
 
     // Get current user
     val currentUser = authRepository.getCurrentUser()
@@ -129,6 +131,18 @@ fun TaskDetailScreenReactWrapper(
             dependentTasks.map { dep -> taskRepository.getTaskByIdFlow(dep.taskId) }
         ) { tasks -> tasks.filterNotNull() }
     }.collectAsStateWithLifecycle(initialValue = emptyList())
+
+    // Tasks in same project for dependency picker (exclude self and already-added deps)
+    val existingDepIds = remember(dependencies) { dependencies.map { it.dependsOnTaskId }.toSet() }
+    val projectTasksForPicker by if (task != null) {
+        taskRepository.getTasksForProjectFlow(task.projectId)
+            .collectAsStateWithLifecycle(initialValue = emptyList())
+    } else {
+        remember { mutableStateOf(emptyList()) }
+    }
+    val availableForDependency = remember(projectTasksForPicker, taskId, existingDepIds) {
+        projectTasksForPicker.filter { it.id != taskId && !existingDepIds.contains(it.id) }
+    }
 
     val project by if (task != null) {
         projectRepository.getProjectFlow(task.projectId)
@@ -205,6 +219,7 @@ fun TaskDetailScreenReactWrapper(
                         taskRepository.removeDependency(taskId, depTaskId)
                     }
                 },
+                onAddDependency = { showDependencyPicker = true },
                 onAddComment = onAddComment,
                 // New inline action callbacks
                 onStatusClick = { showStatusPicker = true },
@@ -254,6 +269,25 @@ fun TaskDetailScreenReactWrapper(
                     showJournalDialog = false
                 },
                 onDismiss = { showJournalDialog = false }
+            )
+        }
+
+        // Dependency Picker
+        if (showDependencyPicker) {
+            TaskPickerBottomSheet(
+                tasks = availableForDependency,
+                onTaskSelected = { selectedTask ->
+                    coroutineScope.launch {
+                        taskRepository.addDependency(
+                            taskId = taskId,
+                            dependsOnTaskId = selectedTask.id,
+                            dependencyType = com.example.kosmos.core.models.DependencyType.BLOCKED_BY,
+                            createdBy = currentUser?.id ?: ""
+                        )
+                    }
+                    showDependencyPicker = false
+                },
+                onDismiss = { showDependencyPicker = false }
             )
         }
 

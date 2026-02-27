@@ -144,6 +144,7 @@ fun TaskDetailScreenReact(
     dependencies: List<Task> = emptyList(), // Tasks this task depends on
     dependentTasks: List<Task> = emptyList(), // Tasks that depend on this task
     onRemoveDependency: (String) -> Unit = {},
+    onAddDependency: () -> Unit = {},
     onAddJournalEntry: () -> Unit = {},
     onAddComment: (String) -> Unit = {},
     // Inline action callbacks
@@ -226,15 +227,14 @@ fun TaskDetailScreenReact(
                 )
             }
 
-            // Dependencies
-            if (dependencies.isNotEmpty() || dependentTasks.isNotEmpty()) {
-                item {
-                    DependenciesCard(
-                        dependencies = dependencies,
-                        dependentTasks = dependentTasks,
-                        onRemoveDependency = onRemoveDependency
-                    )
-                }
+            // Dependencies (always shown so user can add)
+            item {
+                DependenciesCard(
+                    dependencies = dependencies,
+                    dependentTasks = dependentTasks,
+                    onRemoveDependency = onRemoveDependency,
+                    onAddDependency = onAddDependency
+                )
             }
 
             // Activity Timeline (using enhanced component with commit messages)
@@ -1244,7 +1244,8 @@ private fun TaskPriorityDetailBadgeReact(
 private fun DependenciesCard(
     dependencies: List<Task>,
     dependentTasks: List<Task>,
-    onRemoveDependency: (String) -> Unit
+    onRemoveDependency: (String) -> Unit,
+    onAddDependency: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -1253,10 +1254,13 @@ private fun DependenciesCard(
         border = BorderStroke(1.dp, ColorTokens.ReactTheme.border)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Default.AccountTree, null, tint = ColorTokens.ReactTheme.primary, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Dependencies", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = ColorTokens.ReactTheme.foreground)
+                Text("Dependencies", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = ColorTokens.ReactTheme.foreground, modifier = Modifier.weight(1f))
+                IconButton(onClick = onAddDependency, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Default.Add, "Add dependency", tint = ColorTokens.ReactTheme.primary, modifier = Modifier.size(18.dp))
+                }
             }
 
             if (dependencies.isNotEmpty()) {
