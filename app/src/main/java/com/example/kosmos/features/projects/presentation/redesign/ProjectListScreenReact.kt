@@ -141,7 +141,6 @@ fun ProjectListScreenReact(
     onCreateProject: () -> Unit = {},
     onProjectEdit: (String) -> Unit = {},
     onProjectMembers: (String) -> Unit = {},
-    onProjectSettings: (String) -> Unit = {},
     onProjectArchive: (String) -> Unit = {},
     searchQuery: String = "",
     onSearchChange: (String) -> Unit = {},
@@ -261,7 +260,6 @@ fun ProjectListScreenReact(
                                 onClick = { onProjectClick(project.id) },
                                 onEdit = { onProjectEdit(project.id) },
                                 onMembers = { onProjectMembers(project.id) },
-                                onSettings = { onProjectSettings(project.id) },
                                 onArchive = { onProjectArchive(project.id) }
                             )
                         }
@@ -381,7 +379,6 @@ private fun ProjectCard(
     onClick: () -> Unit,
     onEdit: () -> Unit = {},
     onMembers: () -> Unit = {},
-    onSettings: () -> Unit = {},
     onArchive: () -> Unit = {}
 ) {
     val accentColor = project.accentColor.toProjectAccentColor()
@@ -469,16 +466,6 @@ private fun ProjectCard(
                             },
                             leadingIcon = {
                                 Icon(Icons.Default.People, contentDescription = null)
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Settings") },
-                            onClick = {
-                                onSettings()
-                                showProjectMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.Settings, contentDescription = null)
                             }
                         )
                         Divider()
