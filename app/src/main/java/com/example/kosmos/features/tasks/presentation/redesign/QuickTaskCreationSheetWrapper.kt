@@ -66,6 +66,7 @@ fun QuickTaskCreationSheetWrapper(
                 dueDate = parseDateString(quickTaskData.dueDate),
                 assignedToId = quickTaskData.assigneeIds.firstOrNull(),
                 tags = quickTaskData.tags,
+                estimatedHours = quickTaskData.estimatedHours,
                 parentTaskId = parentTaskId
             )
 

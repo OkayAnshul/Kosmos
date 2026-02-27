@@ -74,6 +74,7 @@ fun QuickTaskCreationSheet(
     var selectedProjectName by remember { mutableStateOf(initialProjectName) }
     var dueDate by remember { mutableStateOf<String?>(null) }
     var selectedAssignees by remember { mutableStateOf<List<String>>(emptyList()) }
+    var estimatedHoursInput by remember { mutableStateOf("") }
     var tagInput by remember { mutableStateOf("") }
     var tags by remember { mutableStateOf<List<String>>(emptyList()) }
 
@@ -246,6 +247,22 @@ fun QuickTaskCreationSheet(
                     )
                 }
 
+                // Estimated hours
+                TextFieldStandard(
+                    value = estimatedHoursInput,
+                    onValueChange = { v ->
+                        // Allow only numeric input with up to one decimal
+                        if (v.isEmpty() || v.matches(Regex("^\\d{0,3}(\\.\\d{0,1})?\$"))) {
+                            estimatedHoursInput = v
+                        }
+                    },
+                    label = "Estimated Hours",
+                    placeholder = "e.g. 2.5",
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Next,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 // Tags input
                 Column(
                     verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
@@ -311,7 +328,8 @@ fun QuickTaskCreationSheet(
                                     projectId = selectedProjectId,
                                     dueDate = dueDate,
                                     assigneeIds = selectedAssignees,
-                                    tags = tags
+                                    tags = tags,
+                                    estimatedHours = estimatedHoursInput.toFloatOrNull()
                                 )
                             )
                         }
@@ -578,7 +596,8 @@ data class QuickTaskData(
     val projectId: String?,
     val dueDate: String?,
     val assigneeIds: List<String>,
-    val tags: List<String> = emptyList()
+    val tags: List<String> = emptyList(),
+    val estimatedHours: Float? = null
 )
 
 /**
