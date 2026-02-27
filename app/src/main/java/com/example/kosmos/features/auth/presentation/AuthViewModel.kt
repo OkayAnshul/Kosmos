@@ -440,11 +440,13 @@ class AuthViewModel @Inject constructor(
                 // Upload photo if provided
                 var photoUrl: String? = currentUser.photoUrl
                 if (photoUri != null) {
-                    // TODO: Implement photo upload to Supabase Storage
-                    // For now, use the local URI (this won't work across devices)
-                    // In a real implementation:
-                    // val uploadResult = userRepository.uploadProfilePhoto(currentUser.id, photoUri)
-                    // photoUrl = uploadResult.getOrNull()
+                    val uploadResult = authRepository.uploadProfilePhoto(currentUser.id, photoUri)
+                    photoUrl = uploadResult.getOrNull() ?: currentUser.photoUrl
+                    if (uploadResult.isFailure) {
+                        _uiState.value = _uiState.value.copy(
+                            error = "Profile saved but photo upload failed: ${uploadResult.exceptionOrNull()?.message}"
+                        )
+                    }
                 }
 
                 // Create updated user object

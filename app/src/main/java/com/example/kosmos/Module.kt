@@ -296,8 +296,9 @@ object RepositoryModule {
     fun provideAuthRepository(
         supabase: SupabaseClient,
         userDao: UserDao,
-        sharedPreferences: android.content.SharedPreferences
-    ): AuthRepository = AuthRepository(supabase, userDao, sharedPreferences)
+        sharedPreferences: android.content.SharedPreferences,
+        @dagger.hilt.android.qualifiers.ApplicationContext context: android.content.Context
+    ): AuthRepository = AuthRepository(supabase, userDao, sharedPreferences, context)
 
     @Provides
     @Singleton

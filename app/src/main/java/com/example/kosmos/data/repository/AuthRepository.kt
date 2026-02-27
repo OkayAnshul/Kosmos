@@ -1,13 +1,17 @@
 package com.example.kosmos.data.repository
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.activity.ComponentActivity
 import com.example.kosmos.core.config.SupabaseConfig
 import com.example.kosmos.core.database.dao.UserDao
 import com.example.kosmos.core.models.User
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.storage.storage
 import io.github.jan.supabase.auth.exception.AuthRestException
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -36,7 +40,8 @@ import kotlinx.coroutines.CancellationException
 class AuthRepository @Inject constructor(
     private val supabase: SupabaseClient,
     private val userDao: UserDao,
-    private val sharedPreferences: android.content.SharedPreferences
+    private val sharedPreferences: android.content.SharedPreferences,
+    @ApplicationContext private val context: Context
 ) {
     private val auth = supabase.auth
 
@@ -665,6 +670,31 @@ class AuthRepository @Inject constructor(
             Log.e(TAG, "Session refresh error", e)
             // Session expired, sign out
             signOut()
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Upload a profile photo to Supabase Storage (avatars bucket) and return the public URL.
+     * Bucket must exist in Supabase dashboard with public access enabled.
+     * Path: public/{userId}.jpg — deterministic, idempotent re-uploads via upsert.
+     *
+     * [FUTURE F3] When the Attachment Module is implemented, consider extracting a shared
+     * SupabaseStorageDataSource that handles all bucket uploads (avatars, attachments, voice-messages).
+     */
+    suspend fun uploadProfilePhoto(userId: String, photoUri: Uri): Result<String> {
+        return try {
+            val bytes = context.contentResolver.openInputStream(photoUri)?.use { it.readBytes() }
+                ?: return Result.failure(Exception("Cannot open photo URI"))
+            val path = "public/$userId.jpg"
+            supabase.storage.from("avatars").upload(path, bytes) {
+                upsert = true
+            }
+            val publicUrl = supabase.storage.from("avatars").publicUrl(path)
+            Result.success(publicUrl)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Log.e(TAG, "Photo upload failed", e)
             Result.failure(e)
         }
     }
