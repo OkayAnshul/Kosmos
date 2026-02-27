@@ -33,6 +33,9 @@ android {
             buildConfigField("String", "SUPABASE_ANON_KEY", "\"${project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
             buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
             buildConfigField("boolean", "ENABLE_LOGGING", "true")
+            // [FUTURE F1] Voice recording feature flag — set to true when implementing
+            // the full MediaRecorder → Supabase Storage → ExoPlayer pipeline
+            buildConfigField("boolean", "VOICE_ENABLED", "false")
 
             // Enable detailed logging for debugging
             isDebuggable = true
