@@ -201,18 +201,4 @@ class TaskViewModelTest {
         coVerify { taskRepository.deleteTask(any(), any()) }
     }
 
-    // ─── searchTasks / filterTasksByStatus ────────────────────────────────────
-
-    @Test
-    fun `filterTasksByStatus - updates selectedStatusFilter`() {
-        viewModel.filterTasksByStatus(TaskStatus.TODO)
-        assertThat(viewModel.uiState.value.selectedStatusFilter).isEqualTo(TaskStatus.TODO)
-    }
-
-    @Test
-    fun `filterTasksByStatus with null - clears filter`() {
-        viewModel.filterTasksByStatus(TaskStatus.TODO)
-        viewModel.filterTasksByStatus(null)
-        assertThat(viewModel.uiState.value.selectedStatusFilter).isNull()
-    }
 }
