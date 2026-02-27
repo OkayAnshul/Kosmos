@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.kosmos.shared.ui.components.CharacterCount
 import com.example.kosmos.shared.ui.designsystem.ColorTokens
 import com.example.kosmos.shared.ui.designsystem.Tokens
 
@@ -152,12 +153,21 @@ fun TaskEditScreenReact(
 
             // Description field
             item {
+                val MAX_DESCRIPTION = 500
                 TextAreaField(
                     label = "Description",
                     value = description,
-                    onValueChange = { description = it },
+                    onValueChange = { if (it.length <= MAX_DESCRIPTION) description = it },
                     placeholder = "Enter task description",
                     rows = 4
+                )
+                CharacterCount(
+                    current = description.length,
+                    max = MAX_DESCRIPTION,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentWidth(Alignment.End)
+                        .padding(end = 4.dp, top = 2.dp)
                 )
             }
 
