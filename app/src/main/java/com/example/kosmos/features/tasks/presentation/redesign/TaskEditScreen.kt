@@ -363,8 +363,6 @@ private fun TaskEditForm(
                 )
                 ActualHoursField(
                     value = task.actualHours,
-                    error = validationErrors["actualHours"],
-                    onValueChange = { onFieldChange("actualHours", it) },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -818,16 +816,12 @@ private fun EstimatedHoursField(
 }
 
 @Composable
+// [FUTURE] actualHours is read-only here — it is the authoritative sum from the time tracker.
+// To edit it, use the time tracker widget on the Task Detail screen.
 private fun ActualHoursField(
     value: Float?,
-    error: String?,
-    onValueChange: (Float?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var textValue by remember(value) {
-        mutableStateOf(value?.toString() ?: "")
-    }
-
     Column(modifier = modifier) {
         Text(
             text = "Actual",
@@ -838,47 +832,27 @@ private fun ActualHoursField(
         Spacer(modifier = Modifier.height(Tokens.Spacing.xxs))
 
         OutlinedTextField(
-            value = textValue,
-            onValueChange = { newValue ->
-                textValue = newValue
-                val parsed = newValue.toFloatOrNull()
-                when {
-                    parsed != null && parsed >= 0 -> onValueChange(parsed)
-                    newValue.isEmpty() -> onValueChange(null)
-                }
-            },
+            value = if (value != null) "$value hrs" else "—",
+            onValueChange = {},
             modifier = Modifier.fillMaxWidth(),
-            isError = error != null,
+            readOnly = true,
             singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Decimal,
-                imeAction = ImeAction.Done
-            ),
-            suffix = {
-                Text(
-                    text = "hrs",
-                    style = TypographyTokens.typography.bodySmall,
-                    color = ColorTokens.ReactTheme.mutedForeground
-                )
-            },
             shape = RoundedCornerShape(Tokens.CornerRadius.md),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = ColorTokens.ReactTheme.foreground,
-                unfocusedTextColor = ColorTokens.ReactTheme.foreground,
-                focusedBorderColor = ColorTokens.ReactTheme.primary,
-                unfocusedBorderColor = ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.5f),
-                errorBorderColor = ColorTokens.ReactTheme.destructive
+                focusedTextColor = ColorTokens.ReactTheme.mutedForeground,
+                unfocusedTextColor = ColorTokens.ReactTheme.mutedForeground,
+                focusedBorderColor = ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.3f),
+                unfocusedBorderColor = ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.3f),
+                disabledTextColor = ColorTokens.ReactTheme.mutedForeground
             )
         )
 
-        if (error != null) {
-            Text(
-                text = error,
-                style = TypographyTokens.typography.bodySmall,
-                color = ColorTokens.ReactTheme.destructive,
-                modifier = Modifier.padding(start = Tokens.Spacing.md, top = Tokens.Spacing.xxs)
-            )
-        }
+        Text(
+            text = "Set by time tracker",
+            style = TypographyTokens.typography.bodySmall,
+            color = ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.6f),
+            modifier = Modifier.padding(start = Tokens.Spacing.md, top = Tokens.Spacing.xxs)
+        )
     }
 }
 
