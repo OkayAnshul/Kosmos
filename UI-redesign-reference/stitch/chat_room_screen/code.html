@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kosmos Chat</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+            extend: {
+                colors: {
+                "primary": "#1132d4",
+                "background-light": "#f6f6f8",
+                "background-dark": "#101322",
+                "surface-dark": "#1e2336",
+                "surface-light": "#ffffff",
+                },
+                fontFamily: {
+                "display": ["Inter", "sans-serif"]
+                },
+                borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+            },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d3452;
+            border-radius: 3px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white h-screen flex flex-col overflow-hidden">
+<!-- Top Navigation Bar -->
+<header class="flex-none bg-surface-light dark:bg-[#111422] border-b border-gray-200 dark:border-gray-800 z-10">
+<!-- Status Bar spacer for iOS feel (simulated padding) -->
+<div class="h-0 md:h-2 w-full"></div>
+<div class="flex items-center justify-between px-4 py-3">
+<!-- Left: Back Button -->
+<button class="flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-300 transition-colors">
+<span class="material-symbols-outlined text-[28px]">chevron_left</span>
+</button>
+<!-- Center: Channel Info -->
+<div class="flex flex-col items-center flex-1 cursor-pointer">
+<h1 class="text-base font-bold leading-tight tracking-tight text-slate-900 dark:text-white">
+                    Project Alpha Launch
+                </h1>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="text-xs text-slate-500 dark:text-slate-400 font-medium">8 Members</span>
+<span class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+<span class="text-xs text-green-600 dark:text-green-400 font-medium">3 Online</span>
+</div>
+</div>
+<!-- Right: Settings -->
+<button class="flex items-center justify-center w-10 h-10 -mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-300 transition-colors">
+<span class="material-symbols-outlined text-[24px]">info</span>
+</button>
+</div>
+</header>
+<!-- Connectivity Banner (State Indicator) -->
+<div class="flex-none bg-amber-500/10 dark:bg-amber-500/10 border-b border-amber-500/20 px-4 py-1 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-amber-600 dark:text-amber-500 text-[16px]">wifi_off</span>
+<span class="text-[11px] font-semibold text-amber-700 dark:text-amber-500 uppercase tracking-wide">Offline Mode • syncing changes</span>
+</div>
+<!-- Main Message Area -->
+<main class="flex-1 overflow-y-auto p-4 space-y-6 flex flex-col bg-background-light dark:bg-background-dark scroll-smooth">
+<!-- Date Separator -->
+<div class="flex justify-center py-2">
+<span class="bg-gray-200 dark:bg-[#1e2336] text-slate-600 dark:text-slate-400 text-xs font-medium px-3 py-1 rounded-full">
+                Today
+            </span>
+</div>
+<!-- Incoming Message Group (Sarah J) -->
+<div class="flex gap-3 items-end group">
+<!-- Avatar -->
+<div class="w-8 h-8 shrink-0 rounded-full bg-cover bg-center mb-1 shadow-sm" data-alt="Portrait of Sarah J" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD_aJigDN1GXhXZ8eojx6y4boBuXggc6FR_cShJq_fkkD2G1DamkclKF-gcxC8EQobMZrG70_SzOiCprLvAyR0OwWBvIYWxxMvQjuLv2nY4kp9XRnYGHszd-lMY_wTm5TPJBpcVo4QGo6wDzuJVX_Th17x2E4G9fGJIhfrnAkN3u5RjuoYHRD9fr1_iwz91f_ui1cJxpNHIT5curixy7JAJD3QGs5zOX92kpi-6QZpamUxw9qH4MdHPDvx4XLl8t1cOyZsCvsl5-56d');">
+</div>
+<div class="flex flex-col gap-1 max-w-[80%] md:max-w-[60%]">
+<!-- Sender Name -->
+<span class="text-xs text-slate-500 dark:text-slate-400 ml-1 font-medium">Sarah J.</span>
+<!-- Bubble -->
+<div class="relative bg-white dark:bg-[#1e2336] p-3 rounded-2xl rounded-tl-sm text-slate-800 dark:text-slate-100 shadow-sm border border-gray-100 dark:border-transparent">
+<p class="text-[15px] leading-relaxed">Has everyone reviewed the latest Gantt chart update? I've adjusted the Q3 deliverables.</p>
+</div>
+<!-- Timestamp -->
+<span class="text-[10px] text-slate-400 dark:text-slate-500 ml-1">10:41 AM</span>
+</div>
+</div>
+<!-- Incoming Message (Mike T) + Reaction -->
+<div class="flex gap-3 items-end group">
+<div class="w-8 h-8 shrink-0 rounded-full bg-cover bg-center mb-1 shadow-sm" data-alt="Portrait of Mike T" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA5T5rzpGwdHr4WMwJcLcSELObKLiBwZ1ja9bNehjyuf99BxFGCrOiNiCfdTUo7cHacrYrh2pDThnMk00Dt_SWq9nlf4PtpfGFykb2sEO9q4vTncrUgwswH9VuQR6iR2BnhvhSfCBXxWOaUNvY0mKkuOeGTo5bwJycmm1fAFPx_nwo_lTFEse0-H7Fo-zov-00PWadw1AOeZ6zycIaW1KK0XADXOFzpZ9ow9UzzXYp1taPf66qkyn-Gj0jBaFpNizlqFjG0KKvfs6DJ');">
+</div>
+<div class="flex flex-col gap-1 max-w-[80%] md:max-w-[60%]">
+<span class="text-xs text-slate-500 dark:text-slate-400 ml-1 font-medium">Mike T.</span>
+<div class="relative">
+<div class="bg-white dark:bg-[#1e2336] p-3 rounded-2xl rounded-tl-sm text-slate-800 dark:text-slate-100 shadow-sm border border-gray-100 dark:border-transparent">
+<p class="text-[15px] leading-relaxed">Yes, looks good to me. The timeline for the beta launch seems much more realistic now.</p>
+</div>
+<!-- Reaction Pill -->
+<div class="absolute -bottom-3 right-2 bg-white dark:bg-[#2a3048] border border-gray-100 dark:border-[#38405e] rounded-full px-1.5 py-0.5 flex items-center gap-1 shadow-sm cursor-pointer hover:scale-105 transition-transform">
+<span class="text-sm">👍</span>
+<span class="text-[10px] font-bold text-slate-600 dark:text-slate-300">2</span>
+</div>
+</div>
+<span class="text-[10px] text-slate-400 dark:text-slate-500 ml-1 mt-2">10:45 AM</span>
+</div>
+</div>
+<!-- Outgoing Message Group (Me) -->
+<div class="flex flex-col items-end gap-1">
+<div class="flex flex-col items-end max-w-[80%] md:max-w-[60%]">
+<!-- Bubble -->
+<div class="bg-primary text-white p-3 rounded-2xl rounded-tr-sm shadow-md">
+<p class="text-[15px] leading-relaxed">I'm making a few edits to the engineering timeline now to match. Will sync it shortly.</p>
+</div>
+<!-- Meta Row (Status) -->
+<div class="flex items-center gap-1 mt-1 mr-1">
+<span class="text-[10px] text-slate-400 dark:text-slate-500">10:52 AM</span>
+<span class="text-[10px] text-slate-400 dark:text-slate-500">•</span>
+<span class="text-[10px] text-slate-400 dark:text-slate-500">Edited</span>
+<span class="material-symbols-outlined text-primary text-[14px] ml-1" title="Read">done_all</span>
+</div>
+</div>
+<!-- Consecutive Outgoing (Attachment) -->
+<div class="flex flex-col items-end max-w-[80%] md:max-w-[60%] mt-1">
+<!-- Attachment Bubble -->
+<div class="bg-primary text-white p-2 rounded-2xl rounded-tr-sm shadow-md w-full sm:min-w-[240px]">
+<div class="flex items-center gap-3 bg-white/10 p-2 rounded-xl">
+<div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-white">description</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-sm font-medium truncate">Q3_Engineering_Report.pdf</span>
+<span class="text-[11px] text-white/70">2.4 MB • PDF</span>
+</div>
+</div>
+<div class="mt-2 px-1">
+<p class="text-[15px]">Here is the draft.</p>
+</div>
+</div>
+<!-- Meta Row (Status) -->
+<div class="flex items-center gap-1 mt-1 mr-1">
+<span class="text-[10px] text-slate-400 dark:text-slate-500">10:53 AM</span>
+<span class="material-symbols-outlined text-slate-400 dark:text-slate-600 text-[14px] ml-1" title="Sent">check</span>
+</div>
+</div>
+</div>
+<!-- Spacer to ensure scroll doesn't hide behind input -->
+<div class="h-2"></div>
+</main>
+<!-- Bottom Input Area -->
+<footer class="flex-none bg-surface-light dark:bg-[#111422] border-t border-gray-200 dark:border-gray-800 pb-safe">
+<!-- Reply Preview (Dismissable) -->
+<div class="hidden flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-[#161a2c] border-b border-gray-200 dark:border-gray-800">
+<div class="flex items-center gap-2 overflow-hidden">
+<div class="w-1 h-8 bg-primary rounded-full"></div>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-primary">Replying to Sarah J.</span>
+<span class="text-xs text-slate-500 dark:text-slate-400 truncate">Has everyone reviewed the latest Gantt chart...</span>
+</div>
+</div>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Input Bar -->
+<div class="flex items-end gap-3 p-3 md:px-4 md:py-4">
+<!-- Attachment Button -->
+<button class="flex items-center justify-center w-10 h-10 text-slate-400 hover:text-primary transition-colors shrink-0 mb-0.5">
+<span class="material-symbols-outlined text-[28px]">add_circle</span>
+</button>
+<!-- Text Input -->
+<div class="flex-1 bg-gray-100 dark:bg-[#1e2336] rounded-xl flex items-center min-h-[44px] px-3 py-2 border border-transparent focus-within:border-primary/50 transition-colors">
+<textarea class="w-full bg-transparent border-none text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 text-[15px] focus:ring-0 resize-none py-0 max-h-32" placeholder="Message Project Alpha..." rows="1" style="min-height: 24px;"></textarea>
+<button class="ml-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0">
+<span class="material-symbols-outlined text-[20px]">sentiment_satisfied</span>
+</button>
+</div>
+<!-- Send Button -->
+<button class="flex items-center justify-center w-11 h-11 bg-primary text-white rounded-full hover:bg-blue-700 active:scale-95 transition-all shadow-md shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
+<span class="material-symbols-outlined text-[22px] ml-0.5">send</span>
+</button>
+</div>
+<!-- Bottom Safe Area Spacer for iOS Home Indicator -->
+<div class="h-4 w-full bg-surface-light dark:bg-[#111422]"></div>
+</footer>
+</body></html>

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Members List - Kosmos</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1132d4",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101322",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1C2033",
+                        "surface-highlight": "#232948",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "md": "0.375rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for horizontal chips */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased transition-colors duration-200">
+<div class="relative flex h-full min-h-screen w-full flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark shadow-2xl overflow-hidden border-x border-gray-200 dark:border-gray-800">
+<!-- Navigation Bar -->
+<header class="sticky top-0 z-20 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+<div class="flex items-center justify-between px-4 py-3">
+<button class="flex items-center justify-center text-slate-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined">arrow_back_ios_new</span>
+</button>
+<div class="flex flex-col items-center">
+<h1 class="text-base font-bold text-slate-900 dark:text-white leading-tight">Members</h1>
+<span class="text-xs font-normal text-slate-500 dark:text-slate-400">Project Alpha • 12 Members</span>
+</div>
+<button class="flex items-center justify-center text-primary hover:bg-primary/10 rounded-full p-2 transition-colors">
+<span class="material-symbols-outlined">person_add</span>
+</button>
+</div>
+<!-- Offline Indicator (Conditional) -->
+<div class="bg-orange-100 dark:bg-orange-900/30 px-4 py-2 flex items-center justify-between gap-3 border-b border-orange-200 dark:border-orange-800/50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-orange-600 dark:text-orange-400 text-[18px]">wifi_off</span>
+<p class="text-xs font-medium text-orange-800 dark:text-orange-200">You are offline. Showing cached data.</p>
+</div>
+<button class="text-orange-800 dark:text-orange-200 hover:text-orange-900 dark:hover:text-orange-100">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</header>
+<!-- Search & Filter Section -->
+<div class="flex flex-col gap-4 px-4 pt-4 pb-2 z-10 bg-background-light dark:bg-background-dark">
+<!-- Search Bar -->
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-slate-400 dark:text-slate-500 group-focus-within:text-primary">search</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-2.5 border-none rounded-lg leading-5 bg-white dark:bg-surface-highlight text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50 sm:text-sm shadow-sm" placeholder="Search by name or role..." type="text"/>
+</div>
+<!-- Chips -->
+<div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+<button class="flex shrink-0 items-center justify-center px-4 py-1.5 rounded-full bg-slate-200 dark:bg-surface-highlight text-slate-900 dark:text-white text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors border border-transparent focus:border-primary">
+                    All
+                </button>
+<button class="flex shrink-0 items-center justify-center px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium shadow-md shadow-primary/20 transition-colors">
+                    Administrators
+                </button>
+<button class="flex shrink-0 items-center justify-center px-4 py-1.5 rounded-full bg-slate-200 dark:bg-surface-highlight text-slate-500 dark:text-slate-300 text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
+                    Contributors
+                </button>
+<button class="flex shrink-0 items-center justify-center px-4 py-1.5 rounded-full bg-slate-200 dark:bg-surface-highlight text-slate-500 dark:text-slate-300 text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
+                    Viewers
+                </button>
+</div>
+</div>
+<!-- Scrollable List Content -->
+<main class="flex-1 overflow-y-auto px-4 pb-20">
+<!-- Section: Administrators -->
+<div class="mt-2">
+<h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 ml-1 sticky top-0 bg-background-light dark:bg-background-dark py-2 z-0">Administrators</h2>
+<!-- Member Card 1 -->
+<div class="group flex items-center p-3 mb-3 bg-white dark:bg-surface-dark rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 hover:border-primary/30 transition-all">
+<div class="relative shrink-0">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
+<img alt="Sarah Jenkins portrait" class="w-full h-full object-cover" data-alt="Portrait of Sarah Jenkins smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCma4wdcZ4jn8glfoUWao5Q6fpswdWKOrllQkwv2I0LA0SSY18KQLMSabgAX2HR2GFz9gLbOeSbCiMpSQpIaLF1nECN3UA_EU4aDWKAThAFe-w8QUS5cX9ttmCMRF7xJsjWFf4cl8nzcoCc6aizuAybJCWUzSpG3GmUIVufb8K2t5R1IQfBL63wofvPXAF29DXUcpPv8f8R1uev947i1i8sb-AV6vAMykp5-mIEfPHqoDIKTgZaF65XpERH1OIJShDm8xyT5I_D-3dU"/>
+</div>
+<span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-white dark:ring-surface-dark"></span>
+</div>
+<div class="ml-3 flex-1 min-w-0">
+<div class="flex items-center gap-2">
+<p class="text-sm font-bold text-slate-900 dark:text-white truncate">Sarah Jenkins</p>
+<span class="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">Admin</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 truncate">@sarah_j</p>
+</div>
+<button class="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Member Card 2 -->
+<div class="group flex items-center p-3 mb-3 bg-white dark:bg-surface-dark rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 hover:border-primary/30 transition-all">
+<div class="relative shrink-0">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
+<img alt="David Chen portrait" class="w-full h-full object-cover" data-alt="Portrait of David Chen looking professional" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdRyB6r6BMSHHTq0QrslexUM8H7jIGA7LgpuQFPFcrMw1ew_X81wYPVZqj6mnHjvRvypFypvotfRB80EfqFyk_XsjnS400WGO5lgTRay45Ni4FwOxOtjiHiZ2QRMibkIpFY3FBJWRICOsdzRu--xvNYV2lzSKVjNpturGCifh72Lx3N2zFPiRhbso1LPFNWnWfa4G9Kf4r1ZIBggpXZIVGC8evFNDNRlTWQworHL6RuiqDo1jj42IUd2Xfl-YCtpB90JJeQJJ6G_4X"/>
+</div>
+<span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-white dark:ring-surface-dark"></span>
+</div>
+<div class="ml-3 flex-1 min-w-0">
+<div class="flex items-center gap-2">
+<p class="text-sm font-bold text-slate-900 dark:text-white truncate">David Chen</p>
+<span class="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">Admin</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 truncate">@dchen_88</p>
+</div>
+<button class="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Section: Contributors -->
+<div class="mt-6">
+<h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 ml-1 sticky top-0 bg-background-light dark:bg-background-dark py-2 z-0">Contributors</h2>
+<!-- Member Card 3 (Offline) -->
+<div class="group flex items-center p-3 mb-3 bg-white dark:bg-surface-dark rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 hover:border-primary/30 transition-all">
+<div class="relative shrink-0">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 grayscale">
+<img alt="Emily Davis portrait" class="w-full h-full object-cover" data-alt="Portrait of Emily Davis smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBU0CtGkRWMG4LMhP1weFTiE97fszCH-ft8B0VNcRv6mhyiug3vckL_2pLpxexKwV4jVNoLpsnCSy8QDG96w75njmFba_qPz16C91OgnBwSMMEDVy-ii2R2n6cEdTeq72b_ItZaphDlCEg3RlfNmbd7Nbm7Bc3lFWD_PmZnCJL7-EwqytBZJGr5fs4urAgbHiUIDlS7bG205hZwRWLeaCPqFJAotZsANJhiZMqWY-zUaNsVUilU9QMUpOMEFlVVoLmr2rDRx-UD6--G"/>
+</div>
+<!-- Gray dot for offline -->
+<span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-slate-400 ring-2 ring-white dark:ring-surface-dark"></span>
+</div>
+<div class="ml-3 flex-1 min-w-0">
+<div class="flex items-center gap-2">
+<p class="text-sm font-bold text-slate-900 dark:text-white truncate">Emily Davis</p>
+<span class="inline-flex items-center rounded-md bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 text-xs font-medium text-purple-700 dark:text-purple-400 ring-1 ring-inset ring-purple-700/10 dark:ring-purple-400/20">Contributor</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 truncate">@em_davis • Last seen 2h ago</p>
+</div>
+<button class="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Member Card 4 -->
+<div class="group flex items-center p-3 mb-3 bg-white dark:bg-surface-dark rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 hover:border-primary/30 transition-all">
+<div class="relative shrink-0">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
+<img alt="Marcus Johnson portrait" class="w-full h-full object-cover" data-alt="Portrait of Marcus Johnson smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgiw8GAyvxa-UCoQeoOQlKLalGOkuq6L91QTFNCgfWChSskRdaO_XkFao2ovlbCpU9uSBexETr8tTdYuKTeFtgyxZ55CcAXsbxSexSpMZhc0Naeyig8aU2JcyuFvRoHgZsLd1jyF5476ttZiNXDP99ITND1kW7dEZzS2W87_UhrJSSoPHU41wdwDEpxoFrn56I1G2hSpzDZUgxw9NyGVlRXWmbvQjSHp28gn353av3ZAfjtu1Od-BP1JWpqrkscJmIXuIJHGDtvkYi"/>
+</div>
+<span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-white dark:ring-surface-dark"></span>
+</div>
+<div class="ml-3 flex-1 min-w-0">
+<div class="flex items-center gap-2">
+<p class="text-sm font-bold text-slate-900 dark:text-white truncate">Marcus Johnson</p>
+<span class="inline-flex items-center rounded-md bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 text-xs font-medium text-purple-700 dark:text-purple-400 ring-1 ring-inset ring-purple-700/10 dark:ring-purple-400/20">Contributor</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 truncate">@marcus_j</p>
+</div>
+<button class="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Section: Viewers -->
+<div class="mt-6">
+<h2 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 ml-1 sticky top-0 bg-background-light dark:bg-background-dark py-2 z-0">Viewers</h2>
+<!-- Member Card 5 -->
+<div class="group flex items-center p-3 mb-3 bg-white dark:bg-surface-dark rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 hover:border-primary/30 transition-all">
+<div class="relative shrink-0">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
+<img alt="Alice Cooper portrait" class="w-full h-full object-cover" data-alt="Portrait of Alice Cooper smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-8F6MborSEgffshXJwFjfoirxMpRn9Pd2Qqf_ybzjlcEU9aS3uE015dL6GcLr4OCA-IOkzgyutRpFZU4Tndsv1DeV4o3SK3T5UwZiN37YhjoTT-rG8RWMR0aTyq-YluvcBBQn5QjnswHhz5wPNIdEnOI2NvNzeU0tCXUoUG_WirO39ctOZ01PZHWZUwE8-Bzk3I6KSaD9FHhjjXjK73sTSer07JLCUzniIkIV-z-ygiM-KkNjevCcEThSpZzEfRyCADxE5MgOODRt"/>
+</div>
+<span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-white dark:ring-surface-dark"></span>
+</div>
+<div class="ml-3 flex-1 min-w-0">
+<div class="flex items-center gap-2">
+<p class="text-sm font-bold text-slate-900 dark:text-white truncate">Alice Cooper</p>
+<span class="inline-flex items-center rounded-md bg-slate-50 dark:bg-slate-400/10 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400 ring-1 ring-inset ring-slate-500/10 dark:ring-slate-400/20">Viewer</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 truncate">@acooper</p>
+</div>
+<button class="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Skeleton Loader Example (Simulating loading more at bottom) -->
+<div class="mt-6 opacity-60">
+<div class="flex items-center p-3 mb-3 bg-white dark:bg-surface-dark rounded-lg shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse"></div>
+<div class="ml-3 flex-1">
+<div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3 mb-2 animate-pulse"></div>
+<div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/4 animate-pulse"></div>
+</div>
+</div>
+</div>
+</main>
+<!-- Simulated Action Sheet / Modal (Hidden by default, displayed here for design) -->
+<!-- In a real app this would overlay the screen -->
+<!-- 
+        <div class="absolute inset-0 z-50 bg-black/50 flex items-end justify-center">
+            <div class="bg-surface-light dark:bg-surface-dark w-full max-w-md rounded-t-2xl p-6 flex flex-col gap-2 animate-slide-up">
+                <div class="w-12 h-1 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mb-4"></div>
+                <h3 class="text-lg font-bold text-center mb-2 dark:text-white">Manage Sarah Jenkins</h3>
+                <button class="w-full py-3 px-4 rounded-xl bg-slate-100 dark:bg-surface-highlight text-left font-medium text-slate-900 dark:text-white flex items-center gap-3">
+                    <span class="material-symbols-outlined">admin_panel_settings</span> Promote to Admin
+                </button>
+                <button class="w-full py-3 px-4 rounded-xl bg-slate-100 dark:bg-surface-highlight text-left font-medium text-slate-900 dark:text-white flex items-center gap-3">
+                    <span class="material-symbols-outlined">edit</span> Change Role
+                </button>
+                <button class="w-full py-3 px-4 rounded-xl bg-red-50 dark:bg-red-900/20 text-left font-medium text-red-600 dark:text-red-400 flex items-center gap-3 mt-2">
+                    <span class="material-symbols-outlined">person_remove</span> Remove from Project
+                </button>
+                <button class="w-full py-3 mt-2 text-center text-slate-500 font-medium">Cancel</button>
+            </div>
+        </div> 
+        -->
+</div>
+</body></html>

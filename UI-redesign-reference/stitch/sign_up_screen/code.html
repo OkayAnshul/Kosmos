@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kosmos Sign Up</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#1132d4",
+              "background-light": "#f6f6f8",
+              "background-dark": "#101322",
+              "surface-dark": "#1b2034",
+              "surface-light": "#ffffff",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark text-neutral-900 dark:text-white antialiased">
+<div class="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Top App Bar -->
+<div class="sticky top-0 z-10 flex items-center bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm p-4 pb-2 justify-between border-b border-transparent dark:border-white/5">
+<div class="text-neutral-900 dark:text-white flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</div>
+<h2 class="text-neutral-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-10">Sign Up</h2>
+</div>
+<!-- Header Content -->
+<div class="flex flex-col items-center px-4 pt-6 pb-2">
+<div class="size-16 rounded-xl bg-primary/10 flex items-center justify-center mb-4 text-primary">
+<span class="material-symbols-outlined text-[32px]">rocket_launch</span>
+</div>
+<h1 class="text-neutral-900 dark:text-white tracking-tight text-[32px] font-bold leading-tight text-center">Create your Kosmos ID</h1>
+<p class="text-neutral-500 dark:text-gray-400 text-base font-normal leading-normal pt-2 text-center max-w-xs">Collaborate with your team instantly. Manage projects with ease.</p>
+</div>
+<!-- Main Form -->
+<div class="flex flex-col px-4 py-4 w-full max-w-[480px] mx-auto gap-5">
+<!-- Display Name -->
+<label class="flex flex-col w-full">
+<p class="text-neutral-900 dark:text-white text-sm font-semibold leading-normal pb-2">Display Name</p>
+<input class="form-input flex w-full rounded-xl text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-800 bg-surface-light dark:bg-surface-dark focus:border-primary focus:ring-1 focus:ring-primary h-14 placeholder:text-neutral-400 dark:placeholder:text-gray-500 px-4 text-base font-normal leading-normal transition-all" placeholder="e.g. Jane Doe" type="text"/>
+</label>
+<!-- Username with Availability -->
+<label class="flex flex-col w-full group">
+<div class="flex justify-between items-baseline">
+<p class="text-neutral-900 dark:text-white text-sm font-semibold leading-normal pb-2">Username</p>
+<!-- Simulation of availability check result -->
+<span class="text-green-500 text-xs font-medium flex items-center gap-1 opacity-0 group-focus-within:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                    Available
+                </span>
+</div>
+<div class="relative flex items-center">
+<span class="absolute left-4 text-neutral-400 dark:text-gray-500 select-none">@</span>
+<input class="form-input flex w-full rounded-xl text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-800 bg-surface-light dark:bg-surface-dark focus:border-primary focus:ring-1 focus:ring-primary h-14 placeholder:text-neutral-400 dark:placeholder:text-gray-500 pl-9 pr-10 text-base font-normal leading-normal transition-all" placeholder="username" type="text" value="janedoe"/>
+<div class="absolute right-4 flex items-center pointer-events-none text-green-500">
+<span class="material-symbols-outlined text-[20px] filled">check</span>
+</div>
+</div>
+</label>
+<!-- Email -->
+<label class="flex flex-col w-full">
+<p class="text-neutral-900 dark:text-white text-sm font-semibold leading-normal pb-2">Work Email</p>
+<input class="form-input flex w-full rounded-xl text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-800 bg-surface-light dark:bg-surface-dark focus:border-primary focus:ring-1 focus:ring-primary h-14 placeholder:text-neutral-400 dark:placeholder:text-gray-500 px-4 text-base font-normal leading-normal transition-all" placeholder="name@company.com" type="email"/>
+</label>
+<!-- Password Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<!-- Password -->
+<label class="flex flex-col w-full">
+<p class="text-neutral-900 dark:text-white text-sm font-semibold leading-normal pb-2">Password</p>
+<div class="relative flex items-center">
+<input class="form-input flex w-full rounded-xl text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-800 bg-surface-light dark:bg-surface-dark focus:border-primary focus:ring-1 focus:ring-primary h-14 placeholder:text-neutral-400 dark:placeholder:text-gray-500 px-4 pr-12 text-base font-normal leading-normal transition-all" placeholder="Min. 8 characters" type="password" value="Password123"/>
+<button class="absolute right-4 flex items-center text-neutral-400 dark:text-gray-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">visibility_off</span>
+</button>
+</div>
+</label>
+<!-- Confirm Password -->
+<label class="flex flex-col w-full">
+<p class="text-neutral-900 dark:text-white text-sm font-semibold leading-normal pb-2">Confirm Password</p>
+<div class="relative flex items-center">
+<input class="form-input flex w-full rounded-xl text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-800 bg-surface-light dark:bg-surface-dark focus:border-primary focus:ring-1 focus:ring-primary h-14 placeholder:text-neutral-400 dark:placeholder:text-gray-500 px-4 pr-12 text-base font-normal leading-normal transition-all" placeholder="Re-enter password" type="password" value="Password123"/>
+<button class="absolute right-4 flex items-center text-neutral-400 dark:text-gray-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">visibility_off</span>
+</button>
+</div>
+</label>
+</div>
+<!-- Optional Expandable Section -->
+<details class="group mt-2 rounded-xl bg-white dark:bg-surface-dark/50 border border-neutral-200 dark:border-neutral-800 overflow-hidden transition-all duration-300">
+<summary class="flex items-center justify-between p-4 cursor-pointer list-none bg-neutral-50 dark:bg-surface-dark hover:bg-neutral-100 dark:hover:bg-[#252a40] transition-colors">
+<span class="text-neutral-900 dark:text-white text-sm font-semibold">Add Profile Details <span class="text-neutral-500 font-normal ml-1">(Optional)</span></span>
+<span class="material-symbols-outlined text-neutral-500 transition-transform duration-300 group-open:rotate-180">expand_more</span>
+</summary>
+<div class="p-4 flex flex-col gap-4 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#151829]">
+<!-- Role -->
+<label class="flex flex-col w-full">
+<p class="text-neutral-700 dark:text-gray-300 text-xs font-medium uppercase tracking-wider pb-2">Role / Title</p>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-neutral-400 dark:text-gray-600 text-[20px]">badge</span>
+<input class="form-input flex w-full rounded-lg text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-background-dark focus:border-primary focus:ring-0 h-11 placeholder:text-neutral-400 dark:placeholder:text-gray-600 pl-10 pr-4 text-sm font-normal transition-all" placeholder="e.g. Product Manager" type="text"/>
+</div>
+</label>
+<!-- Location -->
+<label class="flex flex-col w-full">
+<p class="text-neutral-700 dark:text-gray-300 text-xs font-medium uppercase tracking-wider pb-2">Location</p>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-neutral-400 dark:text-gray-600 text-[20px]">location_on</span>
+<input class="form-input flex w-full rounded-lg text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-background-dark focus:border-primary focus:ring-0 h-11 placeholder:text-neutral-400 dark:placeholder:text-gray-600 pl-10 pr-4 text-sm font-normal transition-all" placeholder="City, Country" type="text"/>
+</div>
+</label>
+<!-- Bio -->
+<label class="flex flex-col w-full">
+<p class="text-neutral-700 dark:text-gray-300 text-xs font-medium uppercase tracking-wider pb-2">Bio</p>
+<textarea class="form-textarea flex w-full rounded-lg text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-background-dark focus:border-primary focus:ring-0 min-h-[80px] resize-none placeholder:text-neutral-400 dark:placeholder:text-gray-600 p-3 text-sm font-normal transition-all" placeholder="Tell us a bit about yourself..."></textarea>
+</label>
+</div>
+</details>
+<!-- Terms -->
+<div class="flex items-start gap-3 py-2">
+<div class="relative flex items-center">
+<input checked="" class="peer h-5 w-5 cursor-pointer appearance-none rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface-dark checked:bg-primary checked:border-primary transition-all" type="checkbox"/>
+<span class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</span>
+</div>
+<p class="text-neutral-500 dark:text-gray-400 text-sm leading-tight">
+                I agree to the <a class="text-primary hover:underline font-medium" href="#">Terms of Service</a> and <a class="text-primary hover:underline font-medium" href="#">Privacy Policy</a>.
+            </p>
+</div>
+<!-- Action Area -->
+<div class="pt-2 flex flex-col gap-4">
+<button class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 text-white font-bold text-base tracking-wide hover:bg-blue-700 active:scale-[0.98] transition-all shadow-lg shadow-primary/20">
+                Create Account
+            </button>
+<p class="text-center text-neutral-600 dark:text-gray-400 text-sm">
+                Already have an account? 
+                <a class="text-primary font-bold hover:underline" href="#">Log In</a>
+</p>
+</div>
+</div>
+<div class="h-10"></div>
+</div>
+</body></html>

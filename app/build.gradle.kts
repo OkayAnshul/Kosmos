@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.kotlin.allopen)
 }
 
 android {
@@ -30,6 +31,7 @@ android {
             buildConfigField("String", "GOOGLE_CLOUD_API_KEY", "\"${project.findProperty("GOOGLE_CLOUD_API_KEY") ?: ""}\"")
             buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL") ?: ""}\"")
             buildConfigField("String", "SUPABASE_ANON_KEY", "\"${project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
             buildConfigField("boolean", "ENABLE_LOGGING", "true")
 
             // Enable detailed logging for debugging
@@ -37,7 +39,8 @@ android {
         }
 
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -46,6 +49,7 @@ android {
             buildConfigField("String", "GOOGLE_CLOUD_API_KEY", "\"${project.findProperty("GOOGLE_CLOUD_API_KEY_PROD") ?: project.findProperty("GOOGLE_CLOUD_API_KEY") ?: ""}\"")
             buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL_PROD") ?: project.findProperty("SUPABASE_URL") ?: ""}\"")
             buildConfigField("String", "SUPABASE_ANON_KEY", "\"${project.findProperty("SUPABASE_ANON_KEY_PROD") ?: project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
             buildConfigField("boolean", "ENABLE_LOGGING", "false")
 
             // Signing config for release
@@ -74,8 +78,45 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             excludes += "/META-INF/INDEX.LIST"
             excludes += "/META-INF/DEPENDENCIES"
+            excludes += "/META-INF/LICENSE.md"
+            excludes += "/META-INF/LICENSE-notice.md"
+            excludes += "/META-INF/NOTICE.md"
         }
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+            all {
+                // Enable MockK inline mocking (required to mock final Kotlin classes/methods)
+                it.jvmArgs("-XX:+EnableDynamicAgentLoading", "-Xshare:off")
+            }
+        }
+    }
+}
+
+// Make @Singleton classes open so MockK can subclass them in unit tests
+allOpen {
+    annotation("javax.inject.Singleton")
+}
+
+apply(plugin = "jacoco")
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest")
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    val fileFilter = listOf(
+        "**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/*_Hilt*",
+        "**/*Hilt_*", "**/*_Factory*", "**/*_MembersInjector*"
+    )
+    classDirectories.setFrom(files(
+        fileTree("${buildDir}/tmp/kotlin-classes/debug") { exclude(fileFilter) }
+    ))
+    sourceDirectories.setFrom(files("${projectDir}/src/main/java"))
+    executionData.setFrom(fileTree(buildDir) { include("**/*.exec", "**/*.ec") })
 }
 
 dependencies {
@@ -157,8 +198,7 @@ dependencies {
     // Date Picker
     implementation("io.github.vanpra.compose-material-dialogs:datetime:0.9.0")
 
-    // Animated Navigation Bar - Using custom implementation with Compose animations
-    // The Exyte library is not available on Maven Central, so we'll implement custom animations
+    // Custom animated bottom navigation (built in-house)
 
 // Work Manager (for background tasks)
     implementation("androidx.work:work-runtime-ktx:2.11.0")
@@ -172,10 +212,25 @@ dependencies {
 
     // Testing
     testImplementation(libs.junit)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("app.cash.turbine:turbine:1.0.0")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:2.0.21")
+    testImplementation("com.google.truth:truth:1.4.4")
+    testImplementation("org.robolectric:robolectric:4.13")
+    testImplementation("com.google.dagger:hilt-android-testing:2.57.2")
+    kspTest("com.google.dagger:hilt-android-compiler:2.57.2")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    androidTestImplementation("io.mockk:mockk-android:1.13.8")
+    androidTestImplementation("app.cash.turbine:turbine:1.0.0")
+    androidTestImplementation("com.google.truth:truth:1.4.4")
+    androidTestImplementation("androidx.room:room-testing:2.8.3")
+    androidTestImplementation("com.google.dagger:hilt-android-testing:2.57.2")
+    kspAndroidTest("com.google.dagger:hilt-android-compiler:2.57.2")
 
     // Debug implementations
     debugImplementation(libs.androidx.ui.tooling)

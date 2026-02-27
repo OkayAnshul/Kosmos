@@ -633,14 +633,6 @@ class TaskViewModel @Inject constructor(
         projectMembersJob?.cancel()
     }
 
-    fun filterTasksByStatus(status: TaskStatus?) {
-        _uiState.value = _uiState.value.copy(selectedStatusFilter = status)
-    }
-
-    fun toggleMyTasksFilter() {
-        _uiState.value = _uiState.value.copy(showOnlyMyTasks = !_uiState.value.showOnlyMyTasks)
-    }
-
     fun setError(message: String) {
         _uiState.value = _uiState.value.copy(error = message)
     }
@@ -887,26 +879,6 @@ class TaskViewModel @Inject constructor(
      * Syncing in viewModelScope causes cancellations when navigating away.
      * For pull-to-refresh, just re-collect the Flow - InitialSyncManager handles sync.
      */
-    @Deprecated(
-        message = "Use InitialSyncManager.syncAllData() instead. ViewModels should not trigger syncs.",
-        level = DeprecationLevel.WARNING
-    )
-    fun syncAllUserTasks() {
-        currentUser?.let { user ->
-            viewModelScope.launch {
-                try {
-                    taskRepository.syncUserTasks(user.id)
-                    // Flow will automatically update UI with synced data
-                } catch (e: Exception) {
-                    if (e is CancellationException) throw e
-                    _uiState.value = _uiState.value.copy(
-                        error = "Failed to sync tasks: ${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
     /**
      * Search tasks by title, description, or tags
      * Will trigger debounced search automatically (300ms delay)

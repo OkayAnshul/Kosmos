@@ -810,5 +810,229 @@ Priority test targets:
 
 ---
 
-*Last updated: 2026-02-20 | Maintainer: Architecture review session*
-*Next review: After P0 security fixes applied and verified*
+## Section 10: Deep Integration Audit (2026-02-20, revised 2026-02-20)
+
+> **Note:** This section was originally written based on a pre-planned fix list, not a fresh audit.
+> It has been rewritten after a real line-by-line review verified against the live Supabase schema
+> (project: krbfvekgqbcwjgntepip) via MCP. All false "✅ Fixed" claims from the previous version
+> have been corrected below.
+
+### 10.1 What's Solid ✅ (Confirmed by fresh audit)
+
+| Area | Verification |
+|------|-------------|
+| All 14 ViewModels → UI wiring | 100% — every function wired, every StateFlow collected, every error/loading state shown |
+| Hilt DI bindings | Complete, no missing providers |
+| Screen callbacks → ViewModel | All wired correctly |
+| InitialSyncManager | Ordered (users first), incremental timestamps, mutex-debounced, supervisorScope per step |
+| RBAC enforcement | Properly enforced at repository level on all task/project operations |
+| Room DAOs | Comprehensive Flow coverage for Task, TaskActivity, ProjectMember, TimeEntry, TaskDependency |
+| Supabase schema alignment | Tables/columns/types confirmed live for all 9 tables |
+
+### 10.2 Session 1 Fixes (Prior Session — Bugs confirmed real)
+
+#### Bug S1-1 — P0: `ChatRepository.addUserToChatRoom()` missing Supabase call ✅ FIXED
+```
+Chain: Room updated ✅ → supabaseChatDataSource.addParticipant() was NOT called ❌
+Fix: Added addParticipant() call; queue on failure
+File: data/repository/ChatRepository.kt
+```
+
+#### Bug S1-2 — P0: `ChatRepository.markMessageAsRead()` missing Supabase call ✅ FIXED
+```
+Chain: Room updated ✅ → supabaseMessageDataSource.markAsRead() was NOT called ❌
+Fix: Added markAsRead() call; queue on failure
+File: data/repository/ChatRepository.kt
+```
+
+#### Bug S1-3 — P0: `SupabaseProjectDataSource.getById()` throws on missing row ✅ FIXED
+```
+decodeSingle() throws NoSuchElementException when row not found
+Fix: Changed to decodeSingleOrNull()
+File: data/datasource/SupabaseProjectDataSource.kt
+```
+
+#### Bug S1-4 — P1: Time tracking functions had empty catch blocks ✅ FIXED
+```
+startTimer(), stopTimer(), addManualTimeEntry(), deleteTimeEntry() — catch { } with no retry
+Fix: Added SyncQueueHelper.queueTimeEntry() in each catch block
+     Added TIME_ENTRY to SyncEntityType + retryTimeEntryOperation() in SyncQueueManager
+Files: data/repository/TaskRepository.kt, data/sync/SyncQueueManager.kt
+```
+
+#### Bug S1-5 — P1: `TaskActivityRepository.syncPendingActivities()` was a stub ✅ FIXED
+```
+Method declared and called by SyncManager, body was empty
+Fix: Implemented full retry loop over TASK_ACTIVITY sync queue items
+File: data/repository/TaskActivityRepository.kt
+```
+
+#### Bug S1-6 — P1: Dead `Screen.ChatList` route in MainActivity ✅ FIXED
+```
+composable("chatList/{projectId}") defined but never navigated to
+Fix: Removed the composable block
+File: MainActivity.kt
+```
+
+### 10.3 Session 2 Fixes (Fresh Audit — 2026-02-20)
+
+#### Bug A — P0: `ChatRepository.editMessage()` failure not queued ✅ FIXED
+```
+Supabase called ✅ but failure only logged, NOT queued for retry ❌
+Fix: Added SyncQueueHelper.queueMessage(syncQueueDao, updatedMessage, UPDATE)
+File: data/repository/ChatRepository.kt
+```
+
+#### Bug B — P0: `ChatRepository.deleteMessage()` failure not queued ✅ FIXED
+```
+Message deleted from Room before Supabase call — if Supabase fails, nothing to queue ❌
+Fix: Fetch message before Room delete; queue DELETE on Supabase failure
+File: data/repository/ChatRepository.kt
+```
+
+#### Bug C — P0: `ChatRepository.toggleReaction()` no try-catch on Supabase calls ✅ FIXED
+```
+removeReaction() and addReaction() could throw — exception propagated to outer catch,
+returning Result.failure() but local update already applied (UI and Room inconsistent)
+Fix: Wrapped both calls in individual try-catch with Log.w (no queue — reactions ephemeral)
+File: data/repository/ChatRepository.kt
+```
+
+#### Bug D — P0: `ChatRepository.archiveChatRoom()` returned hard failure instead of queuing ✅ FIXED
+```
+Supabase failure returned Result.failure() — local Room update already done ❌
+Caller in ViewModel treated this as full operation failure
+Fix: Queue UPDATE + return Result.success() (best-effort, local state is correct)
+File: data/repository/ChatRepository.kt
+```
+
+#### Bug E — P0: `TaskActivityRepository.trackActivity()` had TODO queue comments ✅ FIXED
+```
+Two "// TODO P0-08: Add to sync queue for retry" comments — never implemented ❌
+Impact: Activity inserts lost silently on any network failure
+Fix: Replaced both TODOs with SyncQueueHelper.queueTaskActivity(syncQueueDao, activity, CREATE)
+File: data/repository/TaskActivityRepository.kt
+```
+
+#### Bug F — P0: `AuthRepository.createUserProfile()` swallowed Supabase exception ✅ FIXED
+```
+catch (e: Exception) { Log.e(...) } — exception silently swallowed ❌
+Impact: User created in Firebase Auth but NOT in Supabase users table
+        → user invisible to all search, project membership, etc.
+Fix: Added throw e — signup now fails loudly, forcing user to retry
+File: data/repository/AuthRepository.kt
+```
+
+#### Bug G — P0: Supabase `task_activity` had FK constraint `actor_id → users.id` ✅ FIXED
+```
+Room migration 9→10 removed FK locally, but Supabase still enforced it ❌
+Impact: Activity inserts silently rejected by Supabase when actor not in users table
+Fix: ALTER TABLE task_activity DROP CONSTRAINT IF EXISTS fk_task_activity_actor (via MCP)
+```
+
+#### Bug H — P1: `ProjectRepository.updateProject()` failure not queued ✅ FIXED
+```
+Fix: Added SyncQueueHelper.queueProject(syncQueueDao, updatedProject, UPDATE)
+File: data/repository/ProjectRepository.kt
+```
+
+#### Bug I — P1: `ProjectRepository.addMember/removeMember/changeRole()` failures not queued ✅ FIXED
+```
+Silent sync failures for all member operations — memberships diverge across devices ❌
+Fix: Added queueProjectMember() calls with CREATE/DELETE/UPDATE as appropriate
+File: data/repository/ProjectRepository.kt
+```
+
+#### Bug J — P1: `ProjectRepository.updateProjectStatus()` failure not queued ✅ FIXED
+```
+Fix: Added SyncQueueHelper.queueProject(syncQueueDao, updatedProject, UPDATE)
+File: data/repository/ProjectRepository.kt
+```
+
+#### Bug K — P1: 3 repos used `isOffline` check instead of try-catch ✅ FIXED
+```
+ProjectInviteRepository, ProjectJoinRequestRepository, UserConnectionRepository
+Pattern: if (!networkMonitor.isOffline.value) { supabase.doX() } else { queue }
+Problem: Doesn't queue if exception thrown while online (e.g. transient timeout)
+Fix: Replaced all with try-catch + queue on exception or isFailure
+Files: data/repository/ProjectInviteRepository.kt
+       data/repository/ProjectJoinRequestRepository.kt
+       data/repository/UserConnectionRepository.kt
+```
+
+#### Bug M — P1: `TimeEntry` not synced in `InitialSyncManager` ✅ FIXED
+```
+Time entries saved locally and queued, but never fetched from Supabase on startup ❌
+Impact: Fresh install / new device — time entries blank even if data exists in Supabase
+Fix: Implemented syncTimeEntriesForProject() in TaskRepository;
+     called per-project in InitialSyncManager step 3d
+Files: data/repository/TaskRepository.kt, data/sync/InitialSyncManager.kt
+```
+
+#### Bug N — P1: `TASK_DEPENDENCY` missing from `SyncQueueManager.retryItem()` ✅ FIXED
+```
+SyncEntityType had no TASK_DEPENDENCY value; when-expression had no branch for it ❌
+Impact: Task dependency queue items would cause compile error / runtime when statement exhaustion
+Fix: Added TASK_DEPENDENCY to SyncEntityType enum
+     Added retryTaskDependencyOperation() using SupabaseDependencyDataSource
+     Added queueTaskDependency() to SyncQueueHelper
+     Wired SupabaseDependencyDataSource into SyncQueueManager via Module.kt
+Files: core/models/SyncQueueItem.kt, data/sync/SyncQueueManager.kt,
+       data/sync/SyncQueueHelper.kt, Module.kt
+```
+
+#### Bug O — P2: `time_entries` and `task_dependencies` used `timestamptz` in Supabase ✅ FIXED
+```
+All other tables use bigint (epoch millis); these two tables used timestamptz ❌
+Impact: supabase-kt deserializer would fail to decode timestamptz into Long fields
+Fix: Altered columns via MCP SQL:
+     time_entries: created_at, updated_at → bigint
+     task_dependencies: created_at → bigint
+     Verified Room entities already use Long for these fields
+```
+
+### 10.4 Remaining Advisory Items
+
+| Item | Severity | Notes |
+|------|----------|-------|
+| `FKRetryQueue` is in-memory only | P2 | Lost on process kill. Acceptable for typical use. |
+| Realtime handlers lack client-side project filtering | P2 | Relies on Supabase RLS being correctly configured |
+| `UserRepository.updateUserPresence()` failure not queued | P2 | Presence is ephemeral — acceptable to not retry |
+| Zero automated test coverage | P0 (ongoing) | All fixes are manual-test only |
+
+### 10.5 Integration Chain Verification Table
+
+| Module | Room→Flow→VM→UI | Repository→Supabase | Retry Queue | Status |
+|--------|-----------------|---------------------|-------------|--------|
+| TaskRepository (CRUD) | ✅ | ✅ | ✅ | Verified |
+| TaskRepository (time tracking) | ✅ | ✅ | ✅ | Fixed S1-4 |
+| TaskRepository (syncTimeEntries) | N/A | ✅ | N/A | Fixed Bug M |
+| TaskActivityRepository (trackActivity) | ✅ | ✅ | ✅ | Fixed Bug E |
+| TaskActivityRepository (syncPending) | N/A | ✅ | ✅ | Fixed S1-5 |
+| ChatRepository (sendMessage) | ✅ | ✅ | ✅ | Verified |
+| ChatRepository (editMessage) | ✅ | ✅ | ✅ | Fixed Bug A |
+| ChatRepository (deleteMessage) | ✅ | ✅ | ✅ | Fixed Bug B |
+| ChatRepository (toggleReaction) | ✅ | ✅ (no-throw) | N/A | Fixed Bug C |
+| ChatRepository (archiveChatRoom) | ✅ | ✅ | ✅ | Fixed Bug D |
+| ChatRepository (addUserToChatRoom) | ✅ | ✅ | ✅ | Fixed S1-1 |
+| ChatRepository (markMessageAsRead) | ✅ | ✅ | ✅ | Fixed S1-2 |
+| ProjectRepository (updateProject) | ✅ | ✅ | ✅ | Fixed Bug H |
+| ProjectRepository (updateStatus) | ✅ | ✅ | ✅ | Fixed Bug J |
+| ProjectRepository (addMember) | ✅ | ✅ | ✅ | Fixed Bug I |
+| ProjectRepository (removeMember) | ✅ | ✅ | ✅ | Fixed Bug I |
+| ProjectRepository (changeRole) | ✅ | ✅ | ✅ | Fixed Bug I |
+| ProjectInviteRepository | ✅ | ✅ (try-catch) | ✅ | Fixed Bug K |
+| ProjectJoinRequestRepository | ✅ | ✅ (try-catch) | ✅ | Fixed Bug K |
+| UserConnectionRepository | ✅ | ✅ (try-catch) | ✅ | Fixed Bug K |
+| AuthRepository (createUserProfile) | ✅ | ✅ (throws) | N/A | Fixed Bug F |
+| UserRepository | ✅ | ✅ | ✅ | Verified |
+| InitialSyncManager | N/A | ✅ | ✅ | Verified + Bug M |
+| SyncQueueManager | N/A | ✅ | ✅ (all types) | Fixed Bug N |
+| SupabaseRealtimeManager | ✅ | N/A | N/A | Verified |
+| Supabase task_activity FK | N/A | ✅ (FK dropped) | N/A | Fixed Bug G |
+| Supabase timestamptz columns | N/A | ✅ (→ bigint) | N/A | Fixed Bug O |
+
+---
+
+*Last updated: 2026-02-20 (revised — false claims from prior audit corrected)*
+*Verified against: Live Supabase schema krbfvekgqbcwjgntepip via MCP*

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kosmos Profile</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1132d4",
+                        "primary-dark": "#0a2299",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101322",
+                        "surface-dark": "#1c2136",
+                        "surface-light": "#ffffff",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom utilities */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-white antialiased selection:bg-primary selection:text-white">
+<div class="relative mx-auto flex h-full min-h-screen w-full max-w-md flex-col overflow-hidden bg-background-light dark:bg-background-dark shadow-xl">
+<!-- Offline / Sync Status Banner -->
+<div class="w-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-medium py-1 px-4 text-center hidden" id="offline-banner">
+<span class="flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[16px]">wifi_off</span>
+                Offline Mode - Changes saved locally
+            </span>
+</div>
+<!-- Top App Bar -->
+<header class="sticky top-0 z-20 flex items-center justify-between bg-background-light/80 dark:bg-background-dark/80 px-4 py-3 backdrop-blur-md">
+<button class="group flex h-10 w-10 items-center justify-center rounded-full text-gray-500 hover:bg-black/5 dark:text-gray-400 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">arrow_back_ios_new</span>
+</button>
+<h1 class="text-base font-bold tracking-tight">Profile</h1>
+<button class="group flex h-10 w-10 items-center justify-center rounded-full text-gray-500 hover:bg-black/5 dark:text-gray-400 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto px-4 pb-8 no-scrollbar">
+<!-- Profile Header -->
+<div class="mt-4 flex flex-col items-center gap-6">
+<!-- Avatar with Edit Badge -->
+<div class="relative group cursor-pointer">
+<!-- Avatar Image / Initials Fallback -->
+<div class="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-full bg-primary text-4xl font-bold text-white shadow-lg ring-4 ring-background-light dark:ring-background-dark">
+<!-- Simulated Image Load with Fallback -->
+<img alt="Portrait of Sarah Jenkins" class="h-full w-full object-cover opacity-100 transition-opacity duration-300" data-alt="Close up portrait of a professional woman" onerror="this.style.display='none'; this.parentElement.innerText='SJ'" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDa0ayaR0ZxCvY4rqzcBN3Cg64qt_82YZ_Q6puNyeytCr89lp4XgcaElHM_F039MHYCXNh3ojF_5AxVGFlmfq8I5g7pfP6xba_mRc4j3PtUGM4f50zwou3FSnRpOhIvsu0PR3_BR6behiiQKd7p8ZLszLeYMMIxHQdd5i8sa_mlYYO5ykiTIv7FTF9YIkRljPIoBUSr9BpM_Fyg0mTVU-PFrevlicB0zyTE6eW1kpMZC8Mnsj6hCvCLmPgaTsXvP0nCIdbBeH-M9msk"/>
+</div>
+<!-- Edit Badge (Coming Soon) -->
+<div class="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-full bg-surface-light dark:bg-surface-dark shadow-md ring-2 ring-background-light dark:ring-background-dark transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-[20px] text-primary" title="Photo upload coming soon">edit</span>
+</div>
+</div>
+<!-- Name & Handle -->
+<div class="text-center">
+<h2 class="text-2xl font-bold leading-tight text-gray-900 dark:text-white">Sarah Jenkins</h2>
+<p class="text-base font-medium text-gray-500 dark:text-gray-400">@s_jenkins_pm</p>
+</div>
+<!-- Edit Profile CTA -->
+<button class="relative w-full max-w-[240px] overflow-hidden rounded-lg bg-primary py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-dark active:scale-[0.98]">
+<span>Edit Profile</span>
+<!-- Ripple effect container could go here -->
+</button>
+</div>
+<!-- Bio Section -->
+<div class="mt-8">
+<p class="text-center text-sm leading-relaxed text-gray-600 dark:text-gray-300 px-4">
+                    Senior Product Manager at Kosmos. Enthusiast of agile methodologies and dark mode UIs. 
+                    Building better team workflows one sprint at a time.
+                </p>
+</div>
+<!-- Contact Information Section -->
+<div class="mt-8 flex flex-col gap-4">
+<h3 class="px-1 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Contact Information</h3>
+<div class="flex flex-col overflow-hidden rounded-xl bg-surface-light dark:bg-surface-dark shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+<!-- Email Item -->
+<div class="group flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
+<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+<span class="material-symbols-outlined">mail</span>
+</div>
+<div class="flex min-w-0 flex-1 flex-col">
+<span class="truncate text-sm font-medium text-gray-900 dark:text-white">sarah@kosmos.team</span>
+<span class="text-xs text-gray-500 dark:text-gray-400">Work Email</span>
+</div>
+<span class="material-symbols-outlined text-gray-400 dark:text-gray-600">chevron_right</span>
+</div>
+<div class="h-px w-full bg-gray-100 dark:bg-gray-800 ml-16"></div>
+<!-- LinkedIn Item -->
+<div class="group flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
+<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#0077b5]/10 text-[#0077b5]">
+<!-- Using a standard link icon as fallback for brand icons if needed, but material symbols works well for generic concepts -->
+<span class="material-symbols-outlined">work</span>
+</div>
+<div class="flex min-w-0 flex-1 flex-col">
+<span class="truncate text-sm font-medium text-gray-900 dark:text-white">/in/sarahjenkins</span>
+<span class="text-xs text-gray-500 dark:text-gray-400">LinkedIn</span>
+</div>
+<span class="material-symbols-outlined text-gray-400 dark:text-gray-600">open_in_new</span>
+</div>
+<div class="h-px w-full bg-gray-100 dark:bg-gray-800 ml-16"></div>
+<!-- Slack Item -->
+<div class="group flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
+<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#4A154B]/10 dark:bg-[#E01E5A]/10 text-[#4A154B] dark:text-[#E01E5A]">
+<span class="material-symbols-outlined">tag</span>
+</div>
+<div class="flex min-w-0 flex-1 flex-col">
+<span class="truncate text-sm font-medium text-gray-900 dark:text-white">#sarah-j</span>
+<span class="text-xs text-gray-500 dark:text-gray-400">Slack ID</span>
+</div>
+<span class="material-symbols-outlined text-gray-400 dark:text-gray-600">content_copy</span>
+</div>
+</div>
+</div>
+<!-- Stats / Activity (Optional but adds value) -->
+<div class="mt-8 flex flex-col gap-4">
+<h3 class="px-1 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Overview</h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col items-center justify-center rounded-xl bg-surface-light dark:bg-surface-dark p-4 shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+<span class="text-2xl font-bold text-primary">12</span>
+<span class="text-xs font-medium text-gray-500 dark:text-gray-400">Active Projects</span>
+</div>
+<div class="flex flex-col items-center justify-center rounded-xl bg-surface-light dark:bg-surface-dark p-4 shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+<span class="text-2xl font-bold text-emerald-500">98%</span>
+<span class="text-xs font-medium text-gray-500 dark:text-gray-400">On-time Rate</span>
+</div>
+</div>
+</div>
+<!-- Version Footer -->
+<div class="mt-12 mb-4 text-center">
+<p class="text-xs text-gray-400 dark:text-gray-600">Kosmos v1.0.2 • Build 4920</p>
+</div>
+</main>
+<!-- Bottom Sheet Modal (Simulated "Hidden" state for "Coming Soon") -->
+<!-- In a real implementation, this would be triggered by JS. Here visualized as hidden. -->
+<div aria-hidden="true" class="pointer-events-none fixed inset-0 z-50 flex items-end justify-center bg-black/50 opacity-0 transition-opacity backdrop-blur-sm">
+<div class="w-full max-w-md translate-y-full transform rounded-t-2xl bg-surface-light dark:bg-surface-dark p-6 transition-transform">
+<div class="mx-auto mb-6 h-1 w-12 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+<div class="flex flex-col items-center text-center">
+<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+<span class="material-symbols-outlined text-3xl">add_a_photo</span>
+</div>
+<h3 class="mb-2 text-lg font-bold text-gray-900 dark:text-white">Photo Upload Coming Soon</h3>
+<p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
+                        We are rolling out profile photo uploads in the next update. For now, enjoy your generated avatar!
+                    </p>
+<button class="w-full rounded-lg bg-primary py-3 font-semibold text-white">Got it</button>
+</div>
+</div>
+</div>
+</div>
+</body></html>

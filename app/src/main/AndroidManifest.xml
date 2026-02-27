@@ -53,6 +53,18 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- OAuth deep link callback: kosmos://auth-callback -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="kosmos"
+                    android:host="auth-callback" />
+            </intent-filter>
         </activity>
 
         <!-- Background services disabled for MVP - will be re-enabled in Phase 5 -->

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kosmos Dashboard - Light &amp; Professional</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "kosmos-teal": "#00897b", // Primary Brand Color
+                        "kosmos-teal-light": "#b2dfdb",
+                        "kosmos-bg": "#f3f4f6",   // Neutral Gray Surface
+                        "kosmos-surface": "#ffffff",
+                        "text-primary": "#1f2937",
+                        "text-secondary": "#6b7280",
+                    },
+                    fontFamily: {
+                        "sans": ["Inter", "sans-serif"]
+                    },
+                    boxShadow: {
+                        "card": "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
+                        "fab": "0 4px 6px -1px rgba(0, 137, 123, 0.3), 0 2px 4px -1px rgba(0, 137, 123, 0.15)",
+                        "nav": "0 -1px 3px 0 rgba(0, 0, 0, 0.05)"
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .symbol-outline {
+             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }.no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-kosmos-bg text-text-primary font-sans antialiased min-h-screen relative pb-24">
+<header class="fixed top-0 left-0 right-0 z-40 bg-kosmos-surface/90 backdrop-blur-md border-b border-gray-200 pt-safe-top transition-all duration-300">
+<div class="px-4 h-16 flex items-center justify-between max-w-md mx-auto">
+<div class="flex items-center gap-3">
+<button class="p-2 -ml-2 rounded-full hover:bg-gray-100 text-text-secondary">
+<span class="material-symbols-outlined symbol-outline">menu</span>
+</button>
+<h1 class="text-xl font-bold tracking-tight text-gray-900">Kosmos</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-gray-100 text-text-secondary relative">
+<span class="material-symbols-outlined symbol-outline">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+</button>
+<div class="w-9 h-9 rounded-full bg-gradient-to-tr from-kosmos-teal to-blue-500 p-[2px]">
+<img alt="Profile" class="w-full h-full rounded-full object-cover border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBv5fRRd1-qRMGbE99Gc14aIulsSUiQcnD6-X1dSg4TvGU0XClRlCW4jgZi_HsFU_XwJY-qjzYvLEVpTQCt-g7bvahii8ftTopUPT90i_v9-CaIQmE8RdEzqUPFpoNy6in-5cMlk-bTqhKW-pGp60GR-jMMpMGsSnkrpRedyNvJvftII0z2EFWjmVgC3LksBU49haWuiO-M4iLQbcENaR3ODqA6ZJmFx2webw43tL20tpqECogI4A5DAZewLUEBmnKf_2jq-gD_y1f-"/>
+</div>
+</div>
+</div>
+<div class="bg-orange-50 border-t border-orange-100 px-4 py-1 flex items-center justify-center gap-2 text-xs font-medium text-orange-700">
+<span class="material-symbols-outlined text-[14px]">wifi_off</span>
+<span>You are offline. Showing cached data.</span>
+</div>
+</header>
+<main class="pt-[88px] px-4 max-w-md mx-auto w-full flex flex-col gap-5">
+<section class="flex flex-col gap-1 mt-2">
+<h2 class="text-2xl font-bold text-gray-900">Dashboard</h2>
+<div class="flex items-center justify-between">
+<p class="text-text-secondary text-sm">Overview of your active projects</p>
+<span class="text-xs font-medium text-kosmos-teal bg-teal-50 px-2 py-1 rounded-md">Last synced 2m ago</span>
+</div>
+</section>
+<section class="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 py-1">
+<div class="min-w-[140px] bg-white p-3 rounded-xl shadow-card border border-gray-100 flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<span class="text-text-secondary text-xs font-medium">Pending Tasks</span>
+<span class="material-symbols-outlined text-orange-500 text-[20px]">pending_actions</span>
+</div>
+<p class="text-2xl font-bold text-gray-900">12</p>
+</div>
+<div class="min-w-[140px] bg-white p-3 rounded-xl shadow-card border border-gray-100 flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<span class="text-text-secondary text-xs font-medium">Completed</span>
+<span class="material-symbols-outlined text-kosmos-teal text-[20px]">check_circle</span>
+</div>
+<p class="text-2xl font-bold text-gray-900">85%</p>
+</div>
+<div class="min-w-[140px] bg-white p-3 rounded-xl shadow-card border border-gray-100 flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<span class="text-text-secondary text-xs font-medium">Active Team</span>
+<span class="material-symbols-outlined text-blue-500 text-[20px]">group</span>
+</div>
+<p class="text-2xl font-bold text-gray-900">8</p>
+</div>
+</section>
+<section class="flex flex-col gap-4">
+<article class="bg-white rounded-2xl p-5 shadow-card border border-gray-100 relative group active:scale-[0.99] transition-transform duration-200">
+<div class="flex justify-between items-start mb-3">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-kosmos-teal uppercase tracking-wide mb-1">Web Design</span>
+<h3 class="text-lg font-bold text-gray-900">E-Commerce Redesign</h3>
+</div>
+<button class="text-gray-400 hover:text-gray-600">
+<span class="material-symbols-outlined symbol-outline">more_horiz</span>
+</button>
+</div>
+<p class="text-sm text-text-secondary mb-4 line-clamp-2">
+                    Revamping the checkout flow and product listing pages for better conversion rates on mobile devices.
+                </p>
+<div class="mb-4">
+<div class="flex justify-between text-xs mb-1.5">
+<span class="font-medium text-gray-700">Progress</span>
+<span class="font-bold text-kosmos-teal">75%</span>
+</div>
+<div class="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+<div class="h-full bg-kosmos-teal rounded-full" style="width: 75%"></div>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-gray-50 pt-4 mt-2">
+<div class="flex -space-x-2">
+<img alt="User" class="w-7 h-7 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBz1c3bLLo1exq4vXfpgY_HFLEffs1q1-1dDJzKiH0xknkdu2rDZYgUVzlOVa1A5cvGLzbMYnjwqT8ErBeBkYaFQYjPS4LL40cZ__2tXlKqlqadL5-k9ZCddcXjf2vcZy8X3fW809Xnc6NGWf1ehx6O4R3ro55SRlm0vmoSU8mGwctSatSg_bvdnVZ7gbF0IPziVDsB-0LIthxNobrzgPqEtLzy3kCWP65sNK5vM_zjd2cyT56oOFb8kYDu2wxUJNSLBY4gePNioVlO"/>
+<img alt="User" class="w-7 h-7 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZscOXiClyr1nSPxKr4bHN7Y9dkE_DiIYXboDi9xSeQaJDH3MVc2Ss5XGgDqseFomNTegW84KNnQUZVZbOU4FMCtdIOctdejcx5V3_36QwyGCxBHtomeaHE6dH5mWY-PJY4OaHcycbcFvO_W6SfDvt6zJeefxdjljj04cIGMFRPC6D8R8EIXZ2hTjvtz5Od8xMWk3U6n5hIFUA64sZ9wqHiTnGNPcY_myxrCEPDYUTlO2jAk4P_PHTv7hvnLApphyl5A15rPmIcBlU"/>
+<div class="w-7 h-7 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500">+3</div>
+</div>
+<div class="flex items-center gap-1 text-xs text-text-secondary">
+<span class="material-symbols-outlined text-[14px] symbol-outline">schedule</span>
+<span>Updated 2h ago</span>
+</div>
+</div>
+</article>
+<article class="bg-white rounded-2xl p-5 shadow-card border border-gray-100 relative group active:scale-[0.99] transition-transform duration-200">
+<div class="flex justify-between items-start mb-3">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-orange-600 uppercase tracking-wide mb-1">Marketing</span>
+<h3 class="text-lg font-bold text-gray-900">Q4 Campaign Launch</h3>
+</div>
+<div class="flex items-center justify-center bg-orange-50 text-orange-600 px-2 py-1 rounded-md text-xs font-semibold">
+                        At Risk
+                    </div>
+</div>
+<p class="text-sm text-text-secondary mb-4 line-clamp-2">
+                    Preparing assets for social media, email newsletters, and PPC ads. Waiting on final copy approval.
+                </p>
+<div class="mb-4">
+<div class="flex justify-between text-xs mb-1.5">
+<span class="font-medium text-gray-700">Progress</span>
+<span class="font-bold text-orange-600">40%</span>
+</div>
+<div class="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+<div class="h-full bg-orange-500 rounded-full" style="width: 40%"></div>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-gray-50 pt-4 mt-2">
+<div class="flex -space-x-2">
+<img alt="User" class="w-7 h-7 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAT1yVzzAoMMwUuomKpb_5IAHOv7d6clwCrhlqyv2dtAc4PpHuXIz9Bry9oY66b-jZgbXhjgiZBaSGHK4ie39WhvbYXheZSDAdFGGbiLtarUWuSjMssAHJmV_MSS55ZeOCpuBe4mVNs9Fpp8rfbLsIuwzUC92OubIT4kw6hdwC61Xn9B_sGPX09KWC7--WdcHhi5FghVBeqVt81TFiWd1N4oLlXEHoZM1LRtbakNKuU020QJpRsJcCFrbi4UAToKW0U5XNpOgk2TA2t"/>
+<img alt="User" class="w-7 h-7 rounded-full border-2 border-white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAA0lrpuPjiLdB3QQX-Ey_uBYtY9VxuC6jpPw1-wwYHjDQ-643vCv6OZGcCSqgFgL3UEh9cpf1DcXBlnP1P1St4UjFYozx4hzWjHMk_ek4IG7YmeH_-MNFD7mw_FeiQmZaqBvMqQ7Bnjyn22VB3u0fTRK8u0Fk2D8Wwshtxn_Qx45SWjdErhXyTmzaPf_n0hNds0diLhy0Osms-ufzg0HvWimtTdGnkty6X6wdhQioP5SgHaXUciAxjvXCzpVOmiS2KBmjMwYql2TL"/>
+</div>
+<div class="flex items-center gap-1 text-xs text-text-secondary">
+<span class="material-symbols-outlined text-[14px] symbol-outline">cloud_off</span>
+<span>Cached 1d ago</span>
+</div>
+</div>
+</article>
+<article class="bg-white rounded-2xl p-5 shadow-card border border-gray-100 relative group active:scale-[0.99] transition-transform duration-200 opacity-90">
+<div class="flex justify-between items-start mb-3">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-blue-600 uppercase tracking-wide mb-1">Development</span>
+<h3 class="text-lg font-bold text-gray-900">API Migration v2</h3>
+</div>
+<div class="flex items-center justify-center bg-blue-50 text-blue-600 px-2 py-1 rounded-md text-xs font-semibold">
+                        Planning
+                    </div>
+</div>
+<p class="text-sm text-text-secondary mb-4 line-clamp-2">
+                    Migrating legacy endpoints to the new GraphQL architecture. Initial scoping phase.
+                </p>
+<div class="mb-4">
+<div class="flex justify-between text-xs mb-1.5">
+<span class="font-medium text-gray-700">Progress</span>
+<span class="font-bold text-blue-600">10%</span>
+</div>
+<div class="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+<div class="h-full bg-blue-500 rounded-full" style="width: 10%"></div>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-gray-50 pt-4 mt-2">
+<div class="flex -space-x-2">
+<div class="w-7 h-7 rounded-full border-2 border-white bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-600">JD</div>
+</div>
+<div class="flex items-center gap-1 text-xs text-text-secondary">
+<span class="material-symbols-outlined text-[14px] symbol-outline">schedule</span>
+<span>Started today</span>
+</div>
+</div>
+</article>
+</section>
+<div class="h-8"></div>
+</main>
+<button class="fixed right-4 bottom-24 z-30 bg-kosmos-teal hover:bg-teal-700 text-white w-14 h-14 rounded-2xl shadow-fab flex items-center justify-center transition-all duration-200 active:scale-90 group">
+<span class="material-symbols-outlined text-[28px] group-hover:rotate-90 transition-transform duration-200">add</span>
+</button>
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe-bottom z-40 shadow-nav">
+<div class="flex justify-around items-center h-16 max-w-md mx-auto">
+<a class="flex flex-col items-center gap-1 text-kosmos-teal w-16" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px] font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-text-secondary hover:text-kosmos-teal w-16 transition-colors" href="#">
+<span class="material-symbols-outlined symbol-outline">folder_open</span>
+<span class="text-[10px] font-medium">Projects</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-text-secondary hover:text-kosmos-teal w-16 transition-colors" href="#">
+<span class="material-symbols-outlined symbol-outline">check_box</span>
+<span class="text-[10px] font-medium">Tasks</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-text-secondary hover:text-kosmos-teal w-16 transition-colors" href="#">
+<span class="material-symbols-outlined symbol-outline">group</span>
+<span class="text-[10px] font-medium">Team</span>
+</a>
+</div>
+</nav>
+<div class="fixed bottom-16 left-0 right-0 h-8 bg-gradient-to-t from-kosmos-bg to-transparent pointer-events-none z-20"></div>
+
+</body></html>

@@ -1,0 +1,171 @@
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:kspDebugKotlin
+
+> Task :app:compileDebugKotlin FAILED
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/Module.kt:145:83 No value passed for parameter 'taskDao'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/Module.kt:145:83 No value passed for parameter 'taskActivityDao'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/Module.kt:262:79 Argument type mismatch: actual type is 'SupabaseTaskDataSource', but 'UserDao' was expected.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/Module.kt:262:79 No value passed for parameter 'taskActivityDao'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/Module.kt:262:79 No value passed for parameter 'supabaseTaskDataSource'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/Module.kt:262:79 No value passed for parameter 'supabaseTaskActivityDataSource'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/Module.kt:262:79 No value passed for parameter 'notificationRulesEngine'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/Module.kt:262:79 No value passed for parameter 'reminderScheduler'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/core/validators/DependencyValidator.kt:274:13 'isValid' hides member of supertype 'ValidationResult' and needs an 'override' modifier.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/core/validators/DependencyValidator.kt:281:13 'isValid' hides member of supertype 'ValidationResult' and needs an 'override' modifier.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/datasource/SupabaseMilestoneDataSource.kt:141:37 No parameter with name 'ascending' found.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/datasource/SupabaseMilestoneDataSource.kt:141:37 No value passed for parameter 'order'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/datasource/SupabaseTimeEntryDataSource.kt:170:37 No parameter with name 'ascending' found.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/datasource/SupabaseTimeEntryDataSource.kt:170:37 No value passed for parameter 'order'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/datasource/SupabaseTimeEntryDataSource.kt:203:37 No parameter with name 'ascending' found.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/datasource/SupabaseTimeEntryDataSource.kt:203:37 No value passed for parameter 'order'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/datasource/SupabaseTimeEntryDataSource.kt:236:37 No parameter with name 'ascending' found.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/datasource/SupabaseTimeEntryDataSource.kt:236:37 No value passed for parameter 'order'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/datasource/SupabaseTimeEntryDataSource.kt:265:36 Null cannot be a value of a non-null type 'Any'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/datasource/SupabaseTimeEntryDataSource.kt:267:37 No parameter with name 'ascending' found.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/datasource/SupabaseTimeEntryDataSource.kt:267:37 No value passed for parameter 'order'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/repository/TaskRepository.kt:851:56 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/repository/TaskRepository.kt:852:54 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/repository/TaskRepository.kt:853:58 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/repository/TaskRepository.kt:854:56 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/repository/TaskRepository.kt:923:24 Unresolved reference 'BLOCKED'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/data/repository/TaskRepository.kt:924:24 Unresolved reference 'IN_REVIEW'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationListener.kt:99:21 Cannot access 'filter': it is private in 'io.github.jan.supabase.realtime.PostgresChangeFilter'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationListener.kt:216:37 Unresolved reference 'size'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationListener.kt:259:41 No parameter with name 'ascending' found.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationListener.kt:259:41 No value passed for parameter 'order'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationListener.kt:285:41 No parameter with name 'ascending' found.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationListener.kt:285:41 No value passed for parameter 'order'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationRulesEngine.kt:105:26 Unresolved reference 'createdBy'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationRulesEngine.kt:105:55 Unresolved reference 'createdBy'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationRulesEngine.kt:106:46 Unresolved reference 'createdBy'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationRulesEngine.kt:117:26 Unresolved reference 'createdBy'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationRulesEngine.kt:118:46 Unresolved reference 'createdBy'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationRulesEngine.kt:136:25 Unresolved reference 'getUserByUsername'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationRulesEngine.kt:136:54 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationRulesEngine.kt:136:54 Cannot infer type for type parameter 'R'. Specify it explicitly.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationRulesEngine.kt:136:60 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/notifications/NotificationRulesEngine.kt:137:30 Unresolved reference 'id'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/AddManualTimeEntryDialog.kt:133:56 Unresolved reference 'onSurface'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/AddManualTimeEntryDialog.kt:215:40 Unresolved reference 'onSurface'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/AddManualTimeEntryDialog.kt:256:44 Unresolved reference 'onSurfaceVariant'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/AddManualTimeEntryDialog.kt:262:44 Unresolved reference 'onSurface'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/AddManualTimeEntryDialog.kt:277:40 Unresolved reference 'primaryContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/AddManualTimeEntryDialog.kt:289:48 Unresolved reference 'onPrimaryContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/AddManualTimeEntryDialog.kt:296:48 Unresolved reference 'onPrimaryContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/ConflictResolutionDialog.kt:155:44 Unresolved reference 'onSurface'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/ConflictResolutionDialog.kt:161:44 Unresolved reference 'onSurfaceVariant'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/ConflictResolutionDialog.kt:186:44 Unresolved reference 'outline'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/ConflictResolutionDialog.kt:196:40 Unresolved reference 'onSurface'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/ConflictResolutionDialog.kt:242:32 Unresolved reference 'primaryContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/ConflictResolutionDialog.kt:246:18 Unresolved reference 'BorderStroke'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/ConflictResolutionDialog.kt:251:36 Unresolved reference 'outline'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/ConflictResolutionDialog.kt:271:44 Unresolved reference 'onPrimaryContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/ConflictResolutionDialog.kt:273:44 Unresolved reference 'onSurfaceVariant'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/ConflictResolutionDialog.kt:282:44 Unresolved reference 'onPrimaryContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/ConflictResolutionDialog.kt:284:44 Unresolved reference 'onSurface'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/ConflictResolutionDialog.kt:292:44 Unresolved reference 'onPrimaryContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/ConflictResolutionDialog.kt:294:44 Unresolved reference 'onSurfaceVariant'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/EditingIndicatorBadge.kt:66:48 Unresolved reference 'warningContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/EditingIndicatorBadge.kt:75:43 Unresolved reference 'onWarningContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/EditingIndicatorBadge.kt:83:44 Unresolved reference 'onWarningContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/EditingIndicatorBadge.kt:135:48 Unresolved reference 'warningContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/EditingIndicatorBadge.kt:143:43 Unresolved reference 'onWarningContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/EditingIndicatorBadge.kt:154:48 Unresolved reference 'onWarningContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/EditingIndicatorBadge.kt:160:48 Unresolved reference 'onWarningContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TaskPresenceIndicator.kt:85:44 Unresolved reference 'onSurfaceVariant'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TaskPresenceIndicator.kt:179:44 Unresolved reference 'onSurfaceVariant'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TaskPresenceIndicator.kt:205:28 Unresolved reference 'secondary'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TaskPresenceIndicator.kt:206:28 Unresolved reference 'tertiary'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:74:44 Unresolved reference 'outline'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:135:40 Unresolved reference 'onSurface'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:159:36 Unresolved reference 'primaryContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:180:52 Unresolved reference 'onPrimaryContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:185:25 None of the following candidates is applicable:
+fun Text(text: String, modifier: Modifier = ..., color: Color = ..., autoSize: TextAutoSize? = ..., fontSize: TextUnit = ..., fontStyle: FontStyle? = ..., fontWeight: FontWeight? = ..., fontFamily: FontFamily? = ..., letterSpacing: TextUnit = ..., textDecoration: TextDecoration? = ..., textAlign: TextAlign? = ..., lineHeight: TextUnit = ..., overflow: TextOverflow = ..., softWrap: Boolean = ..., maxLines: Int = ..., minLines: Int = ..., onTextLayout: ((TextLayoutResult) -> Unit)? = ..., style: TextStyle = ...): Unit
+fun Text(text: AnnotatedString, modifier: Modifier = ..., color: Color = ..., autoSize: TextAutoSize? = ..., fontSize: TextUnit = ..., fontStyle: FontStyle? = ..., fontWeight: FontWeight? = ..., fontFamily: FontFamily? = ..., letterSpacing: TextUnit = ..., textDecoration: TextDecoration? = ..., textAlign: TextAlign? = ..., lineHeight: TextUnit = ..., overflow: TextOverflow = ..., softWrap: Boolean = ..., maxLines: Int = ..., minLines: Int = ..., inlineContent: Map<String, InlineTextContent> = ..., onTextLayout: (TextLayoutResult) -> Unit = ..., style: TextStyle = ...): Unit
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:188:56 Unresolved reference 'onPrimaryContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:198:44 Unresolved reference 'onPrimaryContainer'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:257:40 Unresolved reference 'secondary'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:266:94 Unresolved reference 'tertiary'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:287:18 Unresolved reference 'BorderStroke'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:287:56 Unresolved reference 'outline'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:304:44 Unresolved reference 'onSurface'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:311:44 Unresolved reference 'onSurfaceVariant'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:404:44 Unresolved reference 'onSurface'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:439:18 Unresolved reference 'BorderStroke'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:439:56 Unresolved reference 'outline'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:456:48 Unresolved reference 'onSurface'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:464:48 Unresolved reference 'onSurfaceVariant'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/components/TimeTrackerWidget.kt:472:52 Unresolved reference 'onSurface'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/ActivityLogScreen.kt:20:45 Unresolved reference 'ScreenScaffold'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/ActivityLogScreen.kt:56:5 Unresolved reference 'ScreenScaffold'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/ActivityLogScreen.kt:61:13 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/ActivityLogScreen.kt:70:9 Cannot infer type for value parameter 'paddingValues'. Specify it explicitly.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/ActivityLogScreen.kt:71:9 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/ActivityLogScreen.kt:126:13 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/ActivityLogScreen.kt:137:13 @Composable invocations can only happen from the context of a @Composable function
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskDetailViewModel.kt:109:21 No value passed for parameter 'actorId'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskDetailViewModel.kt:146:21 No value passed for parameter 'actorId'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskDetailViewModel.kt:183:21 No value passed for parameter 'actorId'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskDetailViewModel.kt:225:21 No value passed for parameter 'actorId'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskDetailViewModel.kt:254:56 No value passed for parameter 'actorId'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskDetailViewModel.kt:326:21 No value passed for parameter 'actorId'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskDetailViewModel.kt:363:21 No value passed for parameter 'actorId'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskDetailViewModel.kt:400:21 No value passed for parameter 'actorId'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskEditViewModel.kt:147:56 No value passed for parameter 'actorId'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskViewModel.kt:246:70 No value passed for parameter 'actorId'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskViewModel.kt:282:56 No value passed for parameter 'actorId'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskViewModel.kt:351:56 No value passed for parameter 'actorId'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskViewModel.kt:412:60 No value passed for parameter 'actorId'.
+e: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskViewModel.kt:607:60 No value passed for parameter 'actorId'.
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 11s
+32 actionable tasks: 2 executed, 30 up-to-date

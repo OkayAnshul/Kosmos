@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kosmos Workspace Overview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1132d4",
+                        "primary-dark": "#0d25a0",
+                        "accent": "#00d4ff",
+                        "background-dark": "#0b0e17",
+                        "surface-dark": "#161b2c",
+                        "surface-variant": "#232942",
+                        "border-dark": "#2d3555",
+                        "text-secondary": "#929bc9",
+                        "success": "#00cc88",
+                        "warning": "#ffaa00",
+                        "error": "#ff4444"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "xl": "1rem", 
+                        "2xl": "1.25rem",
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d3555; 
+            border-radius: 4px;
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-dark text-white antialiased selection:bg-primary/30">
+<div class="relative flex min-h-screen w-full flex-col overflow-hidden pb-24">
+<header class="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-background-dark/80 backdrop-blur-md border-b border-border-dark/50">
+<div class="flex items-center gap-3">
+<button class="p-2 -ml-2 rounded-full hover:bg-surface-variant text-text-secondary hover:text-white transition-colors" type="button">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div>
+<h1 class="text-lg font-bold leading-tight">Project Nebula</h1>
+<div class="flex items-center gap-1.5">
+<span class="h-2 w-2 rounded-full bg-success"></span>
+<p class="text-xs font-medium text-text-secondary">Active • Sprint 4</p>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="relative p-2 rounded-full hover:bg-surface-variant text-text-secondary hover:text-white transition-colors" type="button">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 h-2 w-2 rounded-full bg-error border border-background-dark"></span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-variant text-text-secondary hover:text-white transition-colors" type="button">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</header>
+<main class="flex-1 px-4 py-6 w-full max-w-md mx-auto space-y-8">
+<section class="grid grid-cols-2 gap-3">
+<div class="bg-surface-dark p-4 rounded-2xl border border-border-dark flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="absolute right-[-10px] top-[-10px] w-20 h-20 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-all duration-500"></div>
+<div class="flex items-start justify-between z-10">
+<span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg text-[20px]">check_circle</span>
+<span class="text-xs font-medium text-success bg-success/10 px-2 py-0.5 rounded-full">+12%</span>
+</div>
+<div>
+<p class="text-3xl font-bold text-white">84%</p>
+<p class="text-xs text-text-secondary mt-1">Completion</p>
+</div>
+</div>
+<div class="bg-surface-dark p-4 rounded-2xl border border-border-dark flex flex-col justify-between h-32 relative overflow-hidden group">
+<div class="absolute right-[-10px] top-[-10px] w-20 h-20 bg-accent/10 rounded-full blur-xl group-hover:bg-accent/20 transition-all duration-500"></div>
+<div class="flex items-start justify-between z-10">
+<span class="material-symbols-outlined text-accent bg-accent/10 p-2 rounded-lg text-[20px]">schedule</span>
+<span class="text-xs font-medium text-warning bg-warning/10 px-2 py-0.5 rounded-full">3 due</span>
+</div>
+<div>
+<p class="text-3xl font-bold text-white">12</p>
+<p class="text-xs text-text-secondary mt-1">Pending Tasks</p>
+</div>
+</div>
+</section>
+<section>
+<div class="flex items-center justify-between mb-3">
+<h2 class="text-sm font-semibold uppercase tracking-wider text-text-secondary">About</h2>
+</div>
+<div class="bg-surface-dark p-5 rounded-2xl border border-border-dark">
+<p class="text-sm leading-relaxed text-gray-300">
+                        Reimagining the core banking infrastructure for next-gen financial services. Focus on scalability and security protocols.
+                    </p>
+<div class="mt-4 flex -space-x-2 overflow-hidden">
+<img alt="Member 1" class="inline-block h-8 w-8 rounded-full ring-2 ring-background-dark object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCoGJNEW3a5pSZMMsQfCzNyJGvuYCKNaoamMh66JlboH_v5Hhifxfu6BQwpJrl77NGHWOar1aagtbQxn0zKpMcs0RUq_KfcWMfnZMts5xQ1JKQ6oDHrxWFRKJ_buaaPyU1jlN4zVf8M6Xe_AM8biDLSqghwv6foXEcC4TIxle60kak__x3jhONVB-N5V7clO8L6X9xqMPIIepvhunlUacDZC1pERVz_pAqLvhsIabT1GeI6uRdr8FETfCJ_-8g0W3FlvpGZ9oJmloU"/>
+<img alt="Member 2" class="inline-block h-8 w-8 rounded-full ring-2 ring-background-dark object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADp5c-kUErGefVsf1ayPkp4D2ezuYxqap9mnRvem-Ph3W1dMKjV5jLCirqgFDtP7IFj_6l6866sa77H8648wm7oZ0z0yAaak-cWAp7Pi__lKnwIbc3jcNKxkbuLBIndpW-4JAQXnAyZcRQKxze4D5Ii8RWppP6mG6aebTKV9UpkHoXR9zXu7rUxAnTPHVeQDGo0QXLiDUWK5nxQ14cbKcN6BXV7pyk5TXwBLzA5akKTvnks8LHTl8XKjNGzV_9hB4dNzkIxhGsfqY4"/>
+<img alt="Member 3" class="inline-block h-8 w-8 rounded-full ring-2 ring-background-dark object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDATuHTA91Mr1e4zRSvEW57MQcuod58Qd0TSayTaoPd7VLENIlRpVCOSdUe4AQWdQqgzywzoIZ3tG8xsBoUqYjq9gq80QTcnfWRnwnjHsC2kvCmADf8Jhf8vdmYmdb_L6Ir6EKb5tYPtuwpl--tjcTLzLXjR8qeGtqeURJescPuMkL9cTw_KJOlzQ1eaTjtOmIcX-ihvANkCX2QuntWyCeJlRPoaLTzDZnNHJoysRyQEvkUmJSUtjehsffXnJ292uunW-FUntP6dx3F"/>
+<div class="flex h-8 w-8 items-center justify-center rounded-full ring-2 ring-background-dark bg-surface-variant text-xs font-medium text-white">+4</div>
+<button class="ml-4 text-xs font-semibold text-primary hover:text-accent transition-colors">Manage Team</button>
+</div>
+</div>
+</section>
+<section>
+<div class="flex items-center justify-between mb-3">
+<h2 class="text-sm font-semibold uppercase tracking-wider text-text-secondary">Recent Tasks</h2>
+<button class="text-xs font-medium text-primary hover:text-white transition-colors">View All</button>
+</div>
+<div class="space-y-2">
+<div class="group flex items-center gap-3 bg-surface-dark p-3 rounded-xl border border-border-dark hover:border-primary/50 transition-colors cursor-pointer">
+<div class="relative flex-none">
+<input class="w-5 h-5 rounded border-text-secondary bg-transparent checked:bg-primary focus:ring-primary focus:ring-offset-surface-dark text-primary transition-colors cursor-pointer peer" type="checkbox"/>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-sm font-medium text-white truncate peer-checked:line-through peer-checked:text-text-secondary">Update API documentation</h3>
+<p class="text-xs text-text-secondary">Due Today • Backend</p>
+</div>
+<img alt="Assignee" class="h-6 w-6 rounded-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvpF9gASU_3Vq9YqgItGIZr2w29V1CV6WF3_nDsdqgEM12-XX4PC1NN34Su-_78kID3db7yetPag-GnGCJglw5V-xDeNYMfCTH-fw7HvEJzCqfMJN3vRdBLKdd3xULbUVnbMUVDJFqxzCYpMl8yzLxEKhtSSB0seVx-356EYF5ywc8UnT4xG6W9GOXPE3zUQ43foCQMqDr8_5UVIs2m10JRf-sfD-ZMF_XHh7kgilAAtuTuXTpEVfi8UGLnwEr_afgWJYO9UYsWQcu"/>
+</div>
+<div class="group flex items-center gap-3 bg-surface-dark p-3 rounded-xl border border-border-dark hover:border-primary/50 transition-colors cursor-pointer">
+<div class="relative flex-none">
+<input checked="" class="w-5 h-5 rounded border-text-secondary bg-transparent checked:bg-primary focus:ring-primary focus:ring-offset-surface-dark text-primary transition-colors cursor-pointer peer" type="checkbox"/>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-sm font-medium text-text-secondary line-through truncate">Client meeting notes</h3>
+<p class="text-xs text-text-secondary">Done • Product</p>
+</div>
+<img alt="Assignee" class="h-6 w-6 rounded-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClUfU8xzguxKx6T4qIhWUa1kKKT-lSBh1vfFL0PpcvJ26MQYAGsmxxi6RnsC8pjXZYd-Vb5W1LHo-mnt8BIaxmy9IZYxZ1-4j7sw2NPN1RUhIRfb8srTBRRAHrJVLCMFe_nmskX7BOrwRf4ytN24il10CAMi9Sq4rPCESohg2-cjsVaggRr7F19Fv5fQSzNkycLq9433_NdDI39GUySchhwYSqvmD98ZJkfe06TPfhPBEZggc1my_ceotvVstdrW7RJHpGGw3oES-x"/>
+</div>
+<div class="group flex items-center gap-3 bg-surface-dark p-3 rounded-xl border border-border-dark hover:border-primary/50 transition-colors cursor-pointer">
+<div class="relative flex-none">
+<input class="w-5 h-5 rounded border-text-secondary bg-transparent checked:bg-primary focus:ring-primary focus:ring-offset-surface-dark text-primary transition-colors cursor-pointer peer" type="checkbox"/>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-sm font-medium text-white truncate">Fix authentication bug</h3>
+<p class="text-xs text-error font-medium">Overdue • Security</p>
+</div>
+<div class="h-6 w-6 rounded-full bg-surface-variant flex items-center justify-center text-[10px] text-text-secondary font-bold">MJ</div>
+</div>
+</div>
+</section>
+<section>
+<div class="flex items-center justify-between mb-3">
+<h2 class="text-sm font-semibold uppercase tracking-wider text-text-secondary">Recent Discussions</h2>
+<span class="bg-primary/20 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded">5 New</span>
+</div>
+<div class="bg-surface-dark rounded-2xl border border-border-dark divide-y divide-border-dark">
+<div class="p-4 flex gap-3 hover:bg-surface-variant/30 transition-colors cursor-pointer">
+<div class="relative">
+<img alt="Sarah" class="h-10 w-10 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLgyw3j2LxA00z41TTgD72Hm-Fw_ZBurUjwXVRuT2S5YbXQQInNXSN3WK9ESSg8n7-n4-CW9XBBIEpCewVoqm8xdj0MZg7njSg9WkT3mSVsrmLHWr5309_ls90W0ROupRoYHJ4PparNIPHkhg034Mlu1vcvmXp9TzQtkivlTq-AMAGfvIkxr2YwYTdhDvVFNWe_95LthWTbApHAgeyf42apuorRWm0r-v49_lMTTU-j3L1HB3l_zaQqtcYGnFy4zpeEd3hQ46qrQSk"/>
+<div class="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-success border-2 border-surface-dark"></div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-0.5">
+<h4 class="text-sm font-semibold text-white truncate">Sarah Connor</h4>
+<span class="text-[10px] text-text-secondary">2m ago</span>
+</div>
+<p class="text-xs text-text-secondary truncate">Can you review the wireframes for the dashboard?</p>
+</div>
+</div>
+<div class="p-4 flex gap-3 hover:bg-surface-variant/30 transition-colors cursor-pointer">
+<div class="relative">
+<div class="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs">
+                                DE
+                            </div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-0.5">
+<h4 class="text-sm font-semibold text-white truncate">Design Team</h4>
+<span class="text-[10px] text-text-secondary">1h ago</span>
+</div>
+<p class="text-xs text-white font-medium truncate">New assets have been uploaded to Drive.</p>
+</div>
+<div class="flex items-center">
+<span class="h-2 w-2 rounded-full bg-primary"></span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<button class="fixed right-5 bottom-24 z-40 bg-primary hover:bg-primary-dark text-white rounded-2xl p-4 shadow-lg shadow-primary/30 transition-transform active:scale-95 flex items-center justify-center">
+<span class="material-symbols-outlined text-[28px]">add</span>
+</button>
+<nav class="fixed bottom-0 w-full bg-surface-dark/95 backdrop-blur-xl border-t border-border-dark pb-safe z-50">
+<div class="flex justify-around items-center h-16 px-2">
+<a class="flex flex-col items-center justify-center w-full h-full text-primary group gap-1" href="#">
+<span class="material-symbols-outlined material-symbols-filled text-[24px] group-hover:scale-110 transition-transform">grid_view</span>
+<span class="text-[10px] font-medium">Overview</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-text-secondary hover:text-white transition-colors group gap-1" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">check_box</span>
+<span class="text-[10px] font-medium">Tasks</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-text-secondary hover:text-white transition-colors group gap-1" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">chat</span>
+<span class="text-[10px] font-medium">Chat</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-text-secondary hover:text-white transition-colors group gap-1" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">folder</span>
+<span class="text-[10px] font-medium">Files</span>
+</a>
+</div>
+<div class="h-5 w-full"></div>
+</nav>
+<div class="fixed inset-0 pointer-events-none -z-10" style="background: radial-gradient(circle at 15% 15%, rgba(17, 50, 212, 0.08) 0%, transparent 40%), radial-gradient(circle at 85% 60%, rgba(0, 212, 255, 0.05) 0%, transparent 40%);">
+</div>
+</div>
+
+</body></html>

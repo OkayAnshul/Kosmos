@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kosmos - Chat List</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1132d4",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101322",
+                        "surface-dark": "#161b2e", // Slightly lighter than background-dark
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hiding for clean UI */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased min-h-screen flex flex-col overflow-x-hidden">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-50 bg-background-light dark:bg-background-dark border-b border-slate-200 dark:border-slate-800/60 px-4 py-3">
+<div class="flex items-center justify-between gap-4">
+<!-- Back & Title -->
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<button class="flex items-center justify-center size-10 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<h1 class="text-lg font-bold leading-tight truncate text-slate-900 dark:text-white">Project Alpha</h1>
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400">5 active channels</span>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex items-center gap-1">
+<button class="flex items-center justify-center size-10 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-2xl">search</span>
+</button>
+<button class="flex items-center justify-center size-10 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-primary dark:text-primary">
+<span class="material-symbols-outlined text-2xl">edit_square</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Offline Indicator -->
+<div class="bg-slate-800 dark:bg-surface-dark px-4 py-2 flex items-center justify-center gap-2 border-b border-slate-700/50">
+<span class="material-symbols-outlined text-amber-500 text-sm">wifi_off</span>
+<p class="text-xs font-medium text-slate-300 text-center">You are offline. Showing cached data.</p>
+</div>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col w-full max-w-2xl mx-auto">
+<!-- Filter Chips -->
+<div class="flex items-center gap-3 px-4 py-4 overflow-x-auto scrollbar-hide w-full">
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-primary px-4 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[18px] text-white">filter_list</span>
+<span class="text-white text-sm font-medium">All</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/50 px-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[18px] text-slate-500 dark:text-slate-400">mail</span>
+<span class="text-slate-700 dark:text-slate-300 text-sm font-medium">Unread</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/50 px-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[18px] text-slate-500 dark:text-slate-400">tag</span>
+<span class="text-slate-700 dark:text-slate-300 text-sm font-medium">Channels</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700/50 px-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[18px] text-slate-500 dark:text-slate-400">person</span>
+<span class="text-slate-700 dark:text-slate-300 text-sm font-medium">Direct Messages</span>
+</button>
+</div>
+<!-- Pinned Section -->
+<div class="flex flex-col">
+<h4 class="px-4 pb-2 pt-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Pinned</h4>
+<!-- Pinned Item 1 -->
+<div class="group relative flex items-center gap-4 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-pointer border-b border-transparent dark:border-slate-800/30">
+<!-- Avatar -->
+<div class="relative shrink-0">
+<div class="flex size-14 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-sm" data-alt="Orange gradient background for announcements icon">
+<span class="material-symbols-outlined text-2xl">campaign</span>
+</div>
+</div>
+<!-- Content -->
+<div class="flex flex-1 flex-col justify-center overflow-hidden">
+<div class="flex items-center justify-between mb-0.5">
+<p class="truncate text-base font-semibold text-slate-900 dark:text-white">Announcements</p>
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap ml-2">10:00 AM</span>
+</div>
+<div class="flex items-center justify-between">
+<p class="truncate text-sm text-slate-600 dark:text-slate-400 line-clamp-1 pr-4">Project deadline extended by 2 days due to client request.</p>
+<span class="material-symbols-outlined text-[18px] text-slate-400 dark:text-slate-500 shrink-0 transform rotate-45">push_pin</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Section -->
+<div class="flex flex-col mt-4">
+<h4 class="px-4 pb-2 pt-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Recent</h4>
+<!-- List Item 2 (Unread) -->
+<div class="group relative flex items-center gap-4 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-pointer border-b border-slate-100 dark:border-slate-800/30">
+<div class="relative shrink-0">
+<div class="flex size-14 items-center justify-center rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm" data-alt="Gray background with hash icon for channel">
+<span class="text-xl font-bold">#</span>
+</div>
+<!-- Online indicator dot optional -->
+</div>
+<div class="flex flex-1 flex-col justify-center overflow-hidden">
+<div class="flex items-center justify-between mb-0.5">
+<p class="truncate text-base font-semibold text-slate-900 dark:text-white">Design-Team</p>
+<span class="text-xs font-bold text-primary whitespace-nowrap ml-2">10:05 AM</span>
+</div>
+<div class="flex items-center justify-between">
+<p class="truncate text-sm font-medium text-slate-900 dark:text-white line-clamp-1 pr-4">
+<span class="text-primary">Alice:</span> @Bob did you see the new mockups?
+                        </p>
+<div class="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5">
+<span class="text-[10px] font-bold text-white">3</span>
+</div>
+</div>
+</div>
+</div>
+<!-- List Item 3 (Read) -->
+<div class="group relative flex items-center gap-4 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-pointer border-b border-slate-100 dark:border-slate-800/30">
+<div class="relative shrink-0">
+<div class="size-14 rounded-xl bg-cover bg-center shadow-sm" data-alt="Portrait of Sarah Jenkins" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuADdzfVc3K5fOhwfMOL_sFYCeNmloEn2ssYCKlhe2LsNrm7D5OUq8rWFqp1PHYBP3H1UkTplz7lV5wVYUfolEK2UUkMJKTBFsTb6tn_OxSeh3C4cN0w1UBa8c_b0DcUCZYGyXzGxPpRzAiqcd3Pf1MAqEdyE9I5b9zcqdKE9DgG48eSzOkxx21ve5rQiLDXOCNdMqUqKkjis1boqdYlez2ysuSkcrgeUIUI_fNsF9a3NAndZX51U2Wvr9CTqIjucYoHZYziN1LDmaZw');"></div>
+</div>
+<div class="flex flex-1 flex-col justify-center overflow-hidden">
+<div class="flex items-center justify-between mb-0.5">
+<p class="truncate text-base font-semibold text-slate-900 dark:text-white">Sarah Jenkins</p>
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap ml-2">Yesterday</span>
+</div>
+<div class="flex items-center justify-between">
+<p class="truncate text-sm text-slate-600 dark:text-slate-400 line-clamp-1 pr-4">Thanks for the update. I'll check it out.</p>
+<!-- No badge -->
+</div>
+</div>
+</div>
+<!-- List Item 4 (Muted) -->
+<div class="group relative flex items-center gap-4 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-pointer border-b border-slate-100 dark:border-slate-800/30 opacity-70">
+<div class="relative shrink-0">
+<div class="flex size-14 items-center justify-center rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 shadow-sm" data-alt="Gray background with hash icon for random channel">
+<span class="text-xl font-bold">#</span>
+</div>
+</div>
+<div class="flex flex-1 flex-col justify-center overflow-hidden">
+<div class="flex items-center justify-between mb-0.5">
+<p class="truncate text-base font-semibold text-slate-900 dark:text-white">Random</p>
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap ml-2">Mon</span>
+</div>
+<div class="flex items-center justify-between">
+<p class="truncate text-sm text-slate-500 dark:text-slate-500 line-clamp-1 pr-4">Check out this link for the team lunch.</p>
+<span class="material-symbols-outlined text-[18px] text-slate-400 dark:text-slate-600">notifications_off</span>
+</div>
+</div>
+</div>
+<!-- List Item 5 (Image Preview) -->
+<div class="group relative flex items-center gap-4 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-pointer border-b border-slate-100 dark:border-slate-800/30">
+<div class="relative shrink-0">
+<div class="size-14 rounded-xl bg-cover bg-center shadow-sm" data-alt="Portrait of Michael Chen" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuACJRoCB3M84EWMd4v5hGqQBAPudz0Mle6N0S4zJSx7ng9KuxjkivE-vmGyw7a7D0g7CSzbXTm4FP4gsIOjBYWJhprNYMLypWtlydsD3rbpUO3kRGXtDx4MWzzOAeQLGW3LU_cPe5eOxG8j9jfj3rORsTG-_Faco8UDsyvxSl6Nmk3EuV7JKealFS-w2GbrfxMLy96gIfnAPNLIONq6As7TDDafUtFCE_k6hEKXtFhGnIbaQuqVhgfk_Tp5Kc771pmWot5OPHWwh1sL');"></div>
+</div>
+<div class="flex flex-1 flex-col justify-center overflow-hidden">
+<div class="flex items-center justify-between mb-0.5">
+<p class="truncate text-base font-semibold text-slate-900 dark:text-white">Michael Chen</p>
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap ml-2">Last Week</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1 overflow-hidden pr-4">
+<span class="material-symbols-outlined text-[16px] text-slate-500 dark:text-slate-400">image</span>
+<p class="truncate text-sm text-slate-600 dark:text-slate-400 line-clamp-1">Sent an image</p>
+</div>
+</div>
+</div>
+</div>
+<!-- List Item 6 (Loading State Simulation) -->
+<div class="group relative flex items-center gap-4 px-4 py-3 animate-pulse">
+<div class="relative shrink-0">
+<div class="size-14 rounded-xl bg-slate-200 dark:bg-slate-800"></div>
+</div>
+<div class="flex flex-1 flex-col justify-center overflow-hidden gap-2">
+<div class="flex items-center justify-between">
+<div class="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
+<div class="h-3 w-12 bg-slate-200 dark:bg-slate-800 rounded"></div>
+</div>
+<div class="flex items-center justify-between">
+<div class="h-3 w-48 bg-slate-200 dark:bg-slate-800 rounded"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom padding for content to not be hidden by nav if needed, though no fixed nav here -->
+<div class="h-8"></div>
+</main>
+<!-- Bottom Navigation Bar (Context) -->
+<nav class="sticky bottom-0 z-40 w-full bg-background-light dark:bg-background-dark border-t border-slate-200 dark:border-slate-800/60 pb-safe pt-2">
+<div class="flex items-center justify-around pb-4 pt-1">
+<button class="flex flex-col items-center justify-center gap-1 p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">folder</span>
+<span class="text-[10px] font-medium">Projects</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 p-2 text-primary transition-colors">
+<span class="material-symbols-outlined fill-1 text-2xl">chat</span>
+<span class="text-[10px] font-medium">Chat</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+<span class="material-symbols-outlined text-2xl">settings</span>
+<span class="text-[10px] font-medium">Settings</span>
+</button>
+</div>
+</nav>
+</body></html>

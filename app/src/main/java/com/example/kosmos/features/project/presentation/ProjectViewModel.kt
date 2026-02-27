@@ -195,56 +195,6 @@ class ProjectViewModel @Inject constructor(
     }
 
     /**
-     * Create a new project
-     * @param name Project name
-     * @param description Project description
-     */
-    fun createProject(name: String, description: String) {
-        viewModelScope.launch {
-            try {
-                val user = authRepository.getCurrentUser()
-                if (user == null) {
-                    _uiState.value = _uiState.value.copy(error = "Please sign in to create projects")
-                    return@launch
-                }
-
-                _uiState.value = _uiState.value.copy(isCreating = true)
-
-                val result = projectRepository.createProject(
-                    name = name,
-                    description = description,
-                    ownerId = user.id
-                )
-
-                if (result.isSuccess) {
-                    _uiState.value = _uiState.value.copy(
-                        isCreating = false,
-                        successMessage = "Project created successfully"
-                    )
-                } else {
-                    _uiState.value = _uiState.value.copy(
-                        isCreating = false,
-                        error = "Failed to create project: ${result.exceptionOrNull()?.message}"
-                    )
-                }
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                if (e is PermissionChecker.PermissionDeniedException) {
-                    feedbackManager.permissionDenied("create project", e.message ?: "Permission denied")
-                    _uiState.value = _uiState.value.copy(isCreating = false)
-                    return@launch
-                }
-                val msg = ErrorMapper.mapError(e, "create project")
-                feedbackManager.error(msg)
-                _uiState.value = _uiState.value.copy(
-                    isCreating = false,
-                    error = msg
-                )
-            }
-        }
-    }
-
-    /**
      * Load members for a specific project
      * @param projectId Project ID
      */

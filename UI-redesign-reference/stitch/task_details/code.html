@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Task Details - Kosmos</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1132d4",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101322",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1e2235",
+                        "surface-variant-light": "#e0e2ec",
+                        "surface-variant-dark": "#2b2f42",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        /* Custom Scrollbar for horizontal scrolling areas */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-gray-900 dark:text-white font-display flex flex-col min-h-screen pb-24 relative overflow-x-hidden">
+<!-- Top App Bar -->
+<div class="sticky top-0 z-30 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-colors duration-200">
+<div class="flex items-center p-4 justify-between h-16">
+<button class="text-gray-900 dark:text-white flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<div class="flex flex-col items-center justify-center flex-1 mx-2">
+<h2 class="text-gray-900 dark:text-white text-base font-bold leading-tight tracking-[-0.015em] text-center">Task Details</h2>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium truncate max-w-[200px]">Global Growth 2024</span>
+</div>
+<div class="flex items-center justify-end">
+<button class="flex size-10 cursor-pointer items-center justify-center rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-900 dark:text-white transition-colors">
+<span class="material-symbols-outlined text-[24px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Offline/Sync Banner (Conditional State) -->
+<div class="bg-amber-100 dark:bg-amber-900/30 px-4 py-1 flex items-center justify-center gap-2 border-b border-amber-200 dark:border-amber-800/50">
+<span class="material-symbols-outlined text-amber-700 dark:text-amber-500 text-[16px]">cloud_off</span>
+<span class="text-xs font-medium text-amber-800 dark:text-amber-400">Offline Mode • Changes pending sync</span>
+</div>
+</div>
+<!-- Main Content Area -->
+<main class="flex-1 w-full max-w-lg mx-auto w-full px-4 pt-4">
+<!-- Headline -->
+<div class="mb-4">
+<h1 class="text-gray-900 dark:text-white tracking-tight text-[28px] font-bold leading-tight pb-2">Q3 Marketing Campaign Launch</h1>
+<div class="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span>Due Oct 12, 2024</span>
+</div>
+</div>
+<!-- Status & Priority Chips -->
+<div class="flex gap-3 mb-6 flex-wrap">
+<div class="flex h-8 items-center justify-center gap-x-2 rounded-lg bg-primary/10 pl-2 pr-3 border border-primary/20">
+<span class="material-symbols-outlined text-primary text-[20px]">timelapse</span>
+<p class="text-primary text-sm font-bold leading-normal">In Progress</p>
+</div>
+<div class="flex h-8 items-center justify-center gap-x-2 rounded-lg bg-red-100 dark:bg-red-900/30 pl-2 pr-3 border border-red-200 dark:border-red-800">
+<span class="material-symbols-outlined text-red-600 dark:text-red-400 text-[20px]">priority_high</span>
+<p class="text-red-600 dark:text-red-400 text-sm font-bold leading-normal">High Priority</p>
+</div>
+</div>
+<!-- Action Row (Scrollable) -->
+<div class="flex gap-3 mb-6 overflow-x-auto hide-scrollbar pb-1 -mx-4 px-4">
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-surface-variant-light dark:bg-surface-variant-dark hover:bg-gray-300 dark:hover:bg-gray-700 active:scale-95 transition-all pl-3 pr-4 border border-transparent dark:border-gray-700/50">
+<span class="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[20px]">person_add</span>
+<p class="text-gray-800 dark:text-gray-200 text-sm font-medium">Assign</p>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-surface-variant-light dark:bg-surface-variant-dark hover:bg-gray-300 dark:hover:bg-gray-700 active:scale-95 transition-all pl-3 pr-4 border border-transparent dark:border-gray-700/50">
+<span class="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[20px]">event</span>
+<p class="text-gray-800 dark:text-gray-200 text-sm font-medium">Due Date</p>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-surface-variant-light dark:bg-surface-variant-dark hover:bg-gray-300 dark:hover:bg-gray-700 active:scale-95 transition-all pl-3 pr-4 border border-transparent dark:border-gray-700/50">
+<span class="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[20px]">label</span>
+<p class="text-gray-800 dark:text-gray-200 text-sm font-medium">Add Tag</p>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-surface-variant-light dark:bg-surface-variant-dark hover:bg-gray-300 dark:hover:bg-gray-700 active:scale-95 transition-all pl-3 pr-4 border border-transparent dark:border-gray-700/50">
+<span class="material-symbols-outlined text-gray-700 dark:text-gray-300 text-[20px]">attach_file</span>
+<p class="text-gray-800 dark:text-gray-200 text-sm font-medium">Attach</p>
+</button>
+</div>
+<!-- Assignee & Metadata Block -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
+<div class="flex items-center justify-between mb-4">
+<p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Assigned To</p>
+<button class="text-primary text-xs font-semibold">Change</button>
+</div>
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="Portrait of Sarah J, the assignee" class="w-10 h-10 rounded-full object-cover border-2 border-background-light dark:border-background-dark shadow-sm" data-alt="Portrait of a smiling woman with glasses" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyTeelZi7hO1ZhKhymYg_dRF--5pMdeU0iIMYmWiMnCMsqkwlxlzZDRQiDaOJj2B7z25CTVPtA5hIwBL2yh39rpt78hGYIbWGCSv1M7c80oBuXlV5jiw58qX6hgXDBzwo4kpBIv7DCdd07v1LalB1B2WJH5UMTz56ieRSepcF8SEZ9JcLQPR8piOQSHMEiLSMQ6YCl6BSdE-mSJJoIfZQJP9noFIt_MuAEzlgCKCH9cdHQ8B74XOIqxNeHQV_EuzdyBWntsVW_lZGp"/>
+<div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-background-light dark:border-background-dark rounded-full"></div>
+</div>
+<div>
+<p class="text-sm font-semibold text-gray-900 dark:text-white">Sarah Jenkins</p>
+<p class="text-xs text-gray-500 dark:text-gray-400">Product Manager</p>
+</div>
+</div>
+</div>
+<!-- Description Card -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-800 mb-6 group">
+<div class="flex items-center justify-between mb-3">
+<h3 class="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Description</h3>
+<button class="text-gray-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+<div class="prose prose-sm dark:prose-invert text-gray-700 dark:text-gray-300 leading-relaxed">
+<p>Finalize the ad copy for the Instagram campaign and approve the budget allocation. We need to ensure that the visual assets align with the new brand guidelines launched last week.</p>
+<ul class="list-disc pl-5 mt-2 space-y-1">
+<li>Review Q3 budget constraints</li>
+<li>Sync with design team on assets</li>
+<li>Get final sign-off from VP</li>
+</ul>
+</div>
+</div>
+<!-- Subtasks -->
+<div class="mb-8">
+<div class="flex items-center justify-between mb-3 px-1">
+<h3 class="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Subtasks (2/3)</h3>
+<button class="text-primary text-sm font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">add</span> Add
+                </button>
+</div>
+<div class="space-y-2">
+<!-- Completed Item -->
+<div class="flex items-center gap-3 p-3 bg-surface-light dark:bg-surface-dark rounded-lg border border-gray-100 dark:border-gray-800 opacity-60">
+<button class="text-primary">
+<span class="material-symbols-outlined fill-current">check_box</span>
+</button>
+<span class="text-sm text-gray-500 dark:text-gray-400 line-through">Draft Copy</span>
+</div>
+<!-- Completed Item -->
+<div class="flex items-center gap-3 p-3 bg-surface-light dark:bg-surface-dark rounded-lg border border-gray-100 dark:border-gray-800 opacity-60">
+<button class="text-primary">
+<span class="material-symbols-outlined fill-current">check_box</span>
+</button>
+<span class="text-sm text-gray-500 dark:text-gray-400 line-through">Create Visuals</span>
+</div>
+<!-- Pending Item -->
+<div class="flex items-center gap-3 p-3 bg-surface-light dark:bg-surface-dark rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
+<button class="text-gray-400 hover:text-primary">
+<span class="material-symbols-outlined">check_box_outline_blank</span>
+</button>
+<span class="text-sm text-gray-900 dark:text-white font-medium">Approve Budget</span>
+</div>
+</div>
+</div>
+<!-- Activity/Comments Section -->
+<div class="pb-4">
+<h3 class="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 px-1">Activity</h3>
+<div class="space-y-6">
+<!-- History Item -->
+<div class="flex gap-4 relative pl-4">
+<!-- Timeline line -->
+<div class="absolute left-[27px] top-8 bottom-[-24px] w-0.5 bg-gray-200 dark:bg-gray-800"></div>
+<div class="size-6 shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-blue-600 dark:text-blue-400 text-[14px]">history</span>
+</div>
+<div class="flex-1 pt-0.5">
+<p class="text-xs text-gray-500 dark:text-gray-400">
+<span class="font-semibold text-gray-900 dark:text-white">Sarah Jenkins</span> changed status to <span class="text-primary font-medium">In Progress</span>
+</p>
+<p class="text-[10px] text-gray-400 mt-1">Today, 9:41 AM</p>
+</div>
+</div>
+<!-- Comment Item -->
+<div class="flex gap-3 relative pl-4">
+<img alt="John Doe Avatar" class="size-8 rounded-full object-cover shrink-0 z-10 border border-gray-200 dark:border-gray-700" data-alt="Portrait of a man with short hair" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCjVS1isJZO9FPqCzWgCI4pQOiHe22U6_wkMkDaPEptKRJmr2P9dPaywg114BsQb8LF_kiWhj_pJwuHnoRwBAUuzU474zRyOcLjQ0U8F68tWHUiZwU0KDdCQqPTTgL7VlDDsfxxHBo4tUc53R04ZLgdgiHdD_Bzc7cjeOEYUb2xTw617Zvfe6lsc6x7xFlc-X048pBrUY2Q-TcHqCx08vcG2KftAkxrrOjti5OIMi0osyg-Ck5L-ZQnpYMMZmZShq6wSlNbe4tqkFy"/>
+<div class="flex-1 bg-surface-light dark:bg-surface-dark p-3 rounded-lg rounded-tl-none shadow-sm border border-gray-100 dark:border-gray-800">
+<div class="flex justify-between items-start mb-1">
+<span class="text-sm font-bold text-gray-900 dark:text-white">John Doe</span>
+<span class="text-[10px] text-gray-400">2m ago</span>
+</div>
+<p class="text-sm text-gray-700 dark:text-gray-300">Hey <span class="text-primary font-medium">@Sarah</span>, is the budget approved yet? We need to start the ad spend by Friday.</p>
+</div>
+</div>
+</div>
+<div class="mt-8 text-center">
+<button class="text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-primary transition-colors flex items-center justify-center gap-1 mx-auto">
+                    View full history <span class="material-symbols-outlined text-[12px]">chevron_right</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Sticky Bottom Input -->
+<div class="fixed bottom-0 left-0 w-full bg-surface-light dark:bg-surface-dark border-t border-gray-200 dark:border-gray-800 p-3 pb-safe z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
+<div class="max-w-lg mx-auto flex items-end gap-2">
+<button class="p-2 text-gray-400 hover:text-primary transition-colors shrink-0">
+<span class="material-symbols-outlined">add_circle</span>
+</button>
+<div class="flex-1 relative">
+<textarea class="w-full bg-gray-100 dark:bg-[#111422] text-gray-900 dark:text-white rounded-2xl px-4 py-3 text-sm border-0 focus:ring-2 focus:ring-primary/50 resize-none max-h-32" placeholder="Add a comment..." rows="1"></textarea>
+</div>
+<button class="p-2 bg-primary hover:bg-primary/90 text-white rounded-full shadow-lg transition-transform active:scale-95 shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">send</span>
+</button>
+</div>
+<!-- Safe area spacing for iOS home indicator handled by padding bottom on container generally, but nice to have extra spacing if needed -->
+<div class="h-4 w-full"></div>
+</div>
+</body></html>

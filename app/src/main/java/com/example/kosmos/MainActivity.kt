@@ -63,7 +63,6 @@ import com.example.kosmos.features.users.presentation.redesign.UserSearchScreenW
 import com.example.kosmos.features.users.presentation.redesign.UserProfileScreenWrapper
 import com.example.kosmos.features.users.presentation.redesign.InviteMembersScreenWrapper
 import com.example.kosmos.features.projects.presentation.redesign.MembersListScreenWrapper
-import com.example.kosmos.features.projects.components.CreateProjectDialog
 import com.example.kosmos.features.test.QuickDataCheckScreen
 import com.example.kosmos.features.test.ReactScreensTestLauncher
 import com.example.kosmos.shared.ui.designsystem.ColorTokens

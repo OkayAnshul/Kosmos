@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kosmos Dashboard - Dark &amp; Modern</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1132d4",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101322",
+                        "surface-dark": "#191e33",
+                        "border-dark": "#323b67",
+                        "text-secondary": "#929bc9"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem", 
+                        "lg": "0.5rem", 
+                        "xl": "0.75rem", 
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #323b67; 
+            border-radius: 4px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark text-gray-900 dark:text-white antialiased transition-colors duration-200">
+<div class="relative flex min-h-screen w-full flex-col overflow-hidden group/design-root">
+<div class="fixed inset-0 pointer-events-none opacity-20 dark:opacity-30" style="background-image: radial-gradient(#323b67 1px, transparent 1px); background-size: 32px 32px;"></div>
+<div class="w-full bg-surface-dark border-b border-border-dark py-1 px-4 flex justify-between items-center text-[10px] text-text-secondary z-20">
+<div class="flex items-center gap-1.5">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+</span>
+<span class="font-medium tracking-wide uppercase">Online • Synced</span>
+</div>
+<span class="opacity-70">Cached 2m ago</span>
+</div>
+<header class="flex items-center justify-between px-5 py-4 z-20 bg-background-dark/80 backdrop-blur-xl sticky top-0 border-b border-white/5">
+<div class="flex items-center gap-3.5">
+<div class="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-[#0a1e80] flex items-center justify-center shadow-lg shadow-primary/20 ring-1 ring-white/10">
+<span class="material-symbols-outlined text-white text-[22px]">token</span>
+</div>
+<div>
+<h1 class="text-lg font-bold leading-tight tracking-tight">Kosmos</h1>
+<p class="text-xs text-text-secondary font-medium">Workspace</p>
+</div>
+</div>
+<button class="relative group">
+<img alt="Profile" class="h-10 w-10 rounded-full border-2 border-surface-dark bg-surface-dark shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAylL45rwkqVmMl6NisfERmZVPk36jzNDK4eW3iEs4iyYIINyz29CluOp6KixGKzT37uDFqlsFxZB-issOveE7u36S_aFAhkoQzxmXUdHQYfgk6qu1Z1PRAEBazS71x1c2OJIUXj8maRzFgUxi_SS5s2HG7wgap4s7r99TDcIw0dM667kpTtf0b5tmuxpnDqnk0ntc2MBhHU1sPTS9PPnDlUM1S9aLoDbSjKLbaM-aMuhziT43UNxc-JYtFEyeDsxJhi8labqP5neh2"/>
+<div class="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background-dark"></div>
+</button>
+</header>
+<main class="flex-1 overflow-y-auto px-5 pt-6 pb-32 z-10 w-full max-w-md mx-auto">
+<div class="flex justify-between items-end mb-6">
+<div>
+<h2 class="text-2xl font-bold tracking-tight mb-1">My Projects</h2>
+<p class="text-text-secondary text-sm font-medium">3 active • 12 pending tasks</p>
+</div>
+<button class="h-10 w-10 flex items-center justify-center text-text-secondary hover:text-white hover:bg-white/10 transition-all rounded-full border border-border-dark bg-surface-dark">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</button>
+</div>
+<div class="flex flex-col gap-4">
+<article class="group relative bg-surface-dark rounded-2xl p-5 border border-border-dark hover:border-primary/50 transition-all duration-300 shadow-lg shadow-black/20 active:scale-[0.98]">
+<div class="flex justify-between items-start mb-3">
+<div class="flex gap-3.5 items-center">
+<div class="h-11 w-11 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 ring-1 ring-blue-500/20">
+<span class="material-symbols-outlined">rocket_launch</span>
+</div>
+<div>
+<h3 class="font-bold text-base text-white leading-tight">Nebula Redesign</h3>
+<p class="text-xs text-text-secondary mt-0.5">UI/UX Overhaul</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-wider border border-blue-500/20">
+                            In Progress
+                        </span>
+</div>
+<p class="text-sm text-gray-300/80 mb-5 leading-relaxed line-clamp-2">Complete aesthetic refresh of the main dashboard including dark mode implementation.</p>
+<div class="mb-5">
+<div class="flex justify-between text-xs mb-2">
+<span class="text-text-secondary font-medium">Progress</span>
+<span class="text-white font-bold">65%</span>
+</div>
+<div class="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[65%] shadow-[0_0_10px_rgba(17,50,212,0.5)]"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-white/5">
+<div class="flex -space-x-2.5">
+<img alt="User" class="h-7 w-7 rounded-full border-2 border-surface-dark ring-1 ring-white/10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKcZ6H9LYholiUHe3e2zrEfz2QFN0A4G20PUHB_E2fcDx1lcy5bueIou6R7leQUtxLumvZbL03K95wNS_nSwcGjwxYN7nLvVt03f5iPjQj6hArC-tUeRZqzrnGAPyooP_HLRo4g0TOu3HLICqgInRtoqkQ919Y9tvzywkMhfzrGlE1Qj8OlOck7xRoFojEVIRJ3LKg01xVEBcEJHbtFYn-ESvS15e8oS12iIOf-dP9tUukNtdSflBXLHXOt3QhRtMf9mgIqvs0i26s"/>
+<img alt="User" class="h-7 w-7 rounded-full border-2 border-surface-dark ring-1 ring-white/10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZB0TDo3nyMKuVnzOoLn3j4j69LsVKkdff1oGpcoDSsaBv4DhbJDaEBtCy3MURg5E0pJoFz7K7NUkuFJBO6Le-OzYMO7YyOCVQz-gTzkvF6Xxw4KDRuSa3_9FnCjm8Ztn5KcZsXE6V9v556Dzq9Ex9cWxGqx7-Iyhoi56Jx9iwZBhUijildYzXUKzVCLqS24G3Lb94cycB5dE4ZVOzLhIHce6Iuhw3Nvd0WJmeKfYIdy0hGABGRDOHkgiaJVMi6Lj6Y9x61X4hnTMQ"/>
+<div class="h-7 w-7 rounded-full border-2 border-surface-dark bg-border-dark flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-white/10">+2</div>
+</div>
+<div class="flex items-center gap-1.5 text-xs text-text-secondary font-medium">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>Updated 2h ago</span>
+</div>
+</div>
+</article>
+<article class="group relative bg-surface-dark rounded-2xl p-5 border border-border-dark hover:border-primary/50 transition-all duration-300 shadow-lg shadow-black/20 active:scale-[0.98]">
+<div class="flex justify-between items-start mb-3">
+<div class="flex gap-3.5 items-center">
+<div class="h-11 w-11 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 ring-1 ring-purple-500/20">
+<span class="material-symbols-outlined">code_blocks</span>
+</div>
+<div>
+<h3 class="font-bold text-base text-white leading-tight">API Migration</h3>
+<p class="text-xs text-text-secondary mt-0.5">Backend System</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold uppercase tracking-wider border border-purple-500/20">
+                            Review
+                        </span>
+</div>
+<p class="text-sm text-gray-300/80 mb-5 leading-relaxed line-clamp-2">Migrating legacy REST endpoints to GraphQL for improved performance and scalability.</p>
+<div class="mb-5">
+<div class="flex justify-between text-xs mb-2">
+<span class="text-text-secondary font-medium">Progress</span>
+<span class="text-white font-bold">90%</span>
+</div>
+<div class="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
+<div class="h-full bg-purple-500 rounded-full w-[90%] shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-white/5">
+<div class="flex -space-x-2.5">
+<img alt="User" class="h-7 w-7 rounded-full border-2 border-surface-dark ring-1 ring-white/10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxSyzIwX4Tk2-o8-FvRD0KUsWh3SV_XYJgeg8pxV6Gp_uxikVlYkPjmY3t994kZ2pDkH3Y7u9qjeGD7qI7vhHxNv4SgLps91dHV5YfXGp197WWMbCN8GWitHxqleqWELUcQZJgaIQZ4ns6Yvm6vY8343bIpYBn7jRdLIGopoR1i50i3gnGe9AesnEmA-ilPQsjGILXU3YBQOdjpgIQfbz665J6Cno3nf-V7GSKoCcfkGzanab87x60VGapiLFTv8tZNRIftF5XcwQW"/>
+<div class="h-7 w-7 rounded-full border-2 border-surface-dark bg-border-dark flex items-center justify-center text-[10px] font-bold text-white ring-1 ring-white/10">+1</div>
+</div>
+<div class="flex items-center gap-1.5 text-xs text-text-secondary font-medium">
+<span class="material-symbols-outlined text-[16px]">history</span>
+<span>4h ago</span>
+</div>
+</div>
+</article>
+<article class="group relative bg-surface-dark rounded-2xl p-5 border border-border-dark hover:border-primary/50 transition-all duration-300 shadow-lg shadow-black/20 opacity-90 active:scale-[0.98]">
+<div class="flex justify-between items-start mb-3">
+<div class="flex gap-3.5 items-center">
+<div class="h-11 w-11 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 ring-1 ring-orange-500/20">
+<span class="material-symbols-outlined">design_services</span>
+</div>
+<div>
+<h3 class="font-bold text-base text-white leading-tight">Marketing Q4</h3>
+<p class="text-xs text-text-secondary mt-0.5">Campaigns</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-400 text-[10px] font-bold uppercase tracking-wider border border-orange-500/20">
+                            Planning
+                        </span>
+</div>
+<p class="text-sm text-gray-300/80 mb-5 leading-relaxed line-clamp-2">Strategizing for the upcoming holiday season campaigns and ad spend allocation.</p>
+<div class="mb-5">
+<div class="flex justify-between text-xs mb-2">
+<span class="text-text-secondary font-medium">Progress</span>
+<span class="text-white font-bold">15%</span>
+</div>
+<div class="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
+<div class="h-full bg-orange-500 rounded-full w-[15%] shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-white/5">
+<div class="flex -space-x-2.5">
+<img alt="User" class="h-7 w-7 rounded-full border-2 border-surface-dark ring-1 ring-white/10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxwMY7ks-60U47pME_C3uqlTJaK1f42Q0FYdJI0KdnF-H6c4SACrt3joD50yj9lkmcWDHaKwOoXuSzpk7s8tF5-i_anv0yiTuklvyOjXeXe1cEMiJVlG8s94VO5KJ-wJQeeLORNrrupVOQ1GOpahPXLzbfRqMQel8UsBnznGvqmyMi8CyJM7z7_ukMtP-eZfsQVfnLbjVZM1FCFj7YkchrcFeN5Zv3KF2JGR8kqVNug7UG_1uvUiLJmRToJrTF2Yz-5pieOmJxPtqj"/>
+<img alt="User" class="h-7 w-7 rounded-full border-2 border-surface-dark ring-1 ring-white/10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVokhuEVcNS9k7mX7rvFeHXCi4eybTVy9DZsfk8cby3YG12r87lEzll04BU5OAUjhnNB0R4AERic64yDSPDB98WtEy9-0C4zgvpJhgp8hG9-kXIQ_Gv11GRdByLAibU-3InwsZ49kk1URoTYRDEYAD8GtTxpgI-HUdS3MvEUj3k2W4fWYYRJIhVSaxCe0Ev2LqrS4wD8IORs8OjiAS6eU7K98yGnIpJUYLPUBNVGCWAFV3N1BUjgVYiZnkCIOWPqwdAPQhPJGMJnhN"/>
+<img alt="User" class="h-7 w-7 rounded-full border-2 border-surface-dark ring-1 ring-white/10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuArMdpgixtjbN5IeVqE-uwaiS066DDtaOLayFB1kNYgxfNoNlYLtlkABpUUtqlPBqFDW9MQw3UugvFVPTxkpMc3R-ngkANZcQtgja_3ufHPLdOB6Wo53gsvZWvW2Ef_D1Rh9Vty3wowRvIUu3a3PLL5khpRIx7UsJjPwF__kt0_vFSxUoc4xsd2nGwmBRSC_b2YmMzLXCJu0M3pzYaYPZ_nQr8QhsmybkraboIap4s2KThJBZIunrv-vtI9HeUofmB4rVTLhRA_W_T9"/>
+</div>
+<div class="flex items-center gap-1.5 text-xs text-text-secondary font-medium">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+<span>Due Oct 24</span>
+</div>
+</div>
+</article>
+</div>
+</main>
+<button class="fixed bottom-24 right-5 h-14 w-14 rounded-2xl bg-primary text-white shadow-xl shadow-primary/30 flex items-center justify-center z-30 hover:scale-110 active:scale-95 transition-all duration-300 group ring-4 ring-background-dark">
+<span class="material-symbols-outlined text-[28px] group-hover:rotate-90 transition-transform duration-300">add</span>
+<span class="absolute right-16 bg-surface-dark text-white text-xs px-2 py-1 rounded border border-border-dark opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">New Project</span>
+</button>
+<nav class="fixed bottom-0 w-full bg-surface-dark/95 backdrop-blur-lg border-t border-border-dark pb-8 pt-3 z-40 px-6 safe-area-bottom">
+<ul class="flex justify-between items-center max-w-md mx-auto">
+<li class="w-full">
+<a class="flex flex-col items-center gap-1.5 text-primary group w-full" href="#">
+<div class="relative">
+<span class="material-symbols-outlined text-[26px] font-variation-settings-fill-1">dashboard</span>
+<span class="absolute -top-1 -right-1 h-2 w-2 bg-primary rounded-full"></span>
+</div>
+<span class="text-[10px] font-medium tracking-wide">Home</span>
+</a>
+</li>
+<li class="w-full">
+<a class="flex flex-col items-center gap-1.5 text-text-secondary hover:text-white transition-colors group w-full" href="#">
+<span class="material-symbols-outlined text-[26px] group-hover:scale-110 transition-transform">folder_open</span>
+<span class="text-[10px] font-medium tracking-wide">Projects</span>
+</a>
+</li>
+<li class="w-full">
+<a class="flex flex-col items-center gap-1.5 text-text-secondary hover:text-white transition-colors group w-full" href="#">
+<div class="relative">
+<span class="material-symbols-outlined text-[26px] group-hover:scale-110 transition-transform">chat_bubble_outline</span>
+<span class="absolute top-0 right-0 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-surface-dark"></span>
+</div>
+<span class="text-[10px] font-medium tracking-wide">Chat</span>
+</a>
+</li>
+<li class="w-full">
+<a class="flex flex-col items-center gap-1.5 text-text-secondary hover:text-white transition-colors group w-full" href="#">
+<span class="material-symbols-outlined text-[26px] group-hover:scale-110 transition-transform">account_circle</span>
+<span class="text-[10px] font-medium tracking-wide">Profile</span>
+</a>
+</li>
+</ul>
+</nav>
+</div>
+
+</body></html>

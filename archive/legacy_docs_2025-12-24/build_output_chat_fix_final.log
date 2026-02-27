@@ -1,0 +1,132 @@
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest FROM-CACHE
+> Task :app:processDebugManifest FROM-CACHE
+> Task :app:processDebugManifestForPackage FROM-CACHE
+> Task :app:processDebugResources FROM-CACHE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:kspDebugKotlin
+
+> Task :app:compileDebugKotlin
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/MainActivity.kt:69:36 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/MainActivity.kt:299:57 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/MainActivity.kt:438:48 'val Icons.Filled.ExitToApp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ExitToApp.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/Module.kt:59:10 'fun fallbackToDestructiveMigration(): RoomDatabase.Builder<KosmosDatabase>' is deprecated. Replace by overloaded version with parameter to indicate if all tables should be dropped or not.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/chat/presentation/ChatScreens.kt:57:36 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/chat/presentation/ChatScreens.kt:79:40 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/chat/presentation/ChatScreens.kt:142:64 'val Icons.Filled.ExitToApp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ExitToApp.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/chat/presentation/ChatScreens.kt:209:32 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/chat/presentation/ChatScreens.kt:233:40 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/chat/presentation/ChatScreens.kt:457:31 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/chat/presentation/ChatScreens.kt:852:40 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/chat/presentation/ChatScreens.kt:883:31 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/chat/presentation/ChatViewModel.kt:36:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/chat/presentation/redesign/EnhancedChatListScreenWrapper.kt:30:36 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/chat/presentation/redesign/EnhancedChatScreenWrapper.kt:20:32 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/profile/presentation/EditProfileScreen.kt:37:32 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/profile/presentation/EditProfileScreen.kt:82:44 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/profile/presentation/ProfileScreen.kt:29:36 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/profile/presentation/ProfileScreen.kt:40:40 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/project/presentation/ProjectDetailScreen.kt:23:35 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/project/presentation/ProjectDetailScreen.kt:43:44 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/project/presentation/ProjectDetailScreen.kt:58:40 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/project/presentation/ProjectDetailScreen.kt:254:83 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/project/presentation/ProjectListScreen.kt:25:35 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/projects/presentation/redesign/ProjectDetailsScreen.kt:154:13 'fun ScrollableTabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., edgePadding: Dp = ..., indicator: ComposableFunction1<List<TabPosition>, Unit> = ..., divider: ComposableFunction0<Unit> = ..., tabs: ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryScrollableTabRow and SecondaryScrollableTabRow tab variants.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/projects/presentation/redesign/ProjectDetailsScreenWrapper.kt:33:35 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/projects/presentation/redesign/ProjectDetailsScreenWrapper.kt:34:82 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/projects/presentation/redesign/ProjectDetailsScreenWrapper.kt:35:83 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/projects/presentation/redesign/ProjectListScreenWrapper.kt:27:35 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskScreens.kt:29:36 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskScreens.kt:47:40 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskScreens.kt:58:9 'fun TabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., indicator: ComposableFunction1<List<TabPosition>, Unit> = ..., divider: ComposableFunction0<Unit> = ..., tabs: ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryTabRow and SecondaryTabRow.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskScreens.kt:545:17 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskScreens.kt:758:48 'val Icons.Filled.Comment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Comment.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskScreens.kt:822:64 'val Icons.Filled.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Send.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/TaskScreens.kt:856:17 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/redesign/MyTasksScreenWrapper.kt:33:32 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/redesign/MyTasksScreenWrapper.kt:34:91 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/redesign/QuickTaskCreationSheetWrapper.kt:20:32 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/tasks/presentation/redesign/QuickTaskCreationSheetWrapper.kt:21:91 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/users/presentation/InviteMembersScreen.kt:31:41 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/users/presentation/InviteMembersScreen.kt:68:44 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/users/presentation/InviteMembersViewModel.kt:44:14 This declaration is in a preview state and can be changed in a backwards-incompatible manner with a best-effort migration. Its usage should be marked with '@kotlinx.coroutines.FlowPreview' or '@OptIn(kotlinx.coroutines.FlowPreview::class)' if you accept the drawback of relying on preview API
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/users/presentation/UserProfileScreen.kt:36:39 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/users/presentation/UserProfileScreen.kt:57:44 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/users/presentation/UserProfileScreen.kt:203:35 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/users/presentation/UserSearchScreen.kt:31:38 'fun <reified VM : ViewModel> hiltViewModel(viewModelStoreOwner: ViewModelStoreOwner = ..., key: String? = ...): VM' is deprecated. Moved to package: androidx.hilt.lifecycle.viewmodel.compose.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/users/presentation/UserSearchScreen.kt:42:44 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/features/users/presentation/components/AddToProjectDialog.kt:36:5 'fun AlertDialog(onDismissRequest: () -> Unit, modifier: Modifier = ..., properties: DialogProperties = ..., content: ComposableFunction0<Unit>): Unit' is deprecated. Use BasicAlertDialog instead.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/components/Dialogs.kt:570:5 'fun AlertDialog(onDismissRequest: () -> Unit, modifier: Modifier = ..., properties: DialogProperties = ..., content: ComposableFunction0<Unit>): Unit' is deprecated. Use BasicAlertDialog instead.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:28:34 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:29:44 'val Icons.Outlined.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Chat.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:64:33 'val Icons.Filled.Sort: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Sort.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:81:43 'val Icons.Outlined.Send: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Send.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:82:36 'val Icons.Filled.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Message.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:83:46 'val Icons.Outlined.Message: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Message.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:84:33 'val Icons.Filled.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Chat.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:85:43 'val Icons.Outlined.Chat: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Chat.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:117:39 'val Icons.Filled.Assignment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Assignment.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:118:49 'val Icons.Outlined.Assignment: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Assignment.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:120:33 'val Icons.Filled.List: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.List.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:194:33 'val Icons.Filled.Help: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Help.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:195:43 'val Icons.Outlined.Help: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Help.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:215:34 'val Icons.Filled.Label: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.Label.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:216:44 'val Icons.Outlined.Label: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.Label.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:224:33 'val Icons.Filled.InsertDriveFile: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.InsertDriveFile.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:225:43 'val Icons.Outlined.InsertDriveFile: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Outlined.InsertDriveFile.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:297:37 'val Icons.Filled.VolumeUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.VolumeUp.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:298:39 'val Icons.Filled.VolumeDown: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.VolumeDown.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:299:38 'val Icons.Filled.VolumeOff: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.VolumeOff.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:322:33 'val Icons.Filled.KeyboardArrowLeft: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowLeft.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/designsystem/IconSet.kt:323:34 'val Icons.Filled.KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/layouts/ScreenScaffold.kt:485:17 'fun TabRow(selectedTabIndex: Int, modifier: Modifier = ..., containerColor: Color = ..., contentColor: Color = ..., indicator: ComposableFunction1<List<TabPosition>, Unit> = ..., divider: ComposableFunction0<Unit> = ..., tabs: ComposableFunction0<Unit>): Unit' is deprecated. Replaced with PrimaryTabRow and SecondaryTabRow.
+w: file:///home/anshul/WORK/DEVELOPEMENT/ANDROID-DEV/Projects/Kosmos/app/src/main/java/com/example/kosmos/shared/ui/theme/Theme.kt:173:20 'var statusBarColor: Int' is deprecated. Deprecated in Java.
+
+> Task :app:compileDebugJavaWithJavac
+> Task :app:hiltAggregateDepsDebug UP-TO-DATE
+> Task :app:hiltJavaCompileDebug
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:mergeDebugJavaResource UP-TO-DATE
+> Task :app:transformDebugClassesWithAsm
+> Task :app:dexBuilderDebug
+> Task :app:mergeProjectDexDebug
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+
+BUILD SUCCESSFUL in 25s
+42 actionable tasks: 9 executed, 4 from cache, 29 up-to-date

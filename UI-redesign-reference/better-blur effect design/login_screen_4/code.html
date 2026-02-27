@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kosmos Dashboard - Vibrant</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2d55ff","primary-dark": "#1132d4",
+                        "background-dark": "#0f121e",
+                        "surface-dark": "#1c2136","surface-highlight": "#252b45",
+                        "border-dark": "#323b67",
+                        "text-secondary": "#929bc9",
+                        "accent-mint": "#00ffd5","accent-teal": "#00dac6",
+                        "accent-purple": "#cf6aff",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem", 
+                        "lg": "0.5rem", 
+                        "xl": "0.75rem", 
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {-webkit-tap-highlight-color: transparent;
+        }.no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-dark text-white antialiased min-h-screen relative overflow-x-hidden selection:bg-accent-mint selection:text-black">
+<div class="fixed inset-0 pointer-events-none z-0">
+<div class="absolute -top-20 -right-20 w-80 h-80 bg-primary/20 rounded-full blur-[80px] animate-pulse"></div>
+<div class="absolute top-[40%] -left-20 w-64 h-64 bg-accent-mint/10 rounded-full blur-[60px]"></div>
+<div class="absolute bottom-20 -right-10 w-72 h-72 bg-accent-purple/10 rounded-full blur-[70px]"></div>
+<div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 24px 24px;"></div>
+</div>
+<div class="relative z-10 flex flex-col min-h-screen pb-24">
+<header class="sticky top-0 z-50 bg-background-dark/80 backdrop-blur-xl border-b border-white/5 px-5 py-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-white text-[24px]">token</span>
+</div>
+<div>
+<h1 class="text-lg font-bold leading-tight tracking-tight">Kosmos</h1>
+<p class="text-[10px] font-medium text-accent-mint tracking-wider uppercase">Workspace</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-text-secondary hover:text-white transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background-dark"></span>
+</button>
+<div class="w-9 h-9 rounded-full bg-surface-highlight border border-white/10 overflow-hidden">
+<img alt="Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEc3GQyDcJR1zxUDdyGjrhLFbel7TAozvo-Lqkz0mPEwy22O95KXBRZxHS5_2h_Gf1wLUFnE3-7Jjer5hejkebwz49i0Huz3HMAT9k811g_9laOcQD3UUtBxbsmmXFHB7PFpAx8jTLGPXA1sS_dDY37EUGxdoRZmfmLiRtj1yoBxWmYftzqfDnczf9AwuigDY5PyFGjcZr2Vt3WtlNF3lL-S4W8HkCEZjTCjFWKbChmWKDw6qzGBJuwgJEzaMdYAGeilajzdi-O5hb"/>
+</div>
+</div>
+</header>
+<main class="flex-1 px-4 pt-6">
+<div class="mb-8">
+<h2 class="text-3xl font-light text-white mb-1">Hello, <span class="font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-accent-mint">Alex</span></h2>
+<p class="text-text-secondary text-sm mb-6">You have 4 active projects this week.</p>
+<div class="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4 snap-x">
+<div class="snap-start shrink-0 w-36 p-4 rounded-2xl bg-surface-dark border border-white/5 flex flex-col gap-2 relative overflow-hidden group">
+<div class="absolute right-0 top-0 w-16 h-16 bg-accent-mint/10 rounded-full blur-xl group-hover:bg-accent-mint/20 transition-all"></div>
+<span class="material-symbols-outlined text-accent-mint">pending_actions</span>
+<div class="mt-auto">
+<span class="text-2xl font-bold">12</span>
+<p class="text-xs text-text-secondary">Pending Tasks</p>
+</div>
+</div>
+<div class="snap-start shrink-0 w-36 p-4 rounded-2xl bg-surface-dark border border-white/5 flex flex-col gap-2 relative overflow-hidden group">
+<div class="absolute right-0 top-0 w-16 h-16 bg-accent-purple/10 rounded-full blur-xl group-hover:bg-accent-purple/20 transition-all"></div>
+<span class="material-symbols-outlined text-accent-purple">check_circle</span>
+<div class="mt-auto">
+<span class="text-2xl font-bold">85%</span>
+<p class="text-xs text-text-secondary">Completion</p>
+</div>
+</div>
+<div class="snap-start shrink-0 w-36 p-4 rounded-2xl bg-surface-dark border border-white/5 flex flex-col gap-2 relative overflow-hidden group">
+<div class="absolute right-0 top-0 w-16 h-16 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-all"></div>
+<span class="material-symbols-outlined text-primary">group</span>
+<div class="mt-auto">
+<span class="text-2xl font-bold">8</span>
+<p class="text-xs text-text-secondary">Team Members</p>
+</div>
+</div>
+</div>
+</div>
+<div class="flex gap-3 overflow-x-auto no-scrollbar pb-6">
+<button class="px-5 py-2 rounded-full bg-accent-mint text-background-dark font-bold text-sm shadow-lg shadow-accent-mint/20 whitespace-nowrap">
+                    All Projects
+                </button>
+<button class="px-5 py-2 rounded-full bg-surface-dark border border-white/10 text-text-secondary text-sm font-medium whitespace-nowrap hover:bg-surface-highlight transition-colors">
+                    In Progress
+                </button>
+<button class="px-5 py-2 rounded-full bg-surface-dark border border-white/10 text-text-secondary text-sm font-medium whitespace-nowrap hover:bg-surface-highlight transition-colors">
+                    Completed
+                </button>
+<button class="px-5 py-2 rounded-full bg-surface-dark border border-white/10 text-text-secondary text-sm font-medium whitespace-nowrap hover:bg-surface-highlight transition-colors">
+                    On Hold
+                </button>
+</div>
+<div class="columns-1 sm:columns-2 gap-4 space-y-4">
+<div class="break-inside-avoid relative p-5 rounded-3xl bg-surface-dark border border-white/5 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden group">
+<div class="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-accent-mint to-transparent opacity-70"></div>
+<div class="flex justify-between items-start mb-4">
+<div class="px-2.5 py-1 rounded-md bg-accent-mint/10 text-accent-mint text-xs font-bold uppercase tracking-wider">
+                            In Progress
+                        </div>
+<button class="text-text-secondary hover:text-white">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</div>
+<h3 class="text-xl font-bold text-white mb-2 group-hover:text-accent-mint transition-colors">Website Redesign</h3>
+<p class="text-sm text-text-secondary mb-5 line-clamp-3">Overhauling the main marketing site with new branding guidelines and 3D assets.</p>
+<div class="mb-5">
+<div class="flex justify-between text-xs mb-2">
+<span class="text-white font-medium">Progress</span>
+<span class="text-accent-mint font-bold">75%</span>
+</div>
+<div class="h-2 w-full bg-background-dark rounded-full overflow-hidden">
+<div class="h-full bg-accent-mint rounded-full w-3/4 shadow-[0_0_10px_rgba(0,255,213,0.5)]"></div>
+</div>
+</div>
+<div class="flex items-center justify-between border-t border-white/5 pt-4 mt-auto">
+<div class="flex -space-x-2">
+<img alt="User" class="w-8 h-8 rounded-full border-2 border-surface-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDItAMAOHuR6-LJJcc9wJY5qSaBvstDkG4jwD9CC3EasBLJbIPFjn4Q7ufM8qxd6g5Y7QmhyadyB0sPFdjMpWphsRZVYGOm_6AuztlyRHdkRDDuH3fb8TqbbfhkeSmdwgPB-h1MJoACa-5QHOaKiD9j92FpyyKjoUDrI49oGUFO7pdV48ciHPnaGyORQNyP-x6pcBiajsfT_dbPcbM-6QznlaWmHwwf-KQvUXq_SC67vzFYAoxUYcjz90OF3B5_haskVqEy3aFqEbOp"/>
+<img alt="User" class="w-8 h-8 rounded-full border-2 border-surface-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJTqSFQjSgRj4RsHsLDileO0vhWF7CdL8olAhxz5PvunNwyggdTlQvysVq7dUV7-hBMTyfu-vbdOD34hwTzUaH5ujlquwTSKT4_K81w_9m-linjOzd2nqZ54n39FC-V5VfZqJ_uSf8xlCbh7qyXF0FLjmubg71WVPXDzuuaCGpC72brTP5d2sn5ySuov3udklmWgdmkA5Hy2T14ncvb4IAkLBnU-giyVco4EpfbWysMlbuTI5ptNjMnmtmpIHg8PSuv4SFmC5-TMgZ"/>
+<div class="w-8 h-8 rounded-full border-2 border-surface-dark bg-surface-highlight flex items-center justify-center text-[10px] text-white font-bold">+2</div>
+</div>
+<div class="flex items-center gap-1 text-xs text-text-secondary">
+<span class="material-symbols-outlined text-[14px]">history</span>
+<span>2h ago</span>
+</div>
+</div>
+</div>
+<div class="break-inside-avoid relative p-5 rounded-3xl bg-surface-dark border border-white/5 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+<div class="absolute top-4 right-4 flex items-center justify-center w-6 h-6 rounded-full bg-white/5 text-text-secondary" title="Cached data">
+<span class="material-symbols-outlined text-[14px]">cloud_sync</span>
+</div>
+<div class="mb-3 mt-1">
+<div class="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400 mb-3">
+<span class="material-symbols-outlined">campaign</span>
+</div>
+<h3 class="text-lg font-bold text-white group-hover:text-orange-400 transition-colors">Q4 Marketing</h3>
+</div>
+<p class="text-sm text-text-secondary mb-4">Planning social media strategy.</p>
+<div class="flex items-center gap-3 text-xs font-medium text-text-secondary bg-background-dark/50 p-2 rounded-lg">
+<span class="material-symbols-outlined text-[16px] text-orange-400">warning</span>
+<span class="text-white">Due Tomorrow</span>
+</div>
+</div>
+<div class="break-inside-avoid relative p-5 rounded-3xl bg-gradient-to-br from-surface-dark to-[#201d36] border border-white/5 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+<div class="flex justify-between items-start mb-3">
+<div class="px-2.5 py-1 rounded-md bg-accent-purple/10 text-accent-purple text-xs font-bold uppercase tracking-wider border border-accent-purple/20">
+                            Research
+                        </div>
+<span class="material-symbols-outlined text-text-secondary text-[20px]">more_horiz</span>
+</div>
+<h3 class="text-xl font-bold text-white mb-2">User Interviews</h3>
+<p class="text-sm text-text-secondary mb-4">Conducting sessions with beta testers.</p>
+<div class="flex items-center gap-4 mb-4">
+<div class="flex flex-col">
+<span class="text-xs text-text-secondary">Tasks</span>
+<span class="text-sm font-bold text-white">12/40</span>
+</div>
+<div class="w-px h-8 bg-white/10"></div>
+<div class="flex flex-col">
+<span class="text-xs text-text-secondary">Time</span>
+<span class="text-sm font-bold text-white">14h</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2">
+<div class="flex -space-x-2">
+<img alt="User" class="w-7 h-7 rounded-full border-2 border-surface-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWR7O1bt6fUBoJ32SIXa0m31Y--BBnkhXawpFKgTMllvRgtR96QXFn229UT-Wa9MXZACn68x1bfgou2af2Y8q_M-DjDOpA6Ny-MbVdjsnFutH4Bn9N08dPDq7sZ_e6EeUUe_hy3Dktggy3bdIJtCn3M7WDeDfDETDW3wPRtWHp7k2YB81e9JV4ID5MITrW-LFnNUJJ-k30JNdL1W32bmfpBtKObvvLhN0oc5kA2AMvHfh2dtMt3Otpu6mkFkc50Sn6aUGXzQn72YSl"/>
+<img alt="User" class="w-7 h-7 rounded-full border-2 border-surface-dark" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAP6pTArKz-wgmUy5wjdQWbdHbHw2oOtzUXu2imL3IAMFJJvN_DZokNDrDcy3RXjxlOfyb_HRTTGp_ws-CwHiPJKESqQFSeUvuVfnQq5npI48_Nlp2DReKLXoA7UVefEtu7CDjUOKs-o8qnPEtob1Lt2KnClbzEtGZxMBd9zZk_B1oUOKMU8_G5w178hPpo8tIVafU91tEgsLlpOeArJPtGxN2w9-ZjclDnReVBPdXHTGQwvWCC0ZwdHbyB5oaKBsblD6_RgdS9ns6V"/>
+</div>
+<div class="w-2 h-2 rounded-full bg-accent-purple animate-pulse"></div>
+</div>
+</div>
+<div class="break-inside-avoid relative p-5 rounded-3xl bg-surface-dark border border-white/5 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+<h3 class="text-lg font-bold text-white mb-1">Design System</h3>
+<p class="text-xs text-text-secondary mb-4">Internal Tooling</p>
+<div class="w-full h-1.5 bg-background-dark rounded-full overflow-hidden mb-3">
+<div class="h-full bg-blue-500 w-[45%]"></div>
+</div>
+<div class="flex justify-between items-center text-xs text-text-secondary">
+<span>Updated yesterday</span>
+<div class="flex items-center gap-1 text-green-400">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>On Track</span>
+</div>
+</div>
+</div>
+</div>
+<div class="h-10"></div>
+</main>
+<button class="fixed right-5 bottom-24 z-40 w-14 h-14 rounded-2xl bg-gradient-to-tr from-accent-mint to-primary text-background-dark shadow-lg shadow-accent-mint/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200 group">
+<span class="material-symbols-outlined text-[28px] group-hover:rotate-90 transition-transform duration-300">add</span>
+</button>
+<nav class="fixed bottom-0 w-full bg-[#131728]/95 backdrop-blur-xl border-t border-white/5 z-50 pb-safe pt-2 px-6 pb-5">
+<div class="flex justify-between items-center">
+<button class="flex flex-col items-center gap-1 w-14 group">
+<div class="relative p-1">
+<span class="material-symbols-outlined text-accent-mint text-[26px] fill-current">grid_view</span>
+<span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent-mint rounded-full"></span>
+</div>
+<span class="text-[10px] font-medium text-accent-mint">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 w-14 group text-text-secondary hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[26px]">folder_open</span>
+<span class="text-[10px] font-medium">Projects</span>
+</button>
+<div class="w-4"></div>
+<button class="flex flex-col items-center gap-1 w-14 group text-text-secondary hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[26px]">chat_bubble_outline</span>
+<span class="text-[10px] font-medium">Chat</span>
+</button>
+<button class="flex flex-col items-center gap-1 w-14 group text-text-secondary hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[26px]">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</button>
+</div>
+</nav>
+</div>
+
+</body></html>

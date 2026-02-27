@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kosmos Project Dashboard</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1132d4",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101322",
+                        "surface-dark": "#1c2136", // A slightly lighter dark for cards
+                        "surface-light": "#ffffff",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar hide for cleaner iOS look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white antialiased transition-colors duration-200">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Offline/Sync Status Indicator -->
+<div class="bg-amber-500/10 dark:bg-amber-500/10 border-b border-amber-500/20 py-2 px-4 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-amber-600 dark:text-amber-500 text-[18px]">wifi_off</span>
+<p class="text-amber-700 dark:text-amber-500 text-xs font-medium">Offline mode. Changes will sync when online.</p>
+</div>
+<!-- Top App Bar -->
+<header class="sticky top-0 z-20 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md px-5 py-4 border-b border-slate-200 dark:border-white/5">
+<div class="flex items-center justify-between">
+<h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">My Projects</h1>
+<button class="relative group outline-none rounded-full focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background-dark">
+<div class="h-10 w-10 overflow-hidden rounded-full border-2 border-white/10 shadow-sm">
+<img alt="Profile Avatar" class="h-full w-full object-cover" data-alt="User profile picture showing a smiling man" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhQYIuWEhK3XZkkiXXrY85m4crgOqNfa1UdzXhOvzz3fVRws9vXz51pFP_dhkkjn3VTfauzr54bvbDar1XXQkeEcrJHoo9xMm5IU7FSVXzjUl4SphjTfxbhzt6oJUvhHRCzUOgFWs3HvDTUnNbfQ5VBujsEbzBRhhtVc-r3DQMduleVZhyGce-cwnbj6E_AlcUdB4Q77qo776TO3s4Rh4SapR6ZwgTK9ZjM-NKKkhuCVoMkJ3hfEc_K1d_aDDgbvIwzwnooY0yE47q"/>
+</div>
+<!-- Notification Dot -->
+<span class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background-light dark:ring-background-dark"></span>
+</button>
+</div>
+</header>
+<!-- Main Content: Project List -->
+<main class="flex-1 flex flex-col gap-4 p-5 pb-24">
+<!-- Card 1: Active -->
+<article class="group relative flex flex-col gap-4 rounded-2xl bg-white dark:bg-surface-dark p-5 shadow-sm ring-1 ring-slate-200 dark:ring-white/5 transition-all hover:shadow-md active:scale-[0.98]">
+<!-- Header -->
+<div class="flex items-start justify-between gap-4">
+<div class="flex flex-col gap-1">
+<h2 class="text-lg font-bold leading-tight text-slate-900 dark:text-white">Website Redesign</h2>
+<p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">Revamping the corporate portal with the new branding guidelines and updated copy.</p>
+</div>
+<span class="inline-flex flex-shrink-0 items-center rounded-full bg-emerald-100 dark:bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-800 dark:text-emerald-400 ring-1 ring-inset ring-emerald-600/20 dark:ring-emerald-500/20">
+                        Active
+                    </span>
+</div>
+<!-- Progress -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between text-xs font-medium">
+<span class="text-slate-500 dark:text-slate-400">Progress</span>
+<span class="text-primary dark:text-blue-400">75%</span>
+</div>
+<div class="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-700/50">
+<div class="h-2 rounded-full bg-primary" style="width: 75%"></div>
+</div>
+</div>
+<!-- Stats & Meta -->
+<div class="flex items-center justify-between border-t border-slate-100 dark:border-white/5 pt-4 mt-1">
+<!-- Stats -->
+<div class="flex gap-4">
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[18px]">group</span>
+<span class="text-xs font-medium">5</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[18px]">chat_bubble</span>
+<span class="text-xs font-medium">3</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span class="text-xs font-medium">12</span>
+</div>
+</div>
+<!-- Avatars -->
+<div class="flex -space-x-2 overflow-hidden">
+<img alt="" class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-surface-dark object-cover" data-alt="Team member portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfmw6aOuVlBypAfpbLewzmbQh7IcFVUcXnE5YfvJJ_Y_mOwu8ZwiIHXP8BI1yjNQJxiVdcCAs35d5qBlGnpbTF9dYh23BJUAhElzhLPAlbiuL8gViaDEmkoQ4jOeJ85Mr4lA8CrpJxGFEAOZdEYSKwzqTfFhbvMKJC0iEaBZAHKI8xvMTFTosH4RWGN2lF2jkTTsvmTAFOx8uxql78nM0k-IGmGexkQ8ZlUHnBB7sWrjSdGtCCQG9eFprMaAiOeL_3p5mMxK_jAsQK"/>
+<img alt="" class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-surface-dark object-cover" data-alt="Team member portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB01sw0ZOxR4CvZX8zbmyN4My-ihgiXbhLNtbSkUFOrA2siRKgSkALdl1YGEJJwt2mpfLx0aGHbIRReYHnc9yQRAHjLQ2VpgHKeF12Ka4L2LoI306CyedQF-Kr59DDzIbp4w7apoVxOnoj2AyOiaSd20RkwyRlR1xvP8t6aQ519oVa2-OARGo3XGIfK0HsazZJwNc0jRerQG_9HbxB5BmwbP9ow9r6CWvYh4vRVt0kSClF2JZm1SYR-5ysyROpdKbSOr_3czOzNt_Sz"/>
+<img alt="" class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-surface-dark object-cover" data-alt="Team member portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJaIQt_cyhZTqRu31G2dNv5lWPijc-JgxNRnnXSglKTXZg5Z9k5sr0DSRHzaP5yWxZihoSTV8OK2UZGET6B9zEVjDh3gBJeRJVjFPHUxHQumN31wTSLJLAy0YnTDR-oYTb5PpVhqrWf0KV64zsHeQDocQTU-OIvjcAnGZ-D1dlY9r37q0EIs8isCbDdK1dIKBABWONNMX4sn1XVnVwhNuSptLoMNQFXCkVPDTiT47yYFMkK0JXG1Mn_Cns-GkCfpRXUyFRVFdKL22c"/>
+</div>
+</div>
+<div class="flex justify-end">
+<span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Updated 2h ago</span>
+</div>
+</article>
+<!-- Card 2: Completed -->
+<article class="group relative flex flex-col gap-4 rounded-2xl bg-white dark:bg-surface-dark p-5 shadow-sm ring-1 ring-slate-200 dark:ring-white/5 transition-all hover:shadow-md active:scale-[0.98]">
+<!-- Header -->
+<div class="flex items-start justify-between gap-4">
+<div class="flex flex-col gap-1">
+<h2 class="text-lg font-bold leading-tight text-slate-900 dark:text-white">Mobile App Launch</h2>
+<p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">Final testing phase and submission to the App Store for iOS release.</p>
+</div>
+<span class="inline-flex flex-shrink-0 items-center rounded-full bg-blue-100 dark:bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-400 ring-1 ring-inset ring-blue-600/20 dark:ring-blue-500/20">
+                        Completed
+                    </span>
+</div>
+<!-- Progress -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between text-xs font-medium">
+<span class="text-slate-500 dark:text-slate-400">Progress</span>
+<span class="text-emerald-500">100%</span>
+</div>
+<div class="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-700/50">
+<div class="h-2 rounded-full bg-emerald-500" style="width: 100%"></div>
+</div>
+</div>
+<!-- Stats & Meta -->
+<div class="flex items-center justify-between border-t border-slate-100 dark:border-white/5 pt-4 mt-1">
+<!-- Stats -->
+<div class="flex gap-4">
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[18px]">group</span>
+<span class="text-xs font-medium">8</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[18px]">chat_bubble</span>
+<span class="text-xs font-medium">0</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span class="text-xs font-medium">42</span>
+</div>
+</div>
+<!-- Avatars -->
+<div class="flex -space-x-2 overflow-hidden">
+<img alt="" class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-surface-dark object-cover" data-alt="Team member portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAguuzLKNs1awIS58XSkpos_5BUYrJHL3KQ6ZjbgEubzebtiyWYvY4XRCKiJ2D4ESRIMBhV7hBh4TW8BFKCqN5CP_8alIsLOjpqZDgOJbw_5VgJXGhNAH3fbDRIf8FD38DXNhBn8o8PKxIL7ADRExGFjgqW4bnPbijm-gqwne9IvMohNX5H4NDMLPylDSPp2bLsENZGWbSDgVYpyoneWKPYFat6JfX35M6UVjXqbWyrjQtd7v4vslCa7ZRo8outXbNLf75L_kPoiHrC"/>
+<div class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 ring-2 ring-white dark:ring-surface-dark">
+<span class="text-[9px] font-bold text-slate-600 dark:text-slate-300">+5</span>
+</div>
+</div>
+</div>
+<div class="flex justify-end">
+<span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Yesterday</span>
+</div>
+</article>
+<!-- Card 3: Syncing State -->
+<article class="group relative flex flex-col gap-4 rounded-2xl bg-white dark:bg-surface-dark p-5 shadow-sm ring-1 ring-slate-200 dark:ring-white/5 transition-all hover:shadow-md active:scale-[0.98]">
+<!-- Header -->
+<div class="flex items-start justify-between gap-4">
+<div class="flex flex-col gap-1">
+<h2 class="text-lg font-bold leading-tight text-slate-900 dark:text-white">Q3 Marketing Campaign</h2>
+<p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">Planning social media strategy and content calendar for the upcoming quarter.</p>
+</div>
+<span class="inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-700 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-300 ring-1 ring-inset ring-slate-600/10 dark:ring-slate-500/20">
+<span class="material-symbols-outlined text-[12px] animate-spin">sync</span>
+                        Syncing
+                    </span>
+</div>
+<!-- Progress -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between text-xs font-medium">
+<span class="text-slate-500 dark:text-slate-400">Progress</span>
+<span class="text-slate-600 dark:text-slate-300">30%</span>
+</div>
+<div class="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-700/50">
+<div class="h-2 rounded-full bg-slate-400 dark:bg-slate-500" style="width: 30%"></div>
+</div>
+</div>
+<!-- Stats & Meta -->
+<div class="flex items-center justify-between border-t border-slate-100 dark:border-white/5 pt-4 mt-1 opacity-60">
+<!-- Stats -->
+<div class="flex gap-4">
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[18px]">group</span>
+<span class="text-xs font-medium">3</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[18px]">chat_bubble</span>
+<span class="text-xs font-medium">--</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span class="text-xs font-medium">--</span>
+</div>
+</div>
+<!-- Avatars -->
+<div class="flex -space-x-2 overflow-hidden">
+<img alt="" class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-surface-dark object-cover grayscale" data-alt="Team member portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuUBXnvqItyuu6XffuDNHLkpP_A1-kvnjfN9m_PYwd4pJ2ixqvYLml5sbTilxpzJM85uTQpVmzy5UWhu839CrHP_Z7dNBeSTHnvTVI-Vnz8a-JEsfUp_5CAHG7xGjOV2sMsW1fulEnum-DF5C9BeGpNz9flfzpEBKhkdzbJHyh42WeSV1ixlMhIDmCLfhKi-ZdBoXNfHWM6drc62U8tQQ2LvZiMXagqg33yswcMd_k3i7celXmo1czrAGJH9xFYzoPk73MhwhTQdsK"/>
+</div>
+</div>
+<div class="flex justify-end">
+<span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Syncing...</span>
+</div>
+</article>
+<!-- Card 4: Archived -->
+<article class="group relative flex flex-col gap-4 rounded-2xl bg-slate-50 dark:bg-surface-dark/60 p-5 shadow-none ring-1 ring-slate-200 dark:ring-white/5 transition-all">
+<!-- Header -->
+<div class="flex items-start justify-between gap-4">
+<div class="flex flex-col gap-1">
+<h2 class="text-lg font-bold leading-tight text-slate-500 dark:text-slate-400 line-through decoration-slate-400">Old Internal Dashboard</h2>
+<p class="text-sm text-slate-400 dark:text-slate-500 line-clamp-1">Previous version of the dashboard.</p>
+</div>
+<span class="inline-flex flex-shrink-0 items-center rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-slate-500 dark:text-slate-400 ring-1 ring-inset ring-slate-500/10">
+                        Archived
+                    </span>
+</div>
+<!-- Progress -->
+<div class="flex flex-col gap-2 opacity-50">
+<div class="flex justify-between text-xs font-medium">
+<span class="text-slate-400">Progress</span>
+<span class="text-slate-400">100%</span>
+</div>
+<div class="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800">
+<div class="h-2 rounded-full bg-slate-400" style="width: 100%"></div>
+</div>
+</div>
+<!-- Stats & Meta -->
+<div class="flex items-center justify-between border-t border-slate-200 dark:border-white/5 pt-4 mt-1 opacity-50">
+<!-- Stats -->
+<div class="flex gap-4">
+<div class="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
+<span class="material-symbols-outlined text-[18px]">group</span>
+<span class="text-xs font-medium">12</span>
+</div>
+<div class="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span class="text-xs font-medium">156</span>
+</div>
+</div>
+<!-- Avatars -->
+<div class="flex -space-x-2 overflow-hidden grayscale">
+<img alt="" class="inline-block h-6 w-6 rounded-full ring-2 ring-slate-50 dark:ring-surface-dark object-cover" data-alt="Team member portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCH9IRvpBKzh4FVs0sYaKWQSvp8tbRedNcMI7TpAwdgRdI6V2aCHZ7UQY97YyRyzGiIqQ63CaPAAhaHh40PS4aJqOpuw81uGHCd8xideuWzgeWAEJy8-czlmtcV9N3TL0ZgAmrKGCB7AzoSTd3VCJmqNfrcy2oCJJrV7vlyItJDC708I7WtDg0Df6tTqbqGe3oKUGPLkyLjV57Ym2IdjyaU5WxbgXP9-YIM-bl0ufqpXS0sK-xVwFYPKq2diWn9f1HdRJVLGiDhaLAi"/>
+</div>
+</div>
+<div class="flex justify-end">
+<span class="text-[11px] text-slate-400 dark:text-slate-600 font-medium">Archived 3mo ago</span>
+</div>
+</article>
+</main>
+<!-- Floating Action Button (FAB) -->
+<button class="fixed bottom-6 right-6 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/40 hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/30 active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined text-white" style="font-size: 28px;">add</span>
+</button>
+<!-- Bottom Safe Area for iPhone Home Indicator -->
+<div class="h-2 w-full bg-transparent"></div>
+</div>
+</body></html>

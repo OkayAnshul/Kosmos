@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kosmos Task Board</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1132d4",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101322",
+                        "surface-dark": "#1E2235",
+                        "card-dark": "#252A41",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    animation: {
+                        'shimmer': 'shimmer 2s linear infinite',
+                    },
+                    keyframes: {
+                        shimmer: {
+                            '0%': { backgroundPosition: '-1000px 0' },
+                            '100%': { backgroundPosition: '1000px 0' }
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-white h-screen flex flex-col overflow-hidden">
+<!-- Top Navigation -->
+<header class="flex-none bg-white dark:bg-background-dark border-b border-gray-200 dark:border-gray-800 z-20">
+<div class="flex items-center justify-between px-4 py-3">
+<button class="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+<span class="material-symbols-outlined !text-[24px]">arrow_back</span>
+</button>
+<div class="flex flex-col items-center">
+<h1 class="text-base font-bold leading-tight">Project Alpha</h1>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Kosmos Team</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 -mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300 relative">
+<span class="material-symbols-outlined !text-[24px]">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-background-dark"></span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary/20 overflow-hidden border border-gray-200 dark:border-gray-700 ml-2">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="User profile avatar showing initials AM" src="https://lh3.googleusercontent.com/aida-public/AB6AXuABUWTLnSNinf-26YvCZagqMJ2fIE4ET1Nqbt5YBCsERjp8I_MZ06C250LrKObD_Ggczmk3-f4n8oTWWLxkudqjtXtFggJ0h7qBg7Q0WHrtlPTjxUIxn0YfrEXEDBk6q21XZ5_aGiyicTZvKMsKeShaLVLjtFg7XZajgdyzE-vzISDasbJ8w1kGM9hjqhIdU5q00BSeerXb-90kcdYovbIw1RqqpEy8aGQbpTr5cFHFIqi0I1Cm7OR75xIW9nvKbrGMB5bbH8_whwXl"/>
+</div>
+</div>
+</div>
+<!-- Offline Indicator (Conditional) -->
+<div class="bg-gray-800 text-white text-xs py-1 px-4 flex items-center justify-center gap-2 w-full">
+<span class="material-symbols-outlined !text-[14px]">wifi_off</span>
+<span>Offline mode • Changes saved locally</span>
+</div>
+</header>
+<!-- Filters & Controls -->
+<div class="flex-none px-4 py-3 bg-background-light dark:bg-background-dark z-10">
+<!-- Search Bar -->
+<div class="mb-3 relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 !text-[20px]">search</span>
+<input class="w-full bg-white dark:bg-surface-dark border-none rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-gray-900 dark:text-white" placeholder="Search tasks..." type="text"/>
+</div>
+<!-- Segmented Control -->
+<div class="flex h-10 w-full items-center justify-center rounded-lg bg-gray-200 dark:bg-surface-dark p-1">
+<label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-[#2C334F] has-[:checked]:shadow-sm has-[:checked]:text-primary dark:has-[:checked]:text-white text-gray-500 dark:text-gray-400 text-sm font-medium transition-all">
+<span class="truncate">My Tasks</span>
+<input checked="" class="invisible w-0 h-0 absolute" name="task_view" type="radio" value="My Tasks"/>
+</label>
+<label class="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-md px-2 has-[:checked]:bg-white dark:has-[:checked]:bg-[#2C334F] has-[:checked]:shadow-sm has-[:checked]:text-primary dark:has-[:checked]:text-white text-gray-500 dark:text-gray-400 text-sm font-medium transition-all">
+<span class="truncate">All Tasks</span>
+<input class="invisible w-0 h-0 absolute" name="task_view" type="radio" value="All Tasks"/>
+</label>
+</div>
+</div>
+<!-- Kanban Board Area -->
+<main class="flex-1 overflow-x-auto no-scrollbar snap-x snap-mandatory flex gap-4 px-4 pb-20 pt-2 scroll-pl-4">
+<!-- Column 1: To Do -->
+<div class="flex-none w-[85vw] max-w-[340px] flex flex-col h-full bg-gray-100 dark:bg-surface-dark rounded-2xl snap-center snap-always border border-gray-200 dark:border-gray-800">
+<!-- Header -->
+<div class="px-4 py-3 flex items-center justify-between border-b border-gray-200 dark:border-gray-700/50 sticky top-0 bg-inherit rounded-t-2xl z-10">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-blue-500"></div>
+<h3 class="text-gray-900 dark:text-white font-bold text-sm uppercase tracking-wide">To Do</h3>
+<span class="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-medium">3</span>
+</div>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined !text-[20px]">more_horiz</span>
+</button>
+</div>
+<!-- Content -->
+<div class="flex-1 overflow-y-auto p-3 space-y-3">
+<!-- Card 1: High Priority -->
+<div class="bg-white dark:bg-card-dark p-4 rounded-xl shadow-sm border border-transparent hover:border-primary/50 cursor-grab active:cursor-grabbing group relative">
+<div class="flex justify-between items-start mb-2">
+<span class="bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">High</span>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-white"><span class="material-symbols-outlined !text-[18px]">edit</span></button>
+</div>
+<h4 class="text-gray-800 dark:text-gray-100 font-medium text-base leading-snug mb-3">Design System Audit</h4>
+<div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700/50 pt-3 mt-1">
+<div class="flex -space-x-2">
+<img class="w-6 h-6 rounded-full border-2 border-white dark:border-card-dark" data-alt="Avatar of Sarah" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-BxvMq-R2qh8ZWDNkKm7pa74O5kA7qYyYi61xsQmieI5B21CVxRT1X8raggcREJsAcJMNizOOoCWa_xTHMDHFspzNyp-4gsdpoXm8xJHwAmKVh7lTuDrLoYbNc5KfQWUwuOFSHskKYXccfJJTbJ94NqgNuVAKcvW4vpyGPgQtqWAWSBlanrjrs8KvJ3-aIB5eLrMf-B8Vu9OGrb9IuaZ04cTTnXluDtg4uLciL6BeFJJYqzavGpqjwDQh9v3t5mwfEVjgMrV5F0oR"/>
+</div>
+<div class="flex items-center text-red-500 text-xs font-medium gap-1">
+<span class="material-symbols-outlined !text-[14px]">calendar_today</span>
+<span>Tomorrow</span>
+</div>
+</div>
+</div>
+<!-- Card 2: Medium Priority -->
+<div class="bg-white dark:bg-card-dark p-4 rounded-xl shadow-sm border border-transparent hover:border-primary/50 cursor-grab active:cursor-grabbing group">
+<div class="flex justify-between items-start mb-2">
+<span class="bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-300 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Medium</span>
+</div>
+<h4 class="text-gray-800 dark:text-gray-100 font-medium text-base leading-snug mb-3">Update User Flows</h4>
+<div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700/50 pt-3 mt-1">
+<div class="flex -space-x-2">
+<img class="w-6 h-6 rounded-full border-2 border-white dark:border-card-dark" data-alt="Avatar of David" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjuMy9X7s03cov9Ljko2JsaZgLgl34zIRaLMqQdC3u1qeviZi4-MCJGhtr2IIScJPA_DuwJGpMF-BVn5iug5ONZzjaHXlfaain0NYEqRH1ZY76Q9Ex7ohWfG2NcHbrIG3Qrdagxkj45_QJqwKF3YD4JjZms19Xcwdr3CRqC6KKsOugBnCgLPlM6ULxhVx3C5UUi2kTENJnycZ2LTJWLDccyGL7E5XPyoBwHh_ENQj27cPvfdY4I_amVQ2Q7mvDiDi_ftQATA7pI45K"/>
+<img class="w-6 h-6 rounded-full border-2 border-white dark:border-card-dark" data-alt="Avatar of User" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC62By4RXjYJSll_XnzTt5wxakYKC-03ixXioapT83qoLsvC2w4QzJf9PUKduFOc3YzfVwfLf6xycSOKzM5Fx8ntqcNLPO7_MYDnlOVSOuf8Gdm0cZfWXeJM48VvmSyGjQngTMTi29Lpi1ikC8fxJ_FKHFTWBBArjGi8y_Rx8UOWrtLlhRvVeDpJxQ9q082I1vLKwSxssqigANX9hNUTv8oEHrPRgiiGu2ssVeTo-5NJshOatNx4muAA4aQbFum0jgOQCQDrKgzCAcG"/>
+</div>
+<div class="flex items-center text-gray-400 text-xs font-medium gap-1">
+<span class="material-symbols-outlined !text-[14px]">calendar_today</span>
+<span>Oct 28</span>
+</div>
+</div>
+</div>
+<!-- Card 3: Skeleton / Loading -->
+<div class="bg-white dark:bg-card-dark p-4 rounded-xl shadow-sm border border-transparent opacity-60">
+<div class="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded-full mb-3 animate-pulse"></div>
+<div class="h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded mb-2 animate-pulse"></div>
+<div class="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded mb-4 animate-pulse"></div>
+<div class="flex justify-between mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/50">
+<div class="h-6 w-6 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+<div class="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+</div>
+</div>
+</div>
+<!-- Add Task Bottom of Column Button -->
+<button class="p-3 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/5 rounded-b-2xl transition-colors flex items-center justify-center gap-2 border-t border-gray-200 dark:border-gray-700/50">
+<span class="material-symbols-outlined !text-[18px]">add</span>
+                Add Card
+            </button>
+</div>
+<!-- Column 2: In Progress -->
+<div class="flex-none w-[85vw] max-w-[340px] flex flex-col h-full bg-gray-100 dark:bg-surface-dark rounded-2xl snap-center snap-always border border-gray-200 dark:border-gray-800">
+<!-- Header -->
+<div class="px-4 py-3 flex items-center justify-between border-b border-gray-200 dark:border-gray-700/50 sticky top-0 bg-inherit rounded-t-2xl z-10">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-orange-500"></div>
+<h3 class="text-gray-900 dark:text-white font-bold text-sm uppercase tracking-wide">In Progress</h3>
+<span class="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-medium">1</span>
+</div>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined !text-[20px]">more_horiz</span>
+</button>
+</div>
+<!-- Content -->
+<div class="flex-1 overflow-y-auto p-3 space-y-3">
+<!-- Card 1: Low Priority -->
+<div class="bg-white dark:bg-card-dark p-4 rounded-xl shadow-sm border border-transparent hover:border-primary/50 cursor-grab active:cursor-grabbing group">
+<div class="flex justify-between items-start mb-2">
+<span class="bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Low</span>
+</div>
+<h4 class="text-gray-800 dark:text-gray-100 font-medium text-base leading-snug mb-3">API Integration</h4>
+<!-- Attached image example -->
+<div class="w-full h-24 bg-gray-800 rounded-lg mb-3 bg-cover bg-center overflow-hidden relative" data-alt="Abstract code snippet visualization" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuADk_Ba-icH6v1cFa2FHKNwkWISta01Cpvw_Zm3UVRq_fjNi8zLBM6OCgsD0D_1EbQpXoBFR2i3E_8Prg_5nbut3oIfr2KXRSmzP6SPOFscw-ijxLOZLRXhqhZ6J9TwOz76noPSUWOv0Tf-aQQOq64vdMqQmRDH1IpqlC1bUYc7ntHOv3h9pBZ49N8dnAjL0o9GLjjEFxhC4oEFWotUMDucMausgsPC19QhBWE38Zr18PNqjYJ8CXzw1IqLFccqmXMLXlK4HT4I4LZN');">
+<div class="absolute inset-0 bg-black/20"></div>
+</div>
+<div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700/50 pt-3 mt-1">
+<div class="flex -space-x-2">
+<img class="w-6 h-6 rounded-full border-2 border-white dark:border-card-dark" data-alt="Avatar of Mike" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA62Ix6OvEZ3gFXlwfqB6r1ni2hqIz7DDFeYraA0eE_VYTiRRr_Sa8lL_4qDxcly-qNBGG3kKdl4JuwzCCyMQgeJQjr8l9LDSvbm_WhDLRY55has4GdcT27G4ae2e3s58su0VsFo0KO9VC3XyyUhwCoXA7O4XjNwGSx_wthtbZbQNwpirPBsC8hUUN21CSJEFFXC-vfEltmJuacG2F7P6ivUs40scb7ysuo30Cd3_U6asN03SegZm6qQ0djbYc-weUfPSH_zukI-kwY"/>
+</div>
+<div class="flex items-center text-gray-400 text-xs font-medium gap-1">
+<span class="material-symbols-outlined !text-[14px]">calendar_today</span>
+<span>Oct 24</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Add Task Bottom of Column Button -->
+<button class="p-3 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/5 rounded-b-2xl transition-colors flex items-center justify-center gap-2 border-t border-gray-200 dark:border-gray-700/50">
+<span class="material-symbols-outlined !text-[18px]">add</span>
+                Add Card
+            </button>
+</div>
+<!-- Column 3: Done -->
+<div class="flex-none w-[85vw] max-w-[340px] flex flex-col h-full bg-gray-100 dark:bg-surface-dark rounded-2xl snap-center snap-always border border-gray-200 dark:border-gray-800">
+<!-- Header -->
+<div class="px-4 py-3 flex items-center justify-between border-b border-gray-200 dark:border-gray-700/50 sticky top-0 bg-inherit rounded-t-2xl z-10">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+<h3 class="text-gray-900 dark:text-white font-bold text-sm uppercase tracking-wide">Done</h3>
+<span class="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-medium">5</span>
+</div>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+<span class="material-symbols-outlined !text-[20px]">more_horiz</span>
+</button>
+</div>
+<!-- Content -->
+<div class="flex-1 overflow-y-auto p-3 space-y-3">
+<!-- Card 1 -->
+<div class="bg-white dark:bg-card-dark p-4 rounded-xl shadow-sm border border-transparent opacity-75 hover:opacity-100 transition-opacity">
+<div class="flex justify-between items-start mb-2">
+<span class="bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Low</span>
+<span class="material-symbols-outlined text-green-500 !text-[20px]">check_circle</span>
+</div>
+<h4 class="text-gray-500 dark:text-gray-400 font-medium text-base leading-snug mb-3 line-through decoration-gray-400">User Interview Script</h4>
+<div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700/50 pt-3 mt-1">
+<div class="flex -space-x-2">
+<img class="w-6 h-6 rounded-full border-2 border-white dark:border-card-dark" data-alt="Avatar of User" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCeTFGIW3g-M7hm9RSNDMomuCssgNdqt8dcwp6UTy2uMLddZwGLDvDk8mQcude6ivAZMQZ0wgsGsG8eIIyyaN5cTUXkrV_VJisZ9J_TED_YddpNCFuN9x1OmorACYv-TqofEC-cQMhVfPk9gsGyzNMiLgX5EGrD-rEo4f1rW7TR_1w_ZmRIyqt9OPSJI2TKgGm8VTcB-l7Y5blDp0UGYZJ8936v_sdCAfVsdg8WPq-JDcccyXM0BqoZSKTMUgeV2-bPLv9m3a9f3501"/>
+</div>
+<div class="flex items-center text-gray-400 text-xs font-medium gap-1">
+<span class="material-symbols-outlined !text-[14px]">event_available</span>
+<span>Oct 20</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-white dark:bg-card-dark p-4 rounded-xl shadow-sm border border-transparent opacity-75 hover:opacity-100 transition-opacity">
+<div class="flex justify-between items-start mb-2">
+<span class="bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Low</span>
+<span class="material-symbols-outlined text-green-500 !text-[20px]">check_circle</span>
+</div>
+<h4 class="text-gray-500 dark:text-gray-400 font-medium text-base leading-snug mb-3 line-through decoration-gray-400">Competitor Analysis</h4>
+<div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700/50 pt-3 mt-1">
+<div class="flex -space-x-2">
+<img class="w-6 h-6 rounded-full border-2 border-white dark:border-card-dark" data-alt="Avatar of Tim" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRdUGlY5a0NKJw5QyKu0raTpfBTxL8KD3u2o0vxI82ncAkbgYeTkqojmrtGzT85uDbUPdnzkmoJm2C-9Byc1KRuQcKRVzC4s7WWTgr6JKTwwICpCgKHnJ88pof8NTV5QLa7grGZaGk8BwQhVHfnNWAjZ80A2QgVOARXdjRPQUC3D9pVeNCVxLvX7nY8Dex35gU-gitxW-bs-pRh-efGBUt2URsSQPeMApBsUmVw0PskVm_MJiW4EwFoO6hP8QFCO-e20nJY0YKCUly"/>
+</div>
+<div class="flex items-center text-gray-400 text-xs font-medium gap-1">
+<span class="material-symbols-outlined !text-[14px]">event_available</span>
+<span>Oct 18</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Empty state footer -->
+<div class="p-4 text-center text-xs text-gray-400 dark:text-gray-500 italic pb-6">
+                Showing last 5 completed items
+            </div>
+</div>
+</main>
+<!-- FAB -->
+<button class="fixed bottom-6 right-6 w-14 h-14 bg-primary text-white rounded-2xl shadow-lg shadow-primary/40 flex items-center justify-center hover:bg-blue-700 transition-all active:scale-95 z-50">
+<span class="material-symbols-outlined !text-[28px]">add</span>
+</button>
+<!-- Sync Status Toast -->
+<div class="fixed bottom-6 left-6 z-50 bg-gray-900/90 dark:bg-white/90 text-white dark:text-gray-900 px-4 py-2 rounded-full shadow-lg text-xs font-medium flex items-center gap-2 opacity-0 animate-[fadeIn_0.5s_ease-out_2s_forwards]">
+<span class="material-symbols-outlined !text-[16px] animate-spin">sync</span>
+        Syncing changes...
+    </div>
+<style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</body></html>
