@@ -234,47 +234,9 @@ fun PrivacySettingsScreen(
                     color = ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.8f)
                 )
 
-                // Blocked Users Section
-                PrivacySectionHeader(
-                    icon = Icons.Default.Block,
-                    title = "BLOCKED USERS"
-                )
-
-                if (blockedUsers.isEmpty()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = ColorTokens.ReactTheme.card
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Block,
-                                contentDescription = "",
-                                modifier = Modifier.size(48.dp),
-                                tint = ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.4f)
-                            )
-                            Text(
-                                text = "No blocked users",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = ColorTokens.ReactTheme.mutedForeground,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = "You haven't blocked anyone yet",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.7f)
-                            )
-                        }
-                    }
-                }
+                // [FUTURE F4] Blocked Users Section — hidden until block/unblock API is implemented.
+                // When ready: add UserConnectionRepository.blockUser()/unblockUser(), expose
+                // blockedUsers flow in PrivacySettingsViewModel, and restore this UI block.
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
