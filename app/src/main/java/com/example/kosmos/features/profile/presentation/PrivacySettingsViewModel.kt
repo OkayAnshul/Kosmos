@@ -14,9 +14,11 @@ import com.example.kosmos.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -52,6 +54,10 @@ class PrivacySettingsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(PrivacySettingsUiState())
     val uiState: StateFlow<PrivacySettingsUiState> = _uiState.asStateFlow()
 
+    // Debounce save: prevents write amplification on rapid toggling.
+    // [FUTURE F4] When blocked-users list is implemented, route its saves through this trigger too.
+    private val _saveTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
     // Phase 4 TODO FIX: Data export file path (for sharing)
     private val _exportFilePath = MutableStateFlow<String?>(null)
     val exportFilePath: StateFlow<String?> = _exportFilePath.asStateFlow()
@@ -61,6 +67,11 @@ class PrivacySettingsViewModel @Inject constructor(
 
     init {
         loadSettings()
+        viewModelScope.launch {
+            _saveTrigger
+                .debounce(800)
+                .collect { saveSettings() }
+        }
     }
 
     private fun loadSettings() {
@@ -141,42 +152,42 @@ class PrivacySettingsViewModel @Inject constructor(
     fun updateProfileVisibility(visibility: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(profileVisibility = visibility) }
-            saveSettings()
+            _saveTrigger.tryEmit(Unit)
         }
     }
 
     fun toggleShowEmail(show: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(showEmail = show) }
-            saveSettings()
+            _saveTrigger.tryEmit(Unit)
         }
     }
 
     fun toggleShowLastSeen(show: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(showLastSeen = show) }
-            saveSettings()
+            _saveTrigger.tryEmit(Unit)
         }
     }
 
     fun toggleShowOnlineStatus(show: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(showOnlineStatus = show) }
-            saveSettings()
+            _saveTrigger.tryEmit(Unit)
         }
     }
 
     fun toggleAllowDirectMessages(allow: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(allowDirectMessages = allow) }
-            saveSettings()
+            _saveTrigger.tryEmit(Unit)
         }
     }
 
     fun toggleAllowMentions(allow: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(allowMentions = allow) }
-            saveSettings()
+            _saveTrigger.tryEmit(Unit)
         }
     }
 

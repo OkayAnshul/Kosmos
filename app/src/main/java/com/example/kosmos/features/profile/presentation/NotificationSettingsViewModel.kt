@@ -8,9 +8,11 @@ import com.example.kosmos.core.models.UserSettings
 import com.example.kosmos.data.repository.AuthRepository
 import com.example.kosmos.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -32,11 +34,20 @@ class NotificationSettingsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(NotificationSettingsUiState())
     val uiState: StateFlow<NotificationSettingsUiState> = _uiState.asStateFlow()
 
+    // Debounce save: rapid toggling emits one save per 800ms burst, preventing write amplification.
+    // [FUTURE F4/F5] If settings become more complex, consider batching all pending changes.
+    private val _saveTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
     private val currentUserId: String?
         get() = authRepository.getCurrentUser()?.id
 
     init {
         loadSettings()
+        viewModelScope.launch {
+            _saveTrigger
+                .debounce(800)
+                .collect { saveSettings() }
+        }
     }
 
     private fun loadSettings() {
@@ -134,63 +145,63 @@ class NotificationSettingsViewModel @Inject constructor(
     fun toggleAllNotifications(enabled: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(allNotificationsEnabled = enabled) }
-            saveSettings()
+_saveTrigger.tryEmit(Unit)
         }
     }
 
     fun toggleMessageNotifications(enabled: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(messageNotifications = enabled) }
-            saveSettings()
+_saveTrigger.tryEmit(Unit)
         }
     }
 
     fun toggleTaskNotifications(enabled: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(taskNotifications = enabled) }
-            saveSettings()
+_saveTrigger.tryEmit(Unit)
         }
     }
 
     fun toggleProjectUpdateNotifications(enabled: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(projectUpdateNotifications = enabled) }
-            saveSettings()
+_saveTrigger.tryEmit(Unit)
         }
     }
 
     fun toggleMentionNotifications(enabled: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(mentionNotifications = enabled) }
-            saveSettings()
+_saveTrigger.tryEmit(Unit)
         }
     }
 
     fun toggleMentionsOnlyMode(enabled: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(mentionsOnlyMode = enabled) }
-            saveSettings()
+_saveTrigger.tryEmit(Unit)
         }
     }
 
     fun toggleSound(enabled: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(soundEnabled = enabled) }
-            saveSettings()
+_saveTrigger.tryEmit(Unit)
         }
     }
 
     fun toggleVibration(enabled: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(vibrationEnabled = enabled) }
-            saveSettings()
+_saveTrigger.tryEmit(Unit)
         }
     }
 
     fun toggleDoNotDisturb(enabled: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(dndEnabled = enabled) }
-            saveSettings()
+_saveTrigger.tryEmit(Unit)
         }
     }
 
@@ -202,7 +213,7 @@ class NotificationSettingsViewModel @Inject constructor(
                     dndStartMinute = minute
                 )
             }
-            saveSettings()
+_saveTrigger.tryEmit(Unit)
         }
     }
 
@@ -214,7 +225,7 @@ class NotificationSettingsViewModel @Inject constructor(
                     dndEndMinute = minute
                 )
             }
-            saveSettings()
+_saveTrigger.tryEmit(Unit)
         }
     }
 }
