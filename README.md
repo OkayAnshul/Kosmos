@@ -1,59 +1,50 @@
 # Kosmos
 
-Kosmos is an Android collaboration app focused on project work: team chat, task workflows, project membership, and offline-first sync.
+Kosmos is an Android collaboration app for project teams: chat, tasks, membership, and offline-first sync.
 
-## Current Status (Evidence-Backed)
-- `testDebugUnitTest`: passing
-- `assembleRelease`: passing
-- `bundleRelease`: passing (`app-release.aab` generated)
-- `lintRelease`: passing
-- Release signing: supported through local properties; not committed in git
+## Why This Project Matters
+- Combines project communication and execution into one mobile flow.
+- Prioritizes local-first behavior with eventual backend convergence.
+- Built as a production-oriented codebase with explicit release gates.
 
-See [docs/evidence/BASELINE_STATUS.md](docs/evidence/BASELINE_STATUS.md) for command outputs and artifact paths.
+## Current Verified Snapshot (March 7, 2026)
+- Android app package ID: `com.aravya.apps.kosmos`
+- Kotlin namespace in source: `com.example.kosmos` (intentional transitional debt)
+- Build config: `minSdk=26`, `targetSdk=36`, `compileSdk=36`
+- Core stack: Kotlin, Compose, Hilt, Room, Supabase, Coroutines/Flow
+- Release blockers still open: signed release configuration + final Play Console/legal metadata checks
 
-## Problem It Solves
-- Teams need project chat + tasks in one mobile flow.
-- Network instability breaks many collaboration apps.
-- Kosmos emphasizes local-first state and background sync retry.
+## What Interviewers Should Review First
+1. [Architecture](docs/ARCHITECTURE.md)
+2. [Codebase Findings](docs/CODEBASE_FINDINGS.md)
+3. [Security Model](docs/SECURITY.md)
+4. [Testing and Quality](docs/TESTING.md)
+5. [Release Runbook](docs/RELEASE.md)
 
-## Core Features
-- Email and Google-based auth
-- Project creation, membership, and role-based actions
-- Chat rooms and project-scoped messaging
-- Task creation/editing/status/assignment
-- Notification listener and in-app notification surface
-- Room + Supabase hybrid sync with retry queue
+## Planned Improvements (Post Internal Track)
+- Close deferred realtime and settings/profile TODO paths.
+- Reduce oversized files and improve modularity in high-churn areas.
+- Expand end-to-end instrumentation and conflict/retry test coverage.
 
-## Tech Stack
-- Kotlin, Jetpack Compose, Material 3
-- Hilt DI
-- Room (local persistence + migrations)
-- Supabase (Auth, PostgREST, Realtime, Storage)
-- Coroutines + Flow
-
-## Build & Verification
+## Build and Release Commands
 ```bash
 ./scripts/preflight_release.sh
 ./gradlew testDebugUnitTest
-./gradlew assembleRelease
-./gradlew bundleRelease
 ./gradlew lintRelease
-./gradlew jacocoTestReport
+./gradlew bundleRelease
+./scripts/verify_bundle_signature.sh
 ```
 
-## Secrets & Signing
-Do not commit runtime keys or keystores.
-
-Set credentials locally in `local.properties` or `~/.gradle/gradle.properties`:
+## Secrets and Safety
+Do not commit runtime secrets or signing materials.
+Use local-only properties for:
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY`
 - `GOOGLE_WEB_CLIENT_ID`, `GOOGLE_CLOUD_API_KEY`
 - `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`
 
-## Known Limitations
-- Codebase still has large files that should be modularized further.
-- Feature coverage is broad, but some lower-priority areas remain marked as future work.
-- Coverage is currently low at total-code level due to large UI surface and generated artifacts.
-
 ## Documentation
-- Production docs index: `docs/README.md`
-- Legacy and development docs archive: `cleanup_nonprod_2026-03-06/`
+- Production docs index: [docs/README.md](docs/README.md)
+- Historical/non-production archive: [docs/ARCHIVE_REFERENCES.md](docs/ARCHIVE_REFERENCES.md)
+
+## Demo Media
+Screenshots and video walkthrough are intentionally deferred and will be added in a dedicated docs pass.
