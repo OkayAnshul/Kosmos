@@ -1,71 +1,36 @@
 # Architecture
 
+Status: Mixed (verified structure + planned hardening)
+
 ## Executive Summary
-Kosmos follows a pragmatic MVVM + Repository architecture with Room local persistence, Supabase backend integration, and Compose-based UI. The architecture is broad and production-oriented, with implementation debt concentrated in selected deferred features.
+Kosmos uses MVVM + Repository architecture with Room local storage, Supabase backend services, and Compose UI.
 
-## Tech Stack
-- Language: Kotlin
-- UI: Jetpack Compose + Material 3
-- DI: Hilt
-- Local DB: Room
-- Remote: Supabase (Auth, PostgREST, Realtime, Storage)
-- Networking: Ktor + Retrofit/OkHttp
-- Background: WorkManager
-- Async: Coroutines + Flow
+## Verified Build and App Configuration
+- `applicationId`: `com.aravya.apps.kosmos`
+- `namespace`: `com.example.kosmos`
+- `minSdk=26`, `targetSdk=36`, `compileSdk=36`
 
-## App Structure
-Top-level code modules under `app/src/main/java/com/example/kosmos`:
-- `core/` (config, models, db, sync, validators)
-- `data/` (datasources, repositories, realtime, sync)
-- `features/` (auth/chat/tasks/projects/profile/settings/etc.)
-- `shared/` (design system, UI utilities, helpers)
-- `navigation/` (route definitions)
-
-## Layering Contract
-1. UI layer (`features/*/presentation`)
-- Compose screens, wrappers, and view state handling.
-- ViewModels own screen state and user actions.
-
-2. Domain-ish orchestration (ViewModels + validators + mappers)
-- Permission checks and transformation logic.
-- Feature orchestration and command flow.
-
-3. Data layer (`data/repository` + `data/datasource`)
-- Repository as source of truth façade.
-- Room for local read/write.
-- Supabase datasource for remote sync.
-
-4. Infrastructure (`core/*`, `data/sync`, `data/realtime`)
-- Database schema/migrations
-- Queueing/sync support
-- Realtime listener management
+## Layering Model
+1. Presentation (`features/*/presentation`): Compose screens + ViewModels
+2. Data (`data/repository`, `data/datasource`): local + remote orchestration
+3. Infrastructure (`core/*`, `data/realtime`, `data/sync`): DB, realtime, sync mechanics
+4. Shared (`shared/*`): design system and reusable UI/utilities
 
 ## Data Flow
-### Online happy path
-UI action -> ViewModel -> Repository -> Local DB write + Remote call -> Flow updates UI.
+- Online: UI -> ViewModel -> Repository -> Room + remote -> Flow to UI
+- Offline-first: UI -> local write -> queue/retry -> eventual remote convergence
 
-### Offline-first behavior
-UI action -> ViewModel -> Repository -> Local DB write -> queue/sync retry pattern -> eventual remote convergence.
+## Verified Strengths
+- Clear layered package structure.
+- Broad feature coverage across auth/projects/chat/tasks/profile/settings.
+- Reusable shared UI system and wrappers across screens.
 
-## Auth and Deep Link
-- OAuth callback handled through `kosmos://auth-callback` intent filter.
-- Supabase deeplink handling is routed in `MainActivity` `onCreate` and `onNewIntent`.
+## Active Debt
+- Very large files in repositories/screens increase review and regression cost.
+- Namespace/applicationId mismatch is intentionally deferred.
+- Some realtime and settings/profile TODO paths remain.
 
-## Build and Release Architecture
-- `applicationId`: `com.aravya.apps.kosmos`
-- `namespace`: `com.example.kosmos` (kept for current code package stability)
-- `minSdk=26`, `targetSdk=36`, `compileSdk=36`
-- Release build: minify + shrink resources enabled
-- Release signing is conditional on local `RELEASE_*` properties
-
-## Known Architecture Debt
-- 100+ TODO/FUTURE markers remain in code comments
-- Partial feature stubs in settings/profile/task-detail adjacent flows
-- Voice feature modules intentionally disabled
-- Namespace and applicationId mismatch (acceptable short term, should converge later)
-
-## Architectural Priorities
-1. Signing + release reproducibility
-2. Resolve high-impact TODOs in settings/profile/task flow
-3. Tighten offline conflict and realtime consistency guarantees
-4. Modularize large UI files into smaller composables
+## Hardening Priorities
+1. Keep release gate reproducibility (preflight, lint/tests, signed bundle verify).
+2. Refactor top hotspot files into smaller bounded units.
+3. Close high-impact TODOs in realtime/retry/settings paths.

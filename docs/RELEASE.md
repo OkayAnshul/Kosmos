@@ -1,12 +1,14 @@
 # Release Runbook
 
-## Release Target
-Primary target: Play Store Internal Testing track.
+Status: Mixed (verified command path + pending operational completion)
+
+## Target
+Primary target is Play Store Internal Testing before wider rollout.
 
 ## Prerequisites
-- Local runtime keys configured
-- Local signing keys configured
-- Keystore available at `RELEASE_STORE_FILE`
+- Runtime keys configured locally.
+- Release signing keys configured locally.
+- Keystore file available at configured `RELEASE_STORE_FILE` path.
 
 ## Required Commands
 ```bash
@@ -17,31 +19,15 @@ Primary target: Play Store Internal Testing track.
 ./scripts/verify_bundle_signature.sh
 ```
 
-## Expected Outcomes
-- Preflight: all `[OK]`
-- Tests: pass
-- Lint: pass
-- Bundle exists: `app/build/outputs/bundle/release/app-release.aab`
-- Signature verification: pass (`[OK] Release bundle signature verified`)
+## Pass Criteria
+- Preflight reports all required keys as present.
+- Unit tests and lint pass.
+- AAB exists at `app/build/outputs/bundle/release/app-release.aab`.
+- Signature verification reports success.
 
 ## Known Failure Modes
-### Unsigned bundle despite bundle success
-- Symptom: `verify_bundle_signature.sh` reports unsigned
-- Cause: missing `RELEASE_*` values
-- Fix: add signing values and rerun bundle
+- Unsigned bundle due to missing `RELEASE_*` properties.
+- Intermittent bundle task collisions from concurrent Gradle processes.
 
-### Bundle packaging race / file already exists
-- Symptom: `FileAlreadyExistsException` in intermediary bundle output
-- Cause: concurrent Gradle sessions
-- Fix: rerun `bundleRelease` alone after other Gradle processes finish
-
-## Artifact Handling
-- Keep generated AAB as release candidate artifact.
-- Do not modify/re-sign manually outside tracked process.
-
-## Go / No-Go Criteria
-GO only when all are true:
-- signed AAB verified
-- internal smoke suite passes
-- privacy/terms URLs verified
-- metadata assets complete for target track
+## GO / NO-GO Rule
+No Play upload until all pass criteria are met and legal/store metadata are finalized.

@@ -1,56 +1,25 @@
 # Security Model
 
-## Security Posture Summary
-Kosmos uses client-safe key distribution (Supabase anon key), local secret injection via non-tracked properties files, and release logging reduction in production builds.
+Status: Mixed (verified controls + required release checks)
 
-## Secrets and Key Management
-Do not commit runtime credentials or signing keys.
+## Security Posture
+Kosmos uses local-only secret provisioning, release logging reduction, and explicit signing verification for artifacts.
 
-Allowed local secret locations:
-- `local.properties`
-- `~/.gradle/gradle.properties`
+## Secret Handling Rules
+Never commit secrets, keystores, or local property files.
 
-Required runtime keys:
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `GOOGLE_WEB_CLIENT_ID`
+Use local-only properties for:
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY`
+- `GOOGLE_WEB_CLIENT_ID`, `GOOGLE_CLOUD_API_KEY`
+- `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`
 
-Required release signing keys:
-- `RELEASE_STORE_FILE`
-- `RELEASE_STORE_PASSWORD`
-- `RELEASE_KEY_ALIAS`
-- `RELEASE_KEY_PASSWORD`
+## Verified Controls
+- `.gitignore` excludes `local.properties` and key-store formats.
+- Release script validates presence of required properties.
+- `verify_bundle_signature.sh` checks signed AAB state.
 
-## Build-Time Security Controls
-- `ENABLE_LOGGING=false` in release build type
-- resource shrinking and code minification enabled in release
-- signed-bundle verification script required in release runbook
-
-## App Permissions Surface
-Declared sensitive permissions include:
-- network access
-- notifications
-- microphone
-- camera
-- legacy storage compatibility permissions
-
-Risk note:
-- Storage/media and microphone permission usage should stay tightly coupled to user actions and visible UI context.
-
-## Authentication and Session
-- OAuth callback via custom scheme (`kosmos://auth-callback`)
-- Supabase auth integration
-- role/permission checks enforced in app logic for critical actions
-
-## Data Protection
-- local persistence with Room
-- remote data integrity depends on Supabase RLS and schema policy quality
-- backup configuration files exist and should be finalized with explicit include/exclude rules before full production rollout
-
-## Security Checklist Before Public Release
-1. No secrets in git-tracked files
-2. Release AAB is signed and verified
-3. Privacy and Terms URLs are live and reachable
-4. Runtime permissions audited against actual feature usage
-5. RLS policies reviewed for project/task/chat/member paths
-6. Incident response owner and rotation documented
+## Required Before Public Rollout
+1. Signed release bundle verification passes.
+2. Privacy policy and terms links are live and correct.
+3. Runtime permission usage is audited against feature entry points.
+4. Supabase RLS policies are reviewed for project/task/chat/member boundaries.

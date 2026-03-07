@@ -1,48 +1,31 @@
 # Testing and Quality
 
-## Current Verification Baseline (2026-03-06)
-- Unit tests: `./gradlew testDebugUnitTest` -> PASS
-- Lint: `./gradlew lintRelease` -> PASS
-- Bundle: `./gradlew bundleRelease` -> PASS
-- Signature: `./scripts/verify_bundle_signature.sh` -> FAIL (unsigned)
+Status: Mixed (verified gates + planned depth expansion)
 
-## Test Inventory
-- `app/src/test`: unit tests for viewmodels, validators, models, and utility logic
-- `app/src/androidTest`: UI/integration tests including repository and screen flows
+## Verified Baseline
+- Unit tests and instrumentation suites exist in repo.
+- Release build/test commands are scripted.
+- Signature verification script is present.
 
-Approximate counts:
-- Main Kotlin files: 262
-- Unit test files: 11
-- Android test files: 11
+## Current Test Surface
+- Unit test files: **11** (`app/src/test`)
+- Android test files: **11** (`app/src/androidTest`)
+- Main Kotlin files: **262** (`app/src/main/java`)
 
-## Quality Gates
-Mandatory for release candidate:
-1. `./scripts/preflight_release.sh`
-2. `./gradlew testDebugUnitTest`
-3. `./gradlew lintRelease`
-4. `./gradlew bundleRelease`
-5. `./scripts/verify_bundle_signature.sh`
+## Mandatory Release Gates
+```bash
+./scripts/preflight_release.sh
+./gradlew testDebugUnitTest
+./gradlew lintRelease
+./gradlew bundleRelease
+./scripts/verify_bundle_signature.sh
+```
 
-## Coverage and Risk Notes
-- Test surface exists but is thin relative to codebase size.
-- Highest risk areas:
-  - sync conflict paths
-  - realtime consistency under reconnect scenarios
-  - settings/profile partial TODO paths
+## Quality Risks
+- Test depth is currently thin relative to codebase size.
+- High-risk paths: sync conflict handling, reconnect/realtime consistency, large task/project flows.
 
-## Recommended Additions
-### Priority A
-- Auth -> Project -> Chat -> Task smoke instrumentation path
-- Sync conflict deterministic tests
-- Permission and role boundary tests for project/task actions
-
-### Priority B
-- Error-state and retry-path UI tests
-- Data export/privacy settings behavior tests
-
-## Release QA Checklist
-- Fresh install flow
-- Upgrade from previous app version
-- Offline create/edit then reconnect sync
-- Notification permission denied/granted transitions
-- Background/foreground state persistence
+## Next Test Additions
+1. End-to-end instrumentation smoke flow: auth -> project -> chat -> task.
+2. Deterministic sync conflict and retry-path tests.
+3. Permission/role boundary tests for project/task actions.
