@@ -14,12 +14,13 @@ Kosmos is an Android collaboration app for project teams: chat, tasks, membershi
 - Core stack: Kotlin, Compose, Hilt, Room, Supabase, Coroutines/Flow
 - Release blockers still open: signed release configuration + final Play Console/legal metadata checks
 
-## What Interviewers Should Review First
-1. [Architecture](docs/ARCHITECTURE.md)
-2. [Codebase Findings](docs/CODEBASE_FINDINGS.md)
-3. [Security Model](docs/SECURITY.md)
-4. [Testing and Quality](docs/TESTING.md)
-5. [Release Runbook](docs/RELEASE.md)
+## Read First
+1. [Project One Sheet](docs/PROJECT_ONE_SHEET.md)
+2. [Architecture](docs/ARCHITECTURE.md)
+3. [Codebase Findings](docs/CODEBASE_FINDINGS.md)
+4. [Security Model](docs/SECURITY.md)
+5. [Testing and Quality](docs/TESTING.md)
+6. [Release Runbook](docs/RELEASE.md)
 
 ## Planned Improvements (Post Internal Track)
 - Close deferred realtime and settings/profile TODO paths.
