@@ -1,142 +1,43 @@
 # Kosmos
 
-Kosmos is an Android collaboration platform built for project execution in mobile-first teams. It combines project workspaces, task execution, team chat, member operations, and offline-first sync in one product.
+Kosmos is an Android collaboration platform that unifies project planning, execution, and communication in one mobile-first system.
 
-Status model used in this README:
-- **Verified**: directly supported by current repository code/config/scripts.
-- **Planned**: approved improvement direction not fully completed yet.
+Status convention in this README:
+- **Verified**: backed by current code/config/scripts in this repository.
+- **Planned**: accepted next-step work not fully completed yet.
 
 Date: 2026-03-07
 
-## 1. Project Overview
-Kosmos solves a common delivery gap: teams discuss work in one tool and execute tasks in another, causing context switching and execution drift. The app is designed to keep communication and execution linked at the project level.
+## 1. Product Overview
+Kosmos is designed for teams that need project workspaces, task execution, member governance, and conversation context in a single app.
 
 ### Verified
-- Android app with collaboration-first scope (projects, members, chat, tasks, notifications, settings).
-- Release distribution identifier: `com.aravya.apps.kosmos`.
-- Implementation organized into production-oriented layers (`core`, `data`, `features`, `shared`, `navigation`).
+- Android-first implementation using Kotlin + Jetpack Compose.
+- Core domains implemented in code: auth, projects, members, tasks, chat, notifications, profile/settings, connections/discover.
+- Production app identifier: `com.aravya.apps.kosmos`.
 
 ### Planned
-- Add richer repository media walkthroughs (screenshots and short product demo) in a dedicated docs/media pass.
+- Add curated visual demo evidence (screenshots and guided video) in a dedicated documentation-media pass.
 
-## 2. Unique Product Value (USP)
+## 2. Core USP (Why This Is Different)
 ### Verified
-- **Execution + communication in one flow**: task and chat interactions are project-linked.
-- **Offline-first posture**: local persistence and sync patterns prioritize continuity in unstable networks.
-- **Release discipline**: explicit preflight/build/lint/signature gate commands are integrated into project workflow.
+- **Execution + communication in one context**: project-scoped chat and tasks co-exist by design.
+- **Offline-first posture**: Room-backed local state with sync/retry patterns for eventual convergence.
+- **Governed collaboration**: role and permission validation in project/member/task flows.
+- **Change accountability**: task activity timeline with optional commit-style change notes.
 
 ### Planned
-- Deepen cross-feature visibility (dependency-aware task context and richer collaboration telemetry).
+- Expand advanced collaboration intelligence and richer cross-feature context surfaces.
 
 ## 3. Android Engineering Baseline
-
 ### Verified
-- Build/runtime baseline:
-  - `compileSdk=36`
-  - `targetSdk=36`
-  - `minSdk=26`
-  - `versionCode=1`
-  - `versionName=1.0`
-- App identifiers:
-  - `applicationId=com.aravya.apps.kosmos`
-  - `namespace=com.example.kosmos` (intentional transitional technical debt)
-- Core stack:
-  - Kotlin, Jetpack Compose, Material 3
-  - Hilt dependency injection
-  - Room local database
-  - Supabase backend integration
-  - Coroutines + Flow
+- `compileSdk=36`, `targetSdk=36`, `minSdk=26`
+- `versionCode=1`, `versionName=1.0`
+- `applicationId=com.aravya.apps.kosmos`
+- `namespace=com.example.kosmos` (transitional technical debt tracked intentionally)
+- Stack: Kotlin, Compose, Material3, Hilt, Room, Supabase, Coroutines/Flow
 
-### Planned
-- Controlled namespace convergence after stability baseline, avoiding risky pre-release mass refactor.
-
-## 4. Architecture And Data Flow
-
-### Verified
-- **Presentation layer**: Compose screens and ViewModels in feature packages.
-- **Data layer**: repositories and data sources orchestrate local and remote operations.
-- **Infrastructure layer**: database models/DAOs, sync queue/retry helpers, realtime management.
-- **Shared layer**: reusable UI tokens/components/layout abstractions and utility services.
-
-Primary runtime flow:
-- UI action -> ViewModel -> Repository -> local write + remote sync -> Flow/state updates UI.
-
-Offline-first behavior pattern:
-- local state continuity first, eventual backend convergence second.
-
-### Planned
-- Additional decomposition of large hotspots (repositories/screens) into bounded modules with clearer ownership.
-- Tighten reconnect/retry consistency guarantees in high-churn realtime paths.
-
-## 5. UI/UX Design System And Experience
-
-### Design Direction
-Kosmos uses a productivity-centered interface model focused on readability, speed, and low-friction task execution.
-
-### Verified
-- Compose + Material 3 implementation with shared UI primitives.
-- Reusable design system units in shared UI layers (tokens/components/layout wrappers).
-- Feature-level screen wrappers to isolate presentation wiring from reusable UI primitives.
-
-### Interaction Model
-- Section-oriented navigation with project-centric screen transitions.
-- Action surfaces optimized for high-frequency operations (task status changes, project interactions, messaging).
-- Feedback patterns based on explicit UI state transitions and user-visible action confirmations.
-
-### Core UX Flows (high-level)
-1. Authentication -> workspace access
-2. Project selection/creation -> member/project operations
-3. Chat room interaction -> contextual team communication
-4. Task board/detail/edit -> execution lifecycle
-5. Settings/profile/notifications -> preferences and account-level operations
-
-### Planned
-- Broader visual consistency pass for deferred settings/profile areas.
-- Follow-up media and UI walkthrough documentation with real app captures.
-
-## 6. Feature Maturity Matrix
-
-### Verified Stable/Usable
-- Authentication entry and sign-in flow integration
-- Project list/workspace and member-oriented flows
-- Chat list and room-level messaging surfaces
-- Task board/detail/edit execution paths
-- Notification and settings surfaces
-
-### Verified Partial/Deferred
-- Select realtime subscription TODO paths remain in project/member areas.
-- Some settings/profile and retry UX interactions are still placeholders.
-- Voice-related pipeline remains intentionally deferred.
-
-### Planned
-- Prioritized closure of high-impact realtime/retry/settings gaps before broader rollout stages.
-
-## 7. Security, Secrets, And Operational Safety
-
-### Verified
-- Secret material expected through local properties (not committed source files).
-- `.gitignore` excludes local properties and key/keystore artifacts.
-- Preflight script validates required runtime/signing property presence.
-- Bundle signature verification script checks whether output AAB is signed.
-
-Required local keys:
-- Runtime: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GOOGLE_WEB_CLIENT_ID`, `GOOGLE_CLOUD_API_KEY`
-- Signing: `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`
-
-### Planned
-- Final legal metadata verification for store rollout.
-- Continued permission-surface audit against active runtime feature usage.
-
-## 8. Testing And Quality Posture
-
-### Verified
-- Source footprint (current):
-  - Main Kotlin files: **262**
-  - Unit test files: **11**
-  - Android test files: **11**
-- Mandatory release gate command path exists and is scripted.
-
-Release commands:
+### Build + release gate commands
 ```bash
 ./scripts/preflight_release.sh
 ./gradlew testDebugUnitTest
@@ -145,61 +46,243 @@ Release commands:
 ./scripts/verify_bundle_signature.sh
 ```
 
-### Planned
-- Expand deterministic critical-path smoke coverage (auth -> project -> chat -> task).
-- Add stronger reconnect/conflict/retry scenario validation.
-- Increase role/permission boundary checks for project/task-sensitive operations.
-
-## 9. Production Readiness Snapshot
-
+## 4. Architecture And Execution Model
 ### Verified
-- Internal-track-first release strategy is documented and aligned with current approach.
-- Release process has explicit gates for configuration, build quality, artifact generation, and signature checks.
+- Layered structure under `com.example.kosmos`:
+  - `core` (models, DB, validators, config)
+  - `data` (datasources, repositories, realtime, sync)
+  - `features` (UI + viewmodels by domain)
+  - `shared` (design system, reusable components/services)
+  - `navigation` (route structure)
+- Main runtime flow:
+  - UI intent -> ViewModel -> Repository -> local Room write + remote sync -> Flow-driven UI updates
+- Realtime flow:
+  - Supabase Realtime channels (message, task, typing, project-members, connections/invites)
+  - event fanout via `SupabaseRealtimeManager`
 
 ### Planned
-- Complete local signing configuration and verify signed bundle pass.
-- Finalize legal/store metadata completeness prior to broader rollout.
+- Further decomposition of hotspot files (large repositories/screens) into tighter bounded modules.
 
-## 10. Risks And Mitigation Priorities
+## 5. Deep Core Feature Coverage
 
-### Verified risk ranking
-- **High**: signing completion and signed artifact verification before distribution.
-- **Medium**: reconnect/realtime consistency and hotspot large-file regression risk.
-- **Lower (important)**: UX consistency debt in selected deferred settings/profile paths.
+### 5.1 Task System (Deep)
+### Verified
+- Task lifecycle states and status transitions (`TODO`, `IN_PROGRESS`, `DONE`, `CANCELLED`).
+- Task assignment/unassignment with role + permission checks.
+- Due date support and overdue-oriented querying.
+- Subtask model via `parentTaskId` and parent task picker flow.
+- Task tags and structured comments (`TaskComment`) persisted/synced.
+- Estimated vs actual hours fields.
+- Task dependency model (`task_dependencies`) and circular-dependency checks.
+- Commit-style change notes through commit message dialogs and task activity records.
 
-### Planned mitigation sequence
-1. Close release-signing operational gap
-2. Harden reliability-critical realtime/retry paths
-3. Modularize hotspot files to improve maintainability and review safety
+### Planned
+- Further polish for dependency title wiring and remaining TODO-marked task UX paths.
 
-## 11. Six-Week Execution Timeline
+### 5.2 Time Tracking
+### Verified
+- `time_entries` entity and DAO/data-source/repository pipeline.
+- Start/stop timers + manual time entry support.
+- Auto-updating `actualHours` from time entries.
+- Time tracker UI widget and manual-entry dialog.
+- Due-date reminder scheduling integration with task operations.
 
-### Weeks 1-2 (Release closure)
-- Finalize signing setup
-- Produce and verify signed AAB
-- Complete internal distribution readiness checklist
+### Planned
+- Expand analytics and reporting around tracked hours.
 
-### Weeks 3-4 (Reliability hardening)
-- Resolve highest-impact realtime/retry TODO paths
-- Add deterministic conflict/reconnect test scenarios
+### 5.3 Activity Center
+### Verified
+- `task_activity` entity with field-change payload support.
+- Activity stream/timeline UI (`ActivityTimeline`) with relative-time and commit-note rendering.
+- Task and project activity retrieval flows.
+- Commit-message search capability in activity repository.
 
-### Weeks 5-6 (Maintainability + UX)
-- Refactor top hotspot files into bounded components
-- Execute UX consistency and accessibility sweep on high-traffic screens
+### Planned
+- Broader project-level activity aggregation and filtering options.
 
-## 12. Documentation Map
-For full supporting references:
-1. [Project One Sheet](docs/PROJECT_ONE_SHEET.md)
-2. [Architecture](docs/ARCHITECTURE.md)
-3. [Codebase Findings](docs/CODEBASE_FINDINGS.md)
-4. [UI/UX Design](docs/UI_UX_DESIGN.md)
-5. [Security](docs/SECURITY.md)
-6. [Testing](docs/TESTING.md)
-7. [Release Runbook](docs/RELEASE.md)
-8. [Production Docs Index](docs/README.md)
+### 5.4 Role Management And Permissions
+### Verified
+- Project roles: admin/manager/member model with hierarchy validation.
+- Permission checker with default role permissions + optional custom permission override parsing.
+- Guarded actions for project edits, member invites/removals, role changes, task create/edit/delete/assign/status.
+- Assignment guardrails using role hierarchy.
 
-Historical/non-production material map:
+### Planned
+- Continue hardening edge-case validations and UX feedback around denied operations.
+
+### 5.5 Chat And Collaboration
+### Verified
+- Multiple chatrooms per project (`chat_rooms`, participants).
+- Message model and Room/Supabase data paths.
+- Participant add/remove operations.
+- Chat room pin/archive operations.
+- Typing indicator support via realtime broadcast.
+- Chat search dialogs and message lookup flows.
+
+### Planned
+- Additional optimization for server-side joins currently noted as improvement areas.
+
+### 5.6 Connections, Discover, Invites, Join Requests
+### Verified
+- Connections domain with accepted/pending request flows.
+- Discover screens for users/projects with join-request actions.
+- Project invite lifecycle (create/accept/decline/cancel/expire).
+- Join request lifecycle and notification hooks.
+- Supporting entities: `user_connections`, `project_invites`, `project_join_requests`.
+
+### Planned
+- Further UX convergence between discover and connections action surfaces.
+
+### 5.7 Profile + Project Rich Fields
+### Verified
+- Profile model fields include bio/location/website and related settings surfaces.
+- Project model includes extended metadata beyond title/description:
+  - category
+  - deadline
+  - website/github links
+  - project motive
+  - tech stack
+  - tags and industry tags
+  - business model/target audience/open-source license
+  - member count tracking
+
+### Planned
+- Ongoing consistency pass for profile/settings fields with remaining deferred UI pieces.
+
+## 6. Data Layer Depth: Room + Supabase
+
+### 6.1 Room (Local Source of Responsiveness)
+### Verified
+- `KosmosDatabase` is versioned to **v12** with sequential migrations.
+- Major migration milestones include:
+  - project extended fields
+  - task activity table
+  - sync queue + sync timestamps
+  - FK behavior hardening (CASCADE -> NO_ACTION)
+  - `time_entries` + `task_dependencies`
+  - `project_invites` + `user_connections` + `project_join_requests`
+
+### 6.2 Supabase Integration (Remote Convergence)
+### Verified
+- Supabase client configured with Auth/Postgrest/Realtime/Storage modules.
+- Datasources mapped to core tables:
+  - `tasks`, `task_activity`, `task_dependencies`, `time_entries`
+  - `projects`, `project_members`, `project_invites`, `project_join_requests`
+  - `chat_rooms`, `messages`
+  - `users`, `user_connections`
+- Repository layer performs best-effort remote sync and queues retries on failure paths.
+
+### Planned
+- Additional convergence checks and optimization of selective server-side filtering paths.
+
+## 7. Realtime And WebSocket Behavior
+### Verified
+- Realtime channels and Postgres change flows are managed in `SupabaseRealtimeManager`.
+- Covered event domains include:
+  - messages
+  - task updates
+  - task activity
+  - typing indicators
+  - project members
+  - user connections and invites
+- Supabase realtime uses websocket-backed channels (as configured in Supabase client stack).
+
+### Planned
+- Close remaining TODO-marked subscription hardening paths identified in audits.
+
+## 8. Background Work (WorkManager)
+### Verified
+- WorkManager-backed scheduling is used for reminders:
+  - `ReminderScheduler`
+  - `TaskReminderWorker` (`CoroutineWorker`)
+- Task repository integrates reminder scheduling/cancellation in task lifecycle operations.
+
+### Planned
+- Add richer observability around worker execution and retry outcomes.
+
+## 9. Security And Release Discipline
+### Verified
+- Local-only secret handling expected for runtime and signing keys.
+- `.gitignore` excludes local properties and keystore material.
+- Preflight + signed-bundle verification gates exist.
+
+Required local keys:
+- Runtime: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GOOGLE_WEB_CLIENT_ID`, `GOOGLE_CLOUD_API_KEY`
+- Signing: `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`
+
+### Planned
+- Final legal links/store metadata completion and rollout governance checks.
+
+## 10. Quality Reality
+### Verified
+- Main Kotlin files: **262**
+- Unit test files: **11**
+- Android test files: **11**
+- Test surface exists, but depth remains lower than total feature breadth.
+
+### Planned
+- Increase deterministic e2e smoke and reconnect/conflict/retry coverage.
+
+## 11. Developer Ideation -> Execution Journey
+This repository reflects an iterative build approach:
+1. Foundation and architecture scaffolding
+2. Core data models and DAOs
+3. Supabase datasource + repository wiring
+4. Auth/chat/project/task feature expansion
+5. Role-permission governance and collaboration flows
+6. Realtime event systems and sync hardening
+7. UX component growth and redesign wrappers
+8. Testing/release documentation and production cleanup
+
+This pattern demonstrates deliberate evolution from architecture-first setup to feature maturity and release governance.
+
+## 12. Feature Checkpoint Matrix (Code + History Evidence)
+| Capability | Code Evidence | First Commit Checkpoint | Milestone Context |
+|---|---|---|---|
+| Chat rooms + messages core models | `core/models/ChatRoom.kt`, `core/models/Message.kt` | `f9ab6d0` (2025-07-13) | `milestone/v0.4-auth-chat` |
+| Project + permissions model | `core/models/Project.kt`, `core/models/Permission.kt` | `68f978a` (2025-07-16) | `milestone/v0.5-projects` |
+| Project member role model | `core/models/ProjectMember.kt` | `e875410` (2025-07-18) | `milestone/v0.5-projects` |
+| Task + activity model | `core/models/Task.kt`, `core/models/TaskActivity.kt` | `420cff0` (2025-07-23) | `milestone/v0.6-tasks` |
+| Time entry + user core models | `core/models/TimeEntry.kt`, `core/models/User.kt` | `7325f7c` (2025-07-26) | `milestone/v0.6-tasks` |
+| Permission/role validation engine | `core/validators/PermissionChecker.kt`, `RoleValidator.kt` | `e4eaadc` (2025-07-31) | `milestone/v0.5-projects` |
+| Realtime manager backbone | `data/realtime/SupabaseRealtimeManager.kt` | `de9f061` (2025-08-12) | `milestone/v0.3-supabase` |
+| Invite + join-request repositories | `data/repository/ProjectInviteRepository.kt`, `ProjectJoinRequestRepository.kt` | `3f06509` (2025-08-17) | `milestone/v0.5-projects` |
+| Project/task repositories (core orchestration) | `data/repository/ProjectRepository.kt`, `TaskRepository.kt` | `988787b` (2025-08-20) | `milestone/v0.6-tasks` |
+| User connection repository | `data/repository/UserConnectionRepository.kt` | `7658fca` (2025-08-22) | `milestone/v0.5-projects` |
+| Reminder scheduling (WorkManager path) | `features/notifications/ReminderScheduler.kt` | `6a47fda` (2025-09-26) | `milestone/v0.8-android-assets` |
+| Task reminder worker | `features/notifications/TaskReminderWorker.kt` | `c451368` (2025-09-29) | `milestone/v0.8-android-assets` |
+| Connections experience | `features/connections/presentation/ConnectionsScreen.kt`, `ConnectionsViewModel.kt` | `4f5d118` (2025-09-19) | `milestone/v0.5-projects` |
+| Discover experience | `features/discover/presentation/DiscoverScreen.kt`, `DiscoverViewModel.kt` | `67e3965` (2025-09-21) | `milestone/v0.5-projects` |
+| Activity timeline UI | `features/tasks/components/ActivityTimeline.kt` | `5d87799` (2025-11-03) | `milestone/v0.6-tasks` |
+| Commit-message workflow UI | `features/tasks/components/CommitMessageDialog.kt` | `e6fffcc` (2025-11-05) | `milestone/v0.6-tasks` |
+| Task picker/subtask selection UI | `features/tasks/components/TaskPickerBottomSheet.kt` | `8229372` (2025-11-08) | `milestone/v0.6-tasks` |
+| Time tracker widget | `features/tasks/components/TimeTrackerWidget.kt` | `66ca128` (2025-11-10) | `milestone/v0.6-tasks` |
+| Room database foundation/migration lineage | `core/database/KosmosDatabase.kt` | `b0f143d` (2025-06-21) | `milestone/v0.2-core-data` |
+| Production-ready docs + release framing | `docs/*`, release docs | `39b5c9d` + `6d1afff` | `milestone/v0.9-quality-docs`, `milestone/v1.0-release-ready` |
+
+Note: some feature checkpoints are **implicit** in synthetic commit subjects, but explicit in file-level commit introduction and current code evidence.
+
+## 13. Risks And Next Priorities
+### Verified risk bands
+- **High**: signing completion and signed artifact verification before external distribution.
+- **Medium**: realtime/reconnect consistency and large-file maintainability risk.
+- **Lower (important)**: remaining deferred UX polish in selected settings/profile paths.
+
+### Planned 6-week focus
+- Weeks 1-2: release-signing closure and verified signed artifact path.
+- Weeks 3-4: realtime/retry hardening + deterministic conflict tests.
+- Weeks 5-6: hotspot modularization + UX/accessibility consistency sweep.
+
+## 14. Documentation Map
+- [Production Docs Index](docs/README.md)
+- [Project One Sheet](docs/PROJECT_ONE_SHEET.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Codebase Findings](docs/CODEBASE_FINDINGS.md)
+- [UI/UX Design](docs/UI_UX_DESIGN.md)
+- [Security](docs/SECURITY.md)
+- [Testing](docs/TESTING.md)
+- [Release Runbook](docs/RELEASE.md)
 - [Archive References](docs/ARCHIVE_REFERENCES.md)
 
-## 13. Current Bottom Line
-Kosmos is a substantial Android collaboration codebase with strong feature breadth, production-conscious architecture, and explicit release governance. Remaining work is concentrated in release-signing completion, selected reliability hardening, and incremental maintainability improvements rather than foundational architecture gaps.
+## 15. Bottom Line
+Kosmos demonstrates full-stack Android collaboration engineering across data modeling, sync/realtime architecture, role-governed workflows, and release operationalization. The remaining work is concentrated in release completion and targeted hardening, not missing product foundation.
