@@ -1,15 +1,23 @@
 # Kosmos Production Documentation
 
-This is the production documentation set for GitHub reviewers, interviewers, and engineering evaluators.
+This is the production documentation set for technical reviewers, product evaluators, and engineering contributors.
+
+## Recommended Reading Order
+1. [Project One Sheet](./PROJECT_ONE_SHEET.md)
+2. [Product and Scope](./PRODUCT.md)
+3. [Architecture](./ARCHITECTURE.md)
+4. [Codebase Findings](./CODEBASE_FINDINGS.md)
+5. [Security Model](./SECURITY.md)
+6. [Testing and Quality](./TESTING.md)
+7. [Release Runbook](./RELEASE.md)
 
 ## Reading Paths
 
-### Interviewer Path (recommended)
-1. [Product and Scope](./PRODUCT.md)
+### Fast Project Understanding Path
+1. [Project One Sheet](./PROJECT_ONE_SHEET.md)
 2. [Architecture](./ARCHITECTURE.md)
 3. [Codebase Findings](./CODEBASE_FINDINGS.md)
-4. [Security Model](./SECURITY.md)
-5. [Release Runbook](./RELEASE.md)
+4. [Release Runbook](./RELEASE.md)
 
 ### Engineering Deep-Dive Path
 1. [Architecture](./ARCHITECTURE.md)
@@ -29,6 +37,7 @@ This is the production documentation set for GitHub reviewers, interviewers, and
 - `Planned`: forward-looking execution guidance.
 
 ## Document Index
+- `Mixed` [Project One Sheet](./PROJECT_ONE_SHEET.md)
 - `Mixed` [Product and Scope](./PRODUCT.md)
 - `Mixed` [Architecture](./ARCHITECTURE.md)
 - `Verified` [Codebase Findings](./CODEBASE_FINDINGS.md)

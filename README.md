@@ -14,12 +14,14 @@ Kosmos is an Android collaboration app for project teams: chat, tasks, membershi
 - Core stack: Kotlin, Compose, Hilt, Room, Supabase, Coroutines/Flow
 - Release blockers still open: signed release configuration + final Play Console/legal metadata checks
 
-## What Interviewers Should Review First
-1. [Architecture](docs/ARCHITECTURE.md)
-2. [Codebase Findings](docs/CODEBASE_FINDINGS.md)
-3. [Security Model](docs/SECURITY.md)
-4. [Testing and Quality](docs/TESTING.md)
-5. [Release Runbook](docs/RELEASE.md)
+## Read First
+1. [Project One Sheet](docs/PROJECT_ONE_SHEET.md)
+2. [Architecture](docs/ARCHITECTURE.md)
+3. [Codebase Findings](docs/CODEBASE_FINDINGS.md)
+4. [Security Model](docs/SECURITY.md)
+5. [Testing and Quality](docs/TESTING.md)
+6. [Release Runbook](docs/RELEASE.md)
+7. [Interview Prep](docs/INTERVIEW_PREP.md)
 
 ## Planned Improvements (Post Internal Track)
 - Close deferred realtime and settings/profile TODO paths.
@@ -47,4 +49,13 @@ Use local-only properties for:
 - Historical/non-production archive: [docs/ARCHIVE_REFERENCES.md](docs/ARCHIVE_REFERENCES.md)
 
 ## Demo Media
-Screenshots and video walkthrough are intentionally deferred and will be added in a dedicated docs pass.
+Captured from the app running in Demo Mode (`BuildConfig.DEMO_MODE_ENABLED`, seeded via `DemoDataSeeder` — no real account or backend required). Full set of 29 screens in [`screenshots/`](screenshots/).
+
+| | | |
+|---|---|---|
+| ![Login](screenshots/00-login.png) | ![Project list](screenshots/01-project-list.png) | ![Workspace overview](screenshots/02-workspace-overview.png) |
+| Login (demo entry) | Project list | Workspace overview |
+| ![Workspace tasks](screenshots/04-workspace-tasks.png) | ![Chat room](screenshots/07-chat-room.png) | ![Task detail](screenshots/08-task-detail.png) |
+| Task board | Chat room | Task detail |
+| ![Notifications](screenshots/09-notifications.png) | ![Discover](screenshots/10-discover.png) | ![Profile](screenshots/14-profile.png) |
+| Notifications | Discover | Profile |
