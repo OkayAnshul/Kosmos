@@ -1,11 +1,46 @@
+<div align="center">
+
 # Kosmos
 
-Kosmos is an Android collaboration app for project teams: chat, tasks, membership, and offline-first sync.
+**An offline-first Android team collaboration app — chat, tasks, and project workspaces that work without a connection, then converge safely when it's back.**
+
+[![Android Tests](https://github.com/OkayAnshul/Kosmos/actions/workflows/android-tests.yml/badge.svg)](https://github.com/OkayAnshul/Kosmos/actions/workflows/android-tests.yml)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.2-7F52FF?logo=kotlin&logoColor=white)
+![Min SDK](https://img.shields.io/badge/minSdk-26-3DDC84?logo=android&logoColor=white)
+![Target SDK](https://img.shields.io/badge/targetSdk-36-3DDC84?logo=android&logoColor=white)
+[![Architecture Deep Dive](https://img.shields.io/badge/docs-architecture%20deep%20dive-7c3aed)](https://okayanshul.github.io/kosmos-architecture/)
+
+**[📐 Architecture & Schema Deep Dive](https://okayanshul.github.io/kosmos-architecture/) · [📋 Interview Prep](docs/INTERVIEW_PREP.md) · [🖼 Full Screenshot Gallery](screenshots/)**
+
+</div>
+
+<br>
+
+<img src="screenshots/social/hero-grid.png" alt="Kosmos screens: login, projects, workspace, task board, activity log, chat, task detail, notifications, discover, profile, settings, connections" width="100%">
 
 ## Why This Project Matters
-- Combines project communication and execution into one mobile flow.
-- Prioritizes local-first behavior with eventual backend convergence.
-- Built as a production-oriented codebase with explicit release gates.
+Kosmos combines project communication and execution into one mobile flow, prioritizes local-first behavior with eventual backend convergence, and is built as a production-oriented codebase with explicit release gates — not a tutorial CRUD app. Solo-built end to end: Android client, Postgres schema, RLS policies, realtime layer, RBAC, and CI.
+
+## Engineering Highlights
+| | |
+|---|---|
+| **14** feature modules | **16** Room entities (DB v12, 12-step migration chain) |
+| **26** granular permissions, 3 role tiers | **3** `ConcurrentHashMap` realtime channel pools |
+| **112** unit tests passing, 3-job CI pipeline | **84.5k** lines of Kotlin |
+
+- **Offline sync with real conflict resolution** — an exponential-backoff sync queue (capped at 60s, max 5 retries) plus field-level last-write-wins conflict resolution across 9 task fields: disjoint edits auto-merge, true conflicts surface a resolution dialog only when they overlap within a 5s window.
+- **Realtime collaboration** — three independently keyed channel pools over Supabase Realtime for messages, tasks, and project members; postgres-change streams plus typing/broadcast channels.
+- **RBAC enforced twice** — a `PermissionGated` composable hides unauthorized UI client-side, and Supabase Row-Level Security + `SECURITY DEFINER` RPCs enforce it server-side, so a modified client still can't bypass it.
+- **Honest about the rough edges** — known hotspot files, an intentionally deferred namespace/applicationId mismatch, and a couple of documented dead-code paths are called out directly in the [architecture site](https://okayanshul.github.io/kosmos-architecture/architecture.html), not hidden.
+
+→ For the full write-up with diagrams, ER schema, and annotated code — see **[okayanshul.github.io/kosmos-architecture](https://okayanshul.github.io/kosmos-architecture/)**.
+
+## Screens
+Captured from the app running in Demo Mode (`BuildConfig.DEMO_MODE_ENABLED`, seeded via `DemoDataSeeder` — no real account or backend required). Full set of 29 individual screens in [`screenshots/`](screenshots/), or browse them all on the [gallery page](https://okayanshul.github.io/kosmos-architecture/gallery.html).
+
+<img src="screenshots/social/collab-realtime.png" alt="Collaboration and realtime screens" width="100%">
+<img src="screenshots/social/task-management.png" alt="Task management screens" width="100%">
+<img src="screenshots/social/profile-discover.png" alt="Discover, profile and settings screens" width="100%">
 
 ## Current Verified Snapshot (March 7, 2026)
 - Android app package ID: `com.aravya.apps.kosmos`
@@ -16,7 +51,7 @@ Kosmos is an Android collaboration app for project teams: chat, tasks, membershi
 
 ## Read First
 1. [Project One Sheet](docs/PROJECT_ONE_SHEET.md)
-2. [Architecture](docs/ARCHITECTURE.md)
+2. [Architecture](docs/ARCHITECTURE.md) · [full deep dive ↗](https://okayanshul.github.io/kosmos-architecture/architecture.html)
 3. [Codebase Findings](docs/CODEBASE_FINDINGS.md)
 4. [Security Model](docs/SECURITY.md)
 5. [Testing and Quality](docs/TESTING.md)
@@ -46,16 +81,9 @@ Use local-only properties for:
 
 ## Documentation
 - Production docs index: [docs/README.md](docs/README.md)
+- Deep-dive site (architecture, schema, engineering case studies): [okayanshul.github.io/kosmos-architecture](https://okayanshul.github.io/kosmos-architecture/)
 - Historical/non-production archive: [docs/ARCHIVE_REFERENCES.md](docs/ARCHIVE_REFERENCES.md)
 
-## Demo Media
-Captured from the app running in Demo Mode (`BuildConfig.DEMO_MODE_ENABLED`, seeded via `DemoDataSeeder` — no real account or backend required). Full set of 29 screens in [`screenshots/`](screenshots/).
-
-| | | |
-|---|---|---|
-| ![Login](screenshots/00-login.png) | ![Project list](screenshots/01-project-list.png) | ![Workspace overview](screenshots/02-workspace-overview.png) |
-| Login (demo entry) | Project list | Workspace overview |
-| ![Workspace tasks](screenshots/04-workspace-tasks.png) | ![Chat room](screenshots/07-chat-room.png) | ![Task detail](screenshots/08-task-detail.png) |
-| Task board | Chat room | Task detail |
-| ![Notifications](screenshots/09-notifications.png) | ![Discover](screenshots/10-discover.png) | ![Profile](screenshots/14-profile.png) |
-| Notifications | Discover | Profile |
+<div align="center">
+<sub>Built by <a href="https://github.com/OkayAnshul">OkayAnshul</a></sub>
+</div>
