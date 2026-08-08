@@ -10,7 +10,7 @@
 ![Target SDK](https://img.shields.io/badge/targetSdk-36-3DDC84?logo=android&logoColor=white)
 [![Architecture Deep Dive](https://img.shields.io/badge/docs-architecture%20deep%20dive-7c3aed)](https://okayanshul.github.io/kosmos-architecture/)
 
-**[📐 Architecture & Schema Deep Dive](https://okayanshul.github.io/kosmos-architecture/) · [📋 Interview Prep](docs/INTERVIEW_PREP.md) · [🖼 Full Screenshot Gallery](screenshots/)**
+**[📐 Architecture & Schema Deep Dive](https://okayanshul.github.io/kosmos-architecture/) · [🖼 Screenshot Gallery](https://okayanshul.github.io/kosmos-architecture/gallery.html) · [⚙️ Tech Stack](#tech-stack) · [🚀 Quick Start](#quick-start)**
 
 </div>
 
@@ -33,7 +33,21 @@ Kosmos combines project communication and execution into one mobile flow, priori
 - **RBAC enforced twice** — a `PermissionGated` composable hides unauthorized UI client-side, and Supabase Row-Level Security + `SECURITY DEFINER` RPCs enforce it server-side, so a modified client still can't bypass it.
 - **Honest about the rough edges** — known hotspot files, an intentionally deferred namespace/applicationId mismatch, and a couple of documented dead-code paths are called out directly in the [architecture site](https://okayanshul.github.io/kosmos-architecture/architecture.html), not hidden.
 
-→ For the full write-up with diagrams, ER schema, and annotated code — see **[okayanshul.github.io/kosmos-architecture](https://okayanshul.github.io/kosmos-architecture/)**.
+→ For the full write-up with diagrams, ER schema, and annotated code, see **[okayanshul.github.io/kosmos-architecture](https://okayanshul.github.io/kosmos-architecture/)**.
+
+## Tech Stack
+| Layer | Technology |
+|---|---|
+| Language | Kotlin 2.2, Coroutines, Flow |
+| UI | Jetpack Compose, Material 3 |
+| Architecture | MVVM + Repository, offline-first |
+| DI | Hilt |
+| Local storage | Room 2.8 (16 entities, 12-step migration chain) |
+| Backend | Supabase — Postgres, Auth (OAuth 2.0), Realtime (WebSockets), Row-Level Security |
+| Background work | WorkManager (tiered task reminders) |
+| Images | Coil |
+| Testing | JUnit, MockK, Robolectric, Turbine, Compose UI tests |
+| CI/CD | GitHub Actions (unit tests + Jacoco coverage + instrumented build), ProGuard/R8 |
 
 ## Screens
 Captured from the app running in Demo Mode (`BuildConfig.DEMO_MODE_ENABLED`, seeded via `DemoDataSeeder` — no real account or backend required). Full set of 29 individual screens in [`screenshots/`](screenshots/), or browse them all on the [gallery page](https://okayanshul.github.io/kosmos-architecture/gallery.html).
@@ -42,11 +56,27 @@ Captured from the app running in Demo Mode (`BuildConfig.DEMO_MODE_ENABLED`, see
 <img src="screenshots/social/task-management.png" alt="Task management screens" width="100%">
 <img src="screenshots/social/profile-discover.png" alt="Discover, profile and settings screens" width="100%">
 
-## Current Verified Snapshot (March 7, 2026)
+## Quick Start
+```bash
+git clone git@github.com:OkayAnshul/Kosmos.git && cd Kosmos
+
+# Add your own Supabase project + OAuth client to local.properties
+# (never committed — see "Secrets and Safety" below)
+cat >> local.properties << 'EOF'
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+GOOGLE_WEB_CLIENT_ID=your-oauth-client-id
+EOF
+
+./gradlew assembleDebug     # build
+./gradlew testDebugUnitTest # run the unit test suite
+```
+No Supabase project handy? Launch the app and tap **Explore Demo Mode** on the login screen — it seeds Room with realistic mock data and skips the network entirely.
+
+## Project Status (as of March 2026)
 - Android app package ID: `com.aravya.apps.kosmos`
-- Kotlin namespace in source: `com.example.kosmos` (intentional transitional debt)
+- Kotlin namespace in source: `com.example.kosmos` (intentional transitional debt — see [Decisions Log](docs/DECISIONS.md))
 - Build config: `minSdk=26`, `targetSdk=36`, `compileSdk=36`
-- Core stack: Kotlin, Compose, Hilt, Room, Supabase, Coroutines/Flow
 - Release blockers still open: signed release configuration + final Play Console/legal metadata checks
 
 ## Read First
@@ -56,7 +86,6 @@ Captured from the app running in Demo Mode (`BuildConfig.DEMO_MODE_ENABLED`, see
 4. [Security Model](docs/SECURITY.md)
 5. [Testing and Quality](docs/TESTING.md)
 6. [Release Runbook](docs/RELEASE.md)
-7. [Interview Prep](docs/INTERVIEW_PREP.md)
 
 ## Planned Improvements (Post Internal Track)
 - Close deferred realtime and settings/profile TODO paths.
