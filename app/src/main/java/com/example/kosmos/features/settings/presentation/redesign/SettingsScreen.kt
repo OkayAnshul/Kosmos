@@ -18,7 +18,9 @@ import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.example.kosmos.core.config.AppConfig
+import com.example.kosmos.features.projects.presentation.redesign.ProjectAccentStyle
 import com.example.kosmos.shared.ui.components.LoadingIndicator
 import com.example.kosmos.shared.ui.designsystem.ColorTokens
 import com.example.kosmos.shared.ui.designsystem.IconSet
@@ -55,6 +57,8 @@ fun SettingsScreen(
     onClearCache: () -> Unit,
     onLogout: () -> Unit,
     onNavigateBack: () -> Unit,
+    projectAccentStyle: ProjectAccentStyle = ProjectAccentStyle.OFF,
+    onProjectAccentStyleChange: (ProjectAccentStyle) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showClearCacheDialog by remember { mutableStateOf(false) }
@@ -137,6 +141,63 @@ fun SettingsScreen(
                             // TODO: Implement preferences screens
                         }
                     )
+                }
+
+                item { Spacer(modifier = Modifier.height(Tokens.Spacing.md)) }
+
+                // Appearance Section
+                item {
+                    SectionHeader(title = "Appearance")
+                }
+
+                item {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = Tokens.Spacing.xxs),
+                        shape = MaterialTheme.shapes.medium,
+                        color = ColorTokens.ReactTheme.card
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(Tokens.Spacing.md),
+                            verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+                        ) {
+                            Text(
+                                text = "Project Card Accent",
+                                style = TypographyTokens.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = ColorTokens.ReactTheme.foreground
+                            )
+                            Text(
+                                text = "How project colors appear on project cards",
+                                style = TypographyTokens.typography.bodySmall,
+                                color = ColorTokens.ReactTheme.mutedForeground
+                            )
+                            Spacer(modifier = Modifier.height(Tokens.Spacing.xs))
+
+                            AccentStyleOption(
+                                label = "Off",
+                                description = "Clean look, no accent color",
+                                selected = projectAccentStyle == ProjectAccentStyle.OFF,
+                                onClick = { onProjectAccentStyleChange(ProjectAccentStyle.OFF) }
+                            )
+                            AccentStyleOption(
+                                label = "Colored Name",
+                                description = "Project name uses the accent color",
+                                selected = projectAccentStyle == ProjectAccentStyle.COLORED_NAME,
+                                onClick = { onProjectAccentStyleChange(ProjectAccentStyle.COLORED_NAME) }
+                            )
+                            AccentStyleOption(
+                                label = "Dot Indicator",
+                                description = "Small colored dot next to the name",
+                                selected = projectAccentStyle == ProjectAccentStyle.DOT,
+                                onClick = { onProjectAccentStyleChange(ProjectAccentStyle.DOT) }
+                            )
+                        }
+                    }
                 }
 
                 item { Spacer(modifier = Modifier.height(Tokens.Spacing.md)) }
@@ -508,6 +569,51 @@ private val preferencesSettings = listOf(
         subtitle = "Manage offline sync settings"
     )
 )
+
+@Composable
+private fun AccentStyleOption(
+    label: String,
+    description: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(Tokens.CornerRadius.md),
+        color = if (selected) ColorTokens.ReactTheme.primary.copy(alpha = 0.1f)
+                else ColorTokens.ReactTheme.secondary
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Tokens.Spacing.md, vertical = Tokens.Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.md)
+        ) {
+            RadioButton(
+                selected = selected,
+                onClick = onClick,
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = ColorTokens.ReactTheme.primary,
+                    unselectedColor = ColorTokens.ReactTheme.mutedForeground
+                )
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    style = TypographyTokens.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    color = if (selected) ColorTokens.ReactTheme.primary else ColorTokens.ReactTheme.foreground
+                )
+                Text(
+                    text = description,
+                    style = TypographyTokens.typography.bodySmall,
+                    color = ColorTokens.ReactTheme.mutedForeground
+                )
+            }
+        }
+    }
+}
 
 private fun aboutSettings(version: String) = listOf(
     SettingItem(

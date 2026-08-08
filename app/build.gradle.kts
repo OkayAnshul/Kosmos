@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -9,12 +11,29 @@ plugins {
     alias(libs.plugins.kotlin.allopen)
 }
 
+// Load secrets from local.properties (not checked into VCS) with gradle.properties as fallback
+val localProps = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { stream -> localProps.load(stream) }
+}
+fun secret(key: String): String =
+    (localProps[key] as String?) ?: (project.findProperty(key) as String?) ?: ""
+
 android {
     namespace = "com.example.kosmos"
     compileSdk = 36
+    val releaseStoreFile = secret("RELEASE_STORE_FILE").ifBlank { null }
+    val releaseStorePassword = secret("RELEASE_STORE_PASSWORD").ifBlank { null }
+    val releaseKeyAlias = secret("RELEASE_KEY_ALIAS").ifBlank { null }
+    val releaseKeyPassword = secret("RELEASE_KEY_PASSWORD").ifBlank { null }
+    val hasReleaseSigning = releaseStoreFile != null &&
+        releaseStorePassword != null &&
+        releaseKeyAlias != null &&
+        releaseKeyPassword != null
 
     defaultConfig {
-        applicationId = "com.example.kosmos"
+        applicationId = "com.aravya.apps.kosmos"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -23,16 +42,32 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+    }
+
     buildTypes {
 
         debug {
             // Add debug-specific build config fields
             // Replace with your actual Google Cloud API key for Speech-to-Text
-            buildConfigField("String", "GOOGLE_CLOUD_API_KEY", "\"${project.findProperty("GOOGLE_CLOUD_API_KEY") ?: ""}\"")
-            buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL") ?: ""}\"")
-            buildConfigField("String", "SUPABASE_ANON_KEY", "\"${project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
-            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
+            buildConfigField("String", "GOOGLE_CLOUD_API_KEY", "\"${secret("GOOGLE_CLOUD_API_KEY")}\"")
+            buildConfigField("String", "SUPABASE_URL", "\"${secret("SUPABASE_URL")}\"")
+            buildConfigField("String", "SUPABASE_ANON_KEY", "\"${secret("SUPABASE_ANON_KEY")}\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${secret("GOOGLE_WEB_CLIENT_ID")}\"")
             buildConfigField("boolean", "ENABLE_LOGGING", "true")
+            buildConfigField("boolean", "DEMO_MODE_ENABLED", "true")
             // [FUTURE F1] Voice recording feature flag — set to true when implementing
             // the full MediaRecorder → Supabase Storage → ExoPlayer pipeline
             buildConfigField("boolean", "VOICE_ENABLED", "false")
@@ -49,14 +84,16 @@ android {
                 "proguard-rules.pro"
             )
             // Add your production API keys here
-            buildConfigField("String", "GOOGLE_CLOUD_API_KEY", "\"${project.findProperty("GOOGLE_CLOUD_API_KEY_PROD") ?: project.findProperty("GOOGLE_CLOUD_API_KEY") ?: ""}\"")
-            buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL_PROD") ?: project.findProperty("SUPABASE_URL") ?: ""}\"")
-            buildConfigField("String", "SUPABASE_ANON_KEY", "\"${project.findProperty("SUPABASE_ANON_KEY_PROD") ?: project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
-            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${project.findProperty("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
+            buildConfigField("String", "GOOGLE_CLOUD_API_KEY", "\"${secret("GOOGLE_CLOUD_API_KEY_PROD").ifBlank { secret("GOOGLE_CLOUD_API_KEY") }}\"")
+            buildConfigField("String", "SUPABASE_URL", "\"${secret("SUPABASE_URL_PROD").ifBlank { secret("SUPABASE_URL") }}\"")
+            buildConfigField("String", "SUPABASE_ANON_KEY", "\"${secret("SUPABASE_ANON_KEY_PROD").ifBlank { secret("SUPABASE_ANON_KEY") }}\"")
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${secret("GOOGLE_WEB_CLIENT_ID")}\"")
             buildConfigField("boolean", "ENABLE_LOGGING", "false")
+            buildConfigField("boolean", "DEMO_MODE_ENABLED", "true")
 
-            // Signing config for release
-            //signingConfig signingConfigs.debug // Replace with actual signing config
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {

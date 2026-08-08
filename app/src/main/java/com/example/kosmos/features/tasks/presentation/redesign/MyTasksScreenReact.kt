@@ -73,7 +73,9 @@ data class TaskData(
     val priority: TaskPriorityReact,
     val dueDate: String? = null,
     val assignee: Assignee? = null,
-    val projectName: String? = null
+    val projectName: String? = null,
+    val subtaskTotal: Int = 0,
+    val subtaskDone: Int = 0
 )
 
 data class Assignee(
@@ -868,6 +870,36 @@ private fun TaskCard(
                 ) {
                     TaskStatusBadge(status = task.status)
                     PriorityBadge(priority = task.priority)
+                }
+
+                // Subtask progress row
+                if (task.subtaskTotal > 0) {
+                    Row(
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Checklist,
+                            contentDescription = null,
+                            tint = ColorTokens.ReactTheme.mutedForeground,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "${task.subtaskDone}/${task.subtaskTotal} subtasks",
+                            fontSize = 12.sp,
+                            color = ColorTokens.ReactTheme.mutedForeground
+                        )
+                        LinearProgressIndicator(
+                            progress = { task.subtaskDone.toFloat() / task.subtaskTotal },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(2.dp)),
+                            color = ColorTokens.ReactTheme.primary,
+                            trackColor = ColorTokens.ReactTheme.border
+                        )
+                    }
                 }
 
                 // Footer (line 72-95)

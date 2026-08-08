@@ -5,6 +5,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kosmos.core.models.ProjectRole
 import com.example.kosmos.features.projects.presentation.MembersListViewModel
+import androidx.compose.foundation.layout.fillMaxSize
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -27,6 +28,19 @@ fun MembersListScreenReactWrapper(
         viewModel.loadJoinRequests(projectId)
     }
 
+    // Show loading indicator during initial load to prevent "0 members" flash
+    if (uiState.isLoading && uiState.members.isEmpty()) {
+        androidx.compose.foundation.layout.Box(
+            modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+            contentAlignment = androidx.compose.ui.Alignment.Center
+        ) {
+            androidx.compose.material3.CircularProgressIndicator(
+                color = com.example.kosmos.shared.ui.designsystem.ColorTokens.ReactTheme.primary
+            )
+        }
+        return
+    }
+
     // Map domain models to UI models
     val memberCards = uiState.filteredMembers.map { memberWithUser ->
         MemberCardData(
@@ -45,6 +59,7 @@ fun MembersListScreenReactWrapper(
         pendingInvites = uiState.pendingInvites,
         joinRequests = uiState.joinRequests,
         currentUserRole = uiState.currentUserRole ?: ProjectRole.MEMBER,
+        currentMember = uiState.currentMember,
         onMemberClick = onMemberClick,
         onAddMembersClick = onAddMembersClick,
         onChangeRole = { userId, newRole ->

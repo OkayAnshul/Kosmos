@@ -6,6 +6,7 @@ import com.example.kosmos.core.models.User
 import com.example.kosmos.core.models.SyncOperation
 import com.example.kosmos.data.datasource.SupabaseUserDataSource
 import com.example.kosmos.data.sync.SyncQueueHelper
+import com.example.kosmos.features.demo.DemoMode
 import io.github.jan.supabase.SupabaseClient
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -28,7 +29,8 @@ class UserRepository @Inject constructor(
     private val supabase: SupabaseClient,
     private val supabaseUserDataSource: SupabaseUserDataSource,
     private val networkMonitor: com.example.kosmos.shared.utils.NetworkMonitor,  // P0-06 FIX
-    private val syncQueueDao: com.example.kosmos.core.database.dao.SyncQueueDao  // P0-08 FIX
+    private val syncQueueDao: com.example.kosmos.core.database.dao.SyncQueueDao,  // P0-08 FIX
+    private val demoMode: DemoMode
 ) {
     companion object {
         private const val TAG = "UserRepository"
@@ -511,6 +513,9 @@ class UserRepository @Inject constructor(
             val localUser = userDao.getUserById(userId)
             emit(Result.success(localUser))
 
+            // Demo mode: no network — local cache is authoritative
+            if (demoMode.isEnabled) return@flow
+
             // Step 2: Fetch from Supabase
             val supabaseResult = supabaseUserDataSource.getById(userId)
 
@@ -554,6 +559,7 @@ class UserRepository @Inject constructor(
         excludeIds: List<String> = emptyList(),
         limit: Int = 50
     ): Result<List<User>> {
+        if (demoMode.isEnabled) return Result.success(searchDemoUsers(query, excludeIds, limit))
         return supabaseUserDataSource.searchUsers(query, excludeIds, limit)
     }
 
@@ -565,7 +571,32 @@ class UserRepository @Inject constructor(
         excludeIds: List<String> = emptyList(),
         limit: Int = 50
     ): Result<List<User>> {
+        if (demoMode.isEnabled) return Result.success(searchDemoUsers(query, excludeIds, limit))
         return supabaseUserDataSource.searchUsersPublic(query, excludeIds, limit)
+    }
+
+    /**
+     * Demo-mode fallback: search seeded users from the local Room cache.
+     */
+    private suspend fun searchDemoUsers(
+        query: String,
+        excludeIds: List<String>,
+        limit: Int
+    ): List<User> {
+        if (query.isBlank()) return emptyList()
+        val trimmed = query.trim()
+        return try {
+            userDao.getAllUsers()
+                .filter { user ->
+                    !excludeIds.contains(user.id) &&
+                        (user.username.contains(trimmed, ignoreCase = true) ||
+                            user.displayName.contains(trimmed, ignoreCase = true) ||
+                            user.email.contains(trimmed, ignoreCase = true))
+                }
+                .take(limit)
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     /**

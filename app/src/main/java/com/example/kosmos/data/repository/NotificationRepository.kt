@@ -1,6 +1,8 @@
 package com.example.kosmos.data.repository
 
 import android.util.Log
+import com.example.kosmos.features.demo.DemoMode
+import com.example.kosmos.features.demo.DemoNotifications
 import com.example.kosmos.features.notifications.SupabaseNotification
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
@@ -17,7 +19,8 @@ import kotlinx.coroutines.CancellationException
  */
 @Singleton
 class NotificationRepository @Inject constructor(
-    private val supabase: SupabaseClient
+    private val supabase: SupabaseClient,
+    private val demoMode: DemoMode
 ) {
     private val TAG = "NotificationRepository"
 
@@ -34,6 +37,7 @@ class NotificationRepository @Inject constructor(
         limit: Int = 50,
         offset: Int = 0
     ): Result<List<SupabaseNotification>> {
+        if (demoMode.isEnabled) return Result.success(DemoNotifications.all)
         return try {
             val notifications = supabase.from("notifications")
                 .select {
@@ -66,6 +70,9 @@ class NotificationRepository @Inject constructor(
         userId: String,
         limit: Int = 50
     ): Result<List<SupabaseNotification>> {
+        if (demoMode.isEnabled) {
+            return Result.success(DemoNotifications.all.filter { !it.isRead })
+        }
         return try {
             val notifications = supabase.from("notifications")
                 .select {
@@ -94,6 +101,9 @@ class NotificationRepository @Inject constructor(
      * @return Count of unread notifications
      */
     suspend fun getUnreadCount(userId: String): Result<Int> {
+        if (demoMode.isEnabled) {
+            return Result.success(DemoNotifications.all.count { !it.isRead })
+        }
         return try {
             val result = supabase.from("notifications")
                 .select {
@@ -121,6 +131,7 @@ class NotificationRepository @Inject constructor(
      * @return Result of the operation
      */
     suspend fun markAsRead(notificationId: String): Result<Unit> {
+        if (demoMode.isEnabled) return Result.success(Unit)
         return try {
             supabase.from("notifications").update(
                 mapOf("is_read" to true)
@@ -146,6 +157,7 @@ class NotificationRepository @Inject constructor(
      * @return Result of the operation
      */
     suspend fun markAllAsRead(userId: String): Result<Unit> {
+        if (demoMode.isEnabled) return Result.success(Unit)
         return try {
             supabase.from("notifications").update(
                 mapOf("is_read" to true)
@@ -172,6 +184,7 @@ class NotificationRepository @Inject constructor(
      * @return Result of the operation
      */
     suspend fun deleteNotification(notificationId: String): Result<Unit> {
+        if (demoMode.isEnabled) return Result.success(Unit)
         return try {
             supabase.from("notifications").delete {
                 filter {
@@ -195,6 +208,7 @@ class NotificationRepository @Inject constructor(
      * @return Result of the operation
      */
     suspend fun deleteAllRead(userId: String): Result<Unit> {
+        if (demoMode.isEnabled) return Result.success(Unit)
         return try {
             supabase.from("notifications").delete {
                 filter {
@@ -249,6 +263,7 @@ class NotificationRepository @Inject constructor(
      * @return Result of the operation
      */
     suspend fun deleteAll(userId: String): Result<Unit> {
+        if (demoMode.isEnabled) return Result.success(Unit)
         return try {
             supabase.from("notifications").delete {
                 filter {

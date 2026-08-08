@@ -63,8 +63,6 @@ import com.example.kosmos.features.users.presentation.redesign.UserSearchScreenW
 import com.example.kosmos.features.users.presentation.redesign.UserProfileScreenWrapper
 import com.example.kosmos.features.users.presentation.redesign.InviteMembersScreenWrapper
 import com.example.kosmos.features.projects.presentation.redesign.MembersListScreenWrapper
-import com.example.kosmos.features.test.QuickDataCheckScreen
-import com.example.kosmos.features.test.ReactScreensTestLauncher
 import com.example.kosmos.shared.ui.designsystem.ColorTokens
 // import com.example.kosmos.features.voice.presentation.SpeechRecognitionScreen
 import com.example.kosmos.shared.ui.theme.KosmosTheme
@@ -224,14 +222,24 @@ fun KosmosApp(
     // Check for unseen announcements whenever the logged-in user changes
     LaunchedEffect(authUiState.currentUser?.id) {
         authUiState.currentUser?.id?.let { uid ->
-            announcementViewModel.checkAnnouncements(uid)
+            if (!authViewModel.isDemoMode()) {
+                announcementViewModel.checkAnnouncements(uid)
+            }
+        }
+    }
+
+    // Re-fetch app config once auth is ready (Application.onCreate may run before auth token is available)
+    LaunchedEffect(authUiState.isLoggedIn) {
+        if (authUiState.isLoggedIn && !authViewModel.isDemoMode()) {
+            appConfigRepo.refresh()
         }
     }
 
     // Start/stop notification listener when user logs in/out
     LaunchedEffect(authUiState.currentUser?.id) {
         val currentUser = authUiState.currentUser
-        if (currentUser != null) {
+        val isDemo = authViewModel.isDemoMode()
+        if (currentUser != null && !isDemo) {
             Log.d("KosmosApp", "Starting notification listener for user: ${currentUser.id}")
             notificationListener.startListening(currentUser.id)
         } else {
@@ -246,7 +254,8 @@ fun KosmosApp(
     // Trigger initial sync when user logs in (using Application scope to survive navigation)
     LaunchedEffect(authUiState.isLoggedIn, authUiState.currentUser?.id) {
         val currentUser = authUiState.currentUser
-        if (authUiState.isLoggedIn && currentUser != null && !syncJobStarted) {
+        val isDemo = authViewModel.isDemoMode()
+        if (authUiState.isLoggedIn && currentUser != null && !syncJobStarted && !isDemo) {
             syncJobStarted = true
             val userId = currentUser.id
 
@@ -338,15 +347,12 @@ fun KosmosApp(
                 onClearPasswordResetState = authViewModel::clearPasswordResetState,
                 getSavedEmail = authViewModel::getSavedEmail,
                 isRememberMeEnabled = authViewModel::isRememberMeEnabled,
-                onGoogleIdToken = { idToken, rawNonce ->
+                 onGoogleIdToken = { idToken, rawNonce ->
                     authViewModel.signInWithGoogleIdToken(idToken, rawNonce)
-                }
+                },
+                onEnterDemoMode = authViewModel::enterDemoMode
             )
         }
-            composable("quick_data_check") {
-                QuickDataCheckScreen(onBack = { navController.popBackStack() })
-            }
-
             composable(Screen.SignUp.route) {
             SignUpScreen(
                 onSignUpSuccess = {
@@ -899,16 +905,6 @@ fun KosmosApp(
             )
         }
 
-        // React Screens Test Launcher (Phase 1 testing)
-        composable(Screen.ReactTest.route) {
-            ReactScreensTestLauncher()
-        }
-
-        // Speech Recognition Screen (optional demo screen)
-        // Voice features disabled for MVP - will be re-enabled in Phase 5
-        // composable(Screen.SpeechDemo.route) {
-        //     SpeechRecognitionScreen()
-        // }
         }
     }
     // Global in-app notification snackbar (overlays all screens)
@@ -919,74 +915,7 @@ fun KosmosApp(
     } // end Box
 }
 
-sealed class Screen(val route: String) {
-    object Login : Screen("login")
-    object SignUp : Screen("signup")
-    object ProjectList : Screen("projectList")
-    object ProjectDetail : Screen("project/{projectId}") {
-        fun createRoute(projectId: String) = "project/$projectId"
-    }
-    object Chat : Screen("chat/{chatRoomId}") {
-        fun createRoute(chatRoomId: String) = "chat/$chatRoomId"
-    }
-    object TaskBoard : Screen("taskBoard/{projectId}?chatRoomId={chatRoomId}") {
-        fun createRoute(projectId: String, chatRoomId: String? = null) =
-            if (chatRoomId != null) {
-                "taskBoard/$projectId?chatRoomId=$chatRoomId"
-            } else {
-                "taskBoard/$projectId"
-            }
-    }
-    // TaskEdit for comprehensive editing
-    object TaskEdit : Screen("taskEdit/{taskId}") {
-        fun createRoute(taskId: String) = "taskEdit/$taskId"
-    }
-    // LEGACY: Keep for backward compatibility (redirects to TaskManagement)
-    object TaskDetail : Screen("taskDetail/{taskId}") {
-        fun createRoute(taskId: String) = "taskDetail/$taskId"
-    }
-    object Profile : Screen("profile")
-    object EditProfile : Screen("editProfile")
-    object Settings : Screen("settings")
-    object PrivacySettings : Screen("privacySettings")
-    object NotificationSettings : Screen("notificationSettings")
-    object NotificationList : Screen("notificationList")
-    object About : Screen("about")  // GAP-005 FIX: Added About screen
-    object SpeechDemo : Screen("speechDemo")
-    object UserSearch : Screen("userSearch/{projectId}") {
-        fun createRoute(projectId: String) = "userSearch/$projectId"
-    }
-    object InviteMembers : Screen("inviteMembers/{projectId}") {
-        fun createRoute(projectId: String) = "inviteMembers/$projectId"
-    }
-    object MembersList : Screen("membersList/{projectId}") {
-        fun createRoute(projectId: String) = "membersList/$projectId"
-    }
-    object UserProfile : Screen("userProfile/{userId}/{projectId}") {
-        fun createRoute(userId: String, projectId: String) = "userProfile/$userId/$projectId"
-    }
-    object ActivityLog : Screen("activityLog/{projectId}") {
-        fun createRoute(projectId: String) = "activityLog/$projectId"
-    }
-    object ProjectEdit : Screen("projectEdit/{projectId}") {
-        fun createRoute(projectId: String) = "projectEdit/$projectId"
-    }
-    object ReactTest : Screen("reactTest")
-
-    // Hub Screens for Bottom Navigation
-    object MyTasks : Screen("myTasks") // All tasks across projects
-    object ChatHub : Screen("chatHub") // All chats across projects
-    object More : Screen("more") // Profile + Settings menu
-    object Discover : Screen("discover") // Global search & discovery
-    object Connections : Screen("connections") // User connections
-    object ProjectWorkspace : Screen("projectWorkspace/{projectId}") {
-        fun createRoute(projectId: String) = "projectWorkspace/$projectId"
-    }
-    object Splash : Screen("splash")
-    object GoogleProfileSetup : Screen("googleProfileSetup")
-}
-
-// Note: ChatListScreen is implemented in Chat.kt
+// Note: Screen routes are defined in navigation/Screen.kt
 
 /**
  * GAP-005 FIX: Simple About Screen

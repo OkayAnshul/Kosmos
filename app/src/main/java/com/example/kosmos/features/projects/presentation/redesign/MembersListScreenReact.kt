@@ -284,6 +284,7 @@ private fun MemberCard(
     // P1-06 FIX: Add state for dialogs
     var showChangeRoleDialog by remember { mutableStateOf(false) }
     var showRemoveMemberDialog by remember { mutableStateOf(false) }
+    var showRolePermissions by remember { mutableStateOf(false) }
 
     Card(
         onClick = onMemberClick,
@@ -341,6 +342,14 @@ private fun MemberCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RoleBadge(role = member.role)
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "View role permissions",
+                        tint = ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.6f),
+                        modifier = Modifier
+                            .size(14.dp)
+                            .clickable { showRolePermissions = true }
+                    )
                     Text(
                         text = "• Joined ${member.joinedAt}",
                         fontSize = 12.sp,
@@ -463,6 +472,13 @@ private fun MemberCard(
             onDismiss = {
                 showRemoveMemberDialog = false
             }
+        )
+    }
+
+    if (showRolePermissions) {
+        RolePermissionsSheet(
+            role = member.role,
+            onDismiss = { showRolePermissions = false }
         )
     }
 }
@@ -660,5 +676,86 @@ private fun RoleBadge(role: ProjectRole) {
             color = textColor,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RolePermissionsSheet(
+    role: ProjectRole,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val permissions = when (role) {
+        ProjectRole.ADMIN -> Permission.ADMIN_PERMISSIONS
+        ProjectRole.MANAGER -> Permission.MANAGER_PERMISSIONS
+        ProjectRole.MEMBER -> Permission.MEMBER_PERMISSIONS
+    }
+    val allPermissionsByCategory = Permission.getPermissionsByCategory()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = ColorTokens.ReactTheme.card,
+        contentColor = ColorTokens.ReactTheme.foreground
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header
+            Text(
+                text = "${role.name.lowercase().replaceFirstChar { it.uppercase() }} Permissions",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = ColorTokens.ReactTheme.foreground
+            )
+            Text(
+                text = "${permissions.size} of ${Permission.entries.size} permissions",
+                fontSize = 14.sp,
+                color = ColorTokens.ReactTheme.mutedForeground
+            )
+
+            HorizontalDivider(color = ColorTokens.ReactTheme.border)
+
+            // Permission categories
+            allPermissionsByCategory.forEach { (category, permsInCategory) ->
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = category,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = ColorTokens.ReactTheme.primary
+                    )
+                    permsInCategory.forEach { perm ->
+                        val hasPermission = perm in permissions
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (hasPermission) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                                contentDescription = null,
+                                tint = if (hasPermission) com.example.kosmos.shared.ui.designsystem.ColorTokens.Status.online
+                                       else ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.4f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = perm.getDescription(),
+                                fontSize = 13.sp,
+                                color = if (hasPermission) ColorTokens.ReactTheme.foreground
+                                        else ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }

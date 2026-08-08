@@ -7,6 +7,8 @@ import androidx.activity.ComponentActivity
 import com.example.kosmos.core.config.SupabaseConfig
 import com.example.kosmos.core.database.dao.UserDao
 import com.example.kosmos.core.models.User
+import com.example.kosmos.features.demo.DemoDataSeeder
+import com.example.kosmos.features.demo.DemoMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
@@ -41,6 +43,8 @@ class AuthRepository @Inject constructor(
     private val supabase: SupabaseClient,
     private val userDao: UserDao,
     private val sharedPreferences: android.content.SharedPreferences,
+    private val demoMode: DemoMode,
+    private val demoDataSeeder: DemoDataSeeder,
     @ApplicationContext private val context: Context
 ) {
     private val auth = supabase.auth
@@ -59,6 +63,22 @@ class AuthRepository @Inject constructor(
     }
 
     init {
+        // Restore offline demo session if enabled (survives app restarts)
+        if (demoMode.isEnabled) {
+            CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+                val demoUser = try { userDao.getUserById(DemoMode.DEMO_USER_ID) } catch (e: Exception) { null }
+                _currentUser.value = demoUser ?: DemoMode.DEMO_USER
+                if (demoUser == null) {
+                    try { userDao.insertUser(DemoMode.DEMO_USER) } catch (e: Exception) { /* ignore */ }
+                }
+                Log.d(TAG, "✅ Demo mode session restored for: ${_currentUser.value?.email}")
+            }
+        } else {
+            restoreSession()
+        }
+    }
+
+    private fun restoreSession() {
         // Check for existing session on initialization
         val currentUserInfo = auth.currentUserOrNull()
         if (currentUserInfo != null) {
@@ -406,6 +426,13 @@ class AuthRepository @Inject constructor(
         return try {
             val userId = _currentUser.value?.id
 
+            // In demo mode, just clear local state — no Supabase calls
+            if (demoMode.isEnabled) {
+                demoMode.disable()
+                _currentUser.value = null
+                return Result.success(Unit)
+            }
+
             // Update online status before signing out
             if (userId != null) {
                 updateUserOnlineStatus(userId, false)
@@ -447,6 +474,48 @@ class AuthRepository @Inject constructor(
      * Check if user is logged in
      */
     fun isUserLoggedIn(): Boolean = _currentUser.value != null
+
+    /**
+     * Check if the app is running in offline demo mode
+     */
+    fun isDemoMode(): Boolean = demoMode.isEnabled
+
+    /**
+     * Enter offline demo mode.
+     *
+     * Seeds the local Room database with realistic mock data and signs in the
+     * demo user without any Supabase interaction. All screens that render from
+     * Room flows become immediately explorable.
+     */
+    suspend fun enterDemoMode(): Result<User> {
+        return try {
+            demoDataSeeder.seed()
+            userDao.insertUser(DemoMode.DEMO_USER)
+            _currentUser.value = DemoMode.DEMO_USER
+            demoMode.enable()
+            Log.d(TAG, "✅ Demo mode entered as: ${DemoMode.DEMO_USER.email}")
+            Result.success(DemoMode.DEMO_USER)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Log.e(TAG, "Demo mode entry failed", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Exit offline demo mode and restore real authentication flow.
+     */
+    suspend fun exitDemoMode(): Result<Unit> {
+        return try {
+            demoMode.disable()
+            _currentUser.value = null
+            Result.success(Unit)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Log.e(TAG, "Demo mode exit failed", e)
+            Result.failure(e)
+        }
+    }
 
     /**
      * Send password reset email

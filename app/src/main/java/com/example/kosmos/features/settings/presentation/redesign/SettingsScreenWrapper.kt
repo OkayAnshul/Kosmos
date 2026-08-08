@@ -7,6 +7,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kosmos.BuildConfig
 import com.example.kosmos.core.config.AppConfigRepository
+import com.example.kosmos.features.projects.presentation.redesign.ProjectAccentStyle
 import com.example.kosmos.features.settings.presentation.SettingsViewModel
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -52,11 +53,24 @@ fun SettingsScreenWrapper(
     }
     val appConfig by appConfigRepo.config.collectAsStateWithLifecycle()
 
+    // Re-fetch config from Supabase (ensures latest values after remote changes)
+    LaunchedEffect(Unit) {
+        appConfigRepo.refresh()
+    }
+
     // Navigate to login when logout is successful
     LaunchedEffect(uiState.logoutSuccess) {
         if (uiState.logoutSuccess) {
             onNavigateToLogin()
         }
+    }
+
+    // Read accent style preference from SharedPreferences
+    val prefs = remember {
+        context.getSharedPreferences("kosmos_prefs", android.content.Context.MODE_PRIVATE)
+    }
+    var accentStyle by remember {
+        mutableStateOf(ProjectAccentStyle.fromPref(prefs.getString(ProjectAccentStyle.PREF_KEY, null)))
     }
 
     // Get app version
@@ -80,6 +94,11 @@ fun SettingsScreenWrapper(
         onClearCache = viewModel::clearCache,
         onLogout = viewModel::logout,
         onNavigateBack = onNavigateBack,
+        projectAccentStyle = accentStyle,
+        onProjectAccentStyleChange = { style ->
+            accentStyle = style
+            prefs.edit().putString(ProjectAccentStyle.PREF_KEY, style.name).apply()
+        },
         modifier = modifier
     )
 }

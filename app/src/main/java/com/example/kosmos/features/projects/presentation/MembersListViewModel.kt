@@ -61,8 +61,9 @@ class MembersListViewModel @Inject constructor(
                 // Load project members
                 val members = projectRepository.getProjectMembers(projectId)
 
-                // Find current user's role
-                val currentUserRole = members.find { it.userId == currentUser?.id }?.role ?: ProjectRole.MEMBER
+                // Find current user's role and member object
+                val currentUserMember = members.find { it.userId == currentUser?.id }
+                val currentUserRole = currentUserMember?.role ?: ProjectRole.MEMBER
 
                 // Load user details for each member
                 val membersWithUsers = members.mapNotNull { member ->
@@ -77,6 +78,7 @@ class MembersListViewModel @Inject constructor(
                         members = membersWithUsers,
                         filteredMembers = membersWithUsers,
                         currentUserRole = currentUserRole,
+                        currentMember = currentUserMember,
                         isLoading = false
                     )
                 }
@@ -219,7 +221,7 @@ class MembersListViewModel @Inject constructor(
                     }
 
                 // Find the actual user ID from the member object
-                val memberToChange = _uiState.value.members.find { it.member.id == memberId }
+                val memberToChange = _uiState.value.members.find { it.user.id == memberId }
                 val userIdToChange = memberToChange?.user?.id
                     ?: return@launch _uiState.update {
                         it.copy(
@@ -274,7 +276,7 @@ class MembersListViewModel @Inject constructor(
                     }
 
                 // Find the actual user ID from the member object
-                val memberToRemove = _uiState.value.members.find { it.member.id == memberId }
+                val memberToRemove = _uiState.value.members.find { it.user.id == memberId }
                 val userIdToRemove = memberToRemove?.user?.id
                     ?: return@launch _uiState.update {
                         it.copy(
@@ -341,6 +343,7 @@ data class MembersListUiState(
     val pendingInvites: List<ProjectInvite> = emptyList(),
     val joinRequests: List<JoinRequestWithUser> = emptyList(),
     val currentUserRole: ProjectRole = ProjectRole.MEMBER,
+    val currentMember: ProjectMember? = null,
     val selectedRoleFilter: ProjectRole? = null,
     val searchQuery: String = "",
     val isLoading: Boolean = true,

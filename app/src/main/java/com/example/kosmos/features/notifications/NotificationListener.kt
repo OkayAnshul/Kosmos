@@ -5,10 +5,12 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.example.kosmos.MainActivity
 import com.example.kosmos.R
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -221,6 +223,13 @@ class NotificationListener @Inject constructor(
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.w(TAG, "Skipping system notification: POST_NOTIFICATIONS permission not granted")
+                return
+            }
 
             // Show notification
             NotificationManagerCompat.from(context).notify(

@@ -47,12 +47,21 @@ fun ProjectActivityScreenReactWrapper(
     val activities by taskRepository.getActivityForProjectFlow(projectId)
         .collectAsStateWithLifecycle(initialValue = emptyList())
 
+    // Collect tasks for title lookup
+    val tasks by taskRepository.getTasksForProjectFlow(projectId)
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+
     val isOffline by networkMonitor.isOffline.collectAsState()
 
+    // Build task title map
+    val taskTitleMap = remember(tasks) {
+        tasks.associate { it.id to it.title }
+    }
+
     // Map TaskActivity to ProjectActivityItem
-    val mappedActivities = remember(activities) {
+    val mappedActivities = remember(activities, taskTitleMap) {
         activities.map { activity ->
-            mapTaskActivityToProjectActivityItem(activity)
+            mapTaskActivityToProjectActivityItem(activity, taskTitleMap)
         }
     }
 
@@ -65,7 +74,7 @@ fun ProjectActivityScreenReactWrapper(
 /**
  * Map TaskActivity (domain model) to ProjectActivityItem (UI model)
  */
-private fun mapTaskActivityToProjectActivityItem(activity: TaskActivity): ProjectActivityItem {
+private fun mapTaskActivityToProjectActivityItem(activity: TaskActivity, taskTitleMap: Map<String, String> = emptyMap()): ProjectActivityItem {
     val type = when (activity.actionType) {
         ActivityActionType.CREATED -> ProjectActivityType.TASK_CREATED
         ActivityActionType.STATUS_CHANGED -> ProjectActivityType.TASK_STATUS_CHANGED
@@ -73,17 +82,36 @@ private fun mapTaskActivityToProjectActivityItem(activity: TaskActivity): Projec
         else -> ProjectActivityType.PROJECT_UPDATED // Default for other action types
     }
 
-    // Generate title based on action type
-    val title = when (activity.actionType) {
-        ActivityActionType.CREATED -> "Created a task"
-        ActivityActionType.STATUS_CHANGED -> "Updated task status"
-        ActivityActionType.ASSIGNED -> "Assigned a task"
-        ActivityActionType.UNASSIGNED -> "Unassigned a task"
-        ActivityActionType.PRIORITY_CHANGED -> "Changed task priority"
-        ActivityActionType.DUE_DATE_CHANGED -> "Updated due date"
-        ActivityActionType.COMMENT_ADDED -> "Added a comment"
-        ActivityActionType.DELETED -> "Deleted a task"
-        else -> "Updated a task"
+    // Include task title if available for context
+    val taskTitle = taskTitleMap[activity.taskId]
+    val taskSuffix = if (taskTitle != null) " on '$taskTitle'" else ""
+    val title = activity.actorName + " " + activity.autoDescription + taskSuffix
+
+    // Build rich description from field changes + commit message
+    val descriptionParts = mutableListOf<String>()
+
+    // Add field change details (old → new)
+    if (activity.changes.isNotEmpty()) {
+        activity.changes.forEach { change ->
+            val fieldLabel = when (change.field) {
+                "status" -> "Status"
+                "priority" -> "Priority"
+                "assignedTo" -> "Assigned to"
+                "dueDate" -> "Due date"
+                "tags" -> "Tags"
+                "title" -> "Title"
+                "description" -> "Description"
+                "estimatedHours" -> "Estimated hours"
+                "actualHours" -> "Actual hours"
+                else -> change.field.replaceFirstChar { it.uppercase() }
+            }
+            descriptionParts.add("$fieldLabel: ${change.getFormattedFromValue()} → ${change.getFormattedToValue()}")
+        }
+    }
+
+    // Add commit message if present
+    if (!activity.commitMessage.isNullOrBlank()) {
+        descriptionParts.add("\"${activity.commitMessage}\"")
     }
 
     return ProjectActivityItem(
@@ -93,7 +121,7 @@ private fun mapTaskActivityToProjectActivityItem(activity: TaskActivity): Projec
         userName = activity.actorName,
         userAvatar = activity.actorName.take(1).uppercase(),
         title = title,
-        description = activity.commitMessage ?: activity.autoDescription,
+        description = descriptionParts.joinToString("\n"),
         timestamp = activity.timestamp
     )
 }

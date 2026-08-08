@@ -2,6 +2,7 @@ package com.example.kosmos.features.tasks.presentation.redesign
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -102,9 +103,24 @@ fun TaskEditScreenReactWrapper(
         remember { mutableStateOf(emptyList()) }
     }
 
-    // Load all users for assignee dropdown
-    val users by userRepository.getAllUsersFlow()
+    // Load project members for assignee dropdown (scoped to task's project)
+    val projectMembers by if (task?.projectId != null) {
+        projectRepository.getProjectMembersFlow(task!!.projectId)
+            .collectAsStateWithLifecycle(initialValue = emptyList())
+    } else {
+        remember { mutableStateOf(emptyList()) }
+    }
+
+    val allUsers by userRepository.getAllUsersFlow()
         .collectAsStateWithLifecycle(initialValue = emptyList())
+
+    // Filter users to only project members
+    val users = if (task?.projectId != null && projectMembers.isNotEmpty()) {
+        val memberUserIds = projectMembers.map { it.userId }.toSet()
+        allUsers.filter { it.id in memberUserIds }
+    } else {
+        allUsers
+    }
 
     // Load tasks for parent task dropdown (exclude current task and tasks that already have parents)
     val allTasks by if (currentUser != null) {
@@ -347,74 +363,82 @@ fun TaskEditScreenReactWrapper(
     // Scaffold wrapper for snackbar support
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { _ ->
+    ) { innerPadding ->
         // Guard: Don't render edit form until task data is loaded (prevents blank form race condition)
-        if (!isNewTask && task == null) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-        TaskEditScreenReact(
-            taskId = taskId,
-            initialData = initialData,
-            projects = projectList,
-            assignees = assigneeList,
-            availableTasks = availableTasksList,
-            onBack = onBack,
-            onSave = handleSave,
-            onDelete = handleDelete
-        )
-
-        // Commit Message Dialog
-        if (showCommitDialog) {
-            CommitMessageDialog(
-                isVisible = true,
-                changes = pendingChanges,
-                onConfirm = { commitMessage ->
-                    showCommitDialog = false
-                    coroutineScope.launch {
-                        saveTaskWithCommit(pendingTaskData!!, commitMessage)
-                    }
-                },
-                onDismiss = {
-                    showCommitDialog = false
-                    pendingChanges = emptyList()
-                    pendingTaskData = null
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            if (!isNewTask && task == null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
-            )
-        }
+            } else {
+                TaskEditScreenReact(
+                    taskId = taskId,
+                    initialData = initialData,
+                    projects = projectList,
+                    assignees = assigneeList,
+                    availableTasks = availableTasksList,
+                    actualHours = task?.actualHours,
+                    dependencies = emptyList(), // TODO: wire dependency titles when dependency model is available
+                    onBack = onBack,
+                    onSave = handleSave,
+                    onDelete = handleDelete
+                )
 
-        // Conflict Resolution Dialog — shown when a version conflict is detected during save
-        if (showConflictDialog && conflictFields.isNotEmpty()) {
-            ConflictResolutionDialog(
-                isVisible = true,
-                conflicts = conflictFields,
-                onResolve = { choices ->
-                    val resolved = conflictResolver.applyUserChoices(
-                        conflictLocalTask ?: return@ConflictResolutionDialog,
-                        choices
+                // Commit Message Dialog
+                if (showCommitDialog) {
+                    CommitMessageDialog(
+                        isVisible = true,
+                        changes = pendingChanges,
+                        onConfirm = { commitMessage ->
+                            showCommitDialog = false
+                            coroutineScope.launch {
+                                saveTaskWithCommit(pendingTaskData!!, commitMessage)
+                            }
+                        },
+                        onDismiss = {
+                            showCommitDialog = false
+                            pendingChanges = emptyList()
+                            pendingTaskData = null
+                        }
                     )
-                    // Force-save: bump version past the server version so it wins
-                    val forceSaveTask = resolved.copy(
-                        version = (conflictServerTask?.version ?: resolved.version) + 1,
-                        updatedAt = System.currentTimeMillis()
-                    )
-                    showConflictDialog = false
-                    conflictFields = emptyList()
-                    coroutineScope.launch { saveTaskWithCommit(forceSaveTask, commitMessage = null) }
-                },
-                onDismiss = {
-                    showConflictDialog = false
-                    conflictFields = emptyList()
-                    conflictLocalTask = null
-                    conflictServerTask = null
                 }
-            )
+
+                // Conflict Resolution Dialog — shown when a version conflict is detected during save
+                if (showConflictDialog && conflictFields.isNotEmpty()) {
+                    ConflictResolutionDialog(
+                        isVisible = true,
+                        conflicts = conflictFields,
+                        onResolve = { choices ->
+                            val resolved = conflictResolver.applyUserChoices(
+                                conflictLocalTask ?: return@ConflictResolutionDialog,
+                                choices
+                            )
+                            // Force-save: bump version past the server version so it wins
+                            val forceSaveTask = resolved.copy(
+                                version = (conflictServerTask?.version ?: resolved.version) + 1,
+                                updatedAt = System.currentTimeMillis()
+                            )
+                            showConflictDialog = false
+                            conflictFields = emptyList()
+                            coroutineScope.launch { saveTaskWithCommit(forceSaveTask, commitMessage = null) }
+                        },
+                        onDismiss = {
+                            showConflictDialog = false
+                            conflictFields = emptyList()
+                            conflictLocalTask = null
+                            conflictServerTask = null
+                        }
+                    )
+                }
+            } // end else (task loaded or new task)
         }
-        } // end else (task loaded or new task)
     }
 }
 

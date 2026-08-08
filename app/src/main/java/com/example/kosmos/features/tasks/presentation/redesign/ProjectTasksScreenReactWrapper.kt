@@ -69,7 +69,12 @@ fun ProjectTasksScreenReactWrapper(
     var timeEntryDialogTaskId by remember { mutableStateOf<String?>(null) }
     var assignableUsers by remember { mutableStateOf<List<User>>(emptyList()) }
 
-    val taskDataList = tasks.map { task ->
+    // Filter to parent tasks only; collect subtask info per parent
+    val parentTasks = tasks.filter { it.parentTaskId == null }
+    val subtasksByParent = tasks.filter { it.parentTaskId != null }.groupBy { it.parentTaskId }
+
+    val taskDataList = parentTasks.map { task ->
+        val subtasks = subtasksByParent[task.id] ?: emptyList()
         TaskData(
             id = task.id,
             title = task.title,
@@ -92,7 +97,9 @@ fun ProjectTasksScreenReactWrapper(
                     avatar = name.firstOrNull()?.toString() ?: "?"
                 )
             },
-            projectName = projectName
+            projectName = projectName,
+            subtaskTotal = subtasks.size,
+            subtaskDone = subtasks.count { it.status == TaskStatus.DONE || it.status == TaskStatus.CANCELLED }
         )
     }
 

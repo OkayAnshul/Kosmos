@@ -27,7 +27,7 @@ fun CreateChatDialogWrapper(
         viewModel.loadProjectMembers(projectId)
     }
 
-    CreateChatDialog(
+    CreateChatScreen(
         projectMembers = uiState.projectMembers,
         isLoading = uiState.isCreatingChat,
         error = uiState.error,

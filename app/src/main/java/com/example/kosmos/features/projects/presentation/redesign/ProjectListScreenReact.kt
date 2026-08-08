@@ -63,6 +63,25 @@ data class ProjectCardData(
     val accentColor: String? = null  // hex string from Project.color, e.g. "#7C3AED"
 )
 
+/**
+ * How project accent colors are displayed on project cards.
+ * Persisted in SharedPreferences under key "project_accent_style".
+ */
+enum class ProjectAccentStyle {
+    /** No accent color shown (clean look) */
+    OFF,
+    /** Project name text uses the accent color */
+    COLORED_NAME,
+    /** Small colored dot next to the project name */
+    DOT;
+
+    companion object {
+        const val PREF_KEY = "project_accent_style"
+        fun fromPref(value: String?): ProjectAccentStyle =
+            entries.find { it.name == value } ?: OFF
+    }
+}
+
 /** Safely parse a hex color string. Falls back to primary purple if null or invalid. */
 private fun String?.toProjectAccentColor(): Color {
     if (this == null) return Color(0xFF7C3AED)
@@ -149,6 +168,7 @@ fun ProjectListScreenReact(
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
     notificationBadgeCount: Int = 0,
+    accentStyle: ProjectAccentStyle = ProjectAccentStyle.OFF,
     modifier: Modifier = Modifier
 ) {
     // Filter logic from React (line 71-76)
@@ -204,17 +224,6 @@ fun ProjectListScreenReact(
                         )
                     }
                     } // end BadgedBox
-                    IconButton(
-                        onClick = onMenuClick,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Menu",
-                            tint = ColorTokens.ReactTheme.foreground,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
                 }
             }
         }
@@ -257,6 +266,7 @@ fun ProjectListScreenReact(
                         items(filteredProjects) { project ->
                             ProjectCard(
                                 project = project,
+                                accentStyle = accentStyle,
                                 onClick = { onProjectClick(project.id) },
                                 onEdit = { onProjectEdit(project.id) },
                                 onMembers = { onProjectMembers(project.id) },
@@ -376,6 +386,7 @@ private fun FilterChips(
 @Composable
 private fun ProjectCard(
     project: ProjectCardData,
+    accentStyle: ProjectAccentStyle = ProjectAccentStyle.OFF,
     onClick: () -> Unit,
     onEdit: () -> Unit = {},
     onMembers: () -> Unit = {},
@@ -383,15 +394,7 @@ private fun ProjectCard(
 ) {
     val accentColor = project.accentColor.toProjectAccentColor()
     KosmosCard(
-        onClick = onClick,
-        modifier = Modifier.drawBehind {
-            // 4dp left accent bar using project color
-            drawRect(
-                color = accentColor,
-                topLeft = Offset.Zero,
-                size = Size(4.dp.toPx(), size.height)
-            )
-        }
+        onClick = onClick
     ) {
         Column {
             // Header (line 31-51)
@@ -402,14 +405,28 @@ private fun ProjectCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = project.name,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,  // 600
-                        color = ColorTokens.ReactTheme.foreground,
-                        maxLines = 1,
-                        modifier = Modifier.padding(bottom = 4.dp)  // mb-1
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (accentStyle == ProjectAccentStyle.DOT) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(accentColor)
+                            )
+                        }
+                        Text(
+                            text = project.name,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,  // 600
+                            color = if (accentStyle == ProjectAccentStyle.COLORED_NAME) accentColor
+                                    else ColorTokens.ReactTheme.foreground,
+                            maxLines = 1
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = project.description,
                         fontSize = 14.sp,  // 0.875rem
@@ -419,80 +436,6 @@ private fun ProjectCard(
                     )
                 }
 
-                // More menu
-                var showProjectMenu by remember { mutableStateOf(false) }
-                Box {
-                    IconButton(
-                        onClick = { showProjectMenu = true },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "More options",
-                            tint = ColorTokens.ReactTheme.mutedForeground,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    DropdownMenu(
-                        expanded = showProjectMenu,
-                        onDismissRequest = { showProjectMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("View Details") },
-                            onClick = {
-                                onClick()
-                                showProjectMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.Visibility, contentDescription = null)
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Edit Project") },
-                            onClick = {
-                                onEdit()
-                                showProjectMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.Edit, contentDescription = null)
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Members") },
-                            onClick = {
-                                onMembers()
-                                showProjectMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.People, contentDescription = null)
-                            }
-                        )
-                        Divider()
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    if (project.status == "Archived") "Unarchive" else "Archive",
-                                    color = ColorTokens.ReactTheme.mutedForeground
-                                )
-                            },
-                            onClick = {
-                                onArchive()
-                                showProjectMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    if (project.status == "Archived")
-                                        Icons.Default.Unarchive
-                                    else
-                                        Icons.Default.Archive,
-                                    contentDescription = null,
-                                    tint = ColorTokens.ReactTheme.mutedForeground
-                                )
-                            }
-                        )
-                    }
-                }
             }
 
             // Status Badge (line 54-56)

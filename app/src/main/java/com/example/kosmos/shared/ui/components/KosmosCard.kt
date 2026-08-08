@@ -40,7 +40,7 @@ fun KosmosCard(
         Tokens.CornerRadius.md  // rounded-xl: 12dp
     )
     val cardElevation = CardDefaults.cardElevation(
-        defaultElevation = Tokens.Elevation.level1  // 0 2px 8px shadow
+        defaultElevation = 0.dp  // No shadow - clean AMOLED look
     )
     val cardContent: @Composable () -> Unit = {
         androidx.compose.foundation.layout.Box(

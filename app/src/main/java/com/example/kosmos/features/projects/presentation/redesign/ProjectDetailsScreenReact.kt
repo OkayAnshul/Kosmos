@@ -7,10 +7,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,11 +26,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.compose.rememberNavController
 import com.example.kosmos.core.models.Permission
 import com.example.kosmos.core.models.ProjectMember
 import com.example.kosmos.shared.ui.components.KosmosCard
 import com.example.kosmos.shared.ui.components.PermissionGated
+import com.example.kosmos.shared.ui.components.SectionCard
+import com.example.kosmos.shared.ui.components.StatusBadge
+import com.example.kosmos.shared.ui.components.BadgeSize
 import com.example.kosmos.shared.ui.designsystem.ColorTokens
 import com.example.kosmos.shared.ui.designsystem.IconSet
 import com.example.kosmos.shared.ui.designsystem.Tokens
@@ -44,21 +47,19 @@ import com.example.kosmos.shared.ui.designsystem.Tokens
  * This component shows ONLY the Overview content.
  *
  * Features:
- * - Project details card (About section)
- * - Stats grid (single-column layout, all clickable to navigate to tabs)
- * - Quick actions (Create Task / Start Chat buttons)
- * - Recent activity timeline (with "View All" button to Activity tab)
+ * - Hero card: project name, status badge, description, category/visibility tags
+ * - Stats row: 3 equal-width clickable cards (Members / Tasks / Chats)
+ * - Quick actions row: two OutlinedButtons (+ New Task / + New Chat)
+ * - About card: deadline, GitHub URL, website URL, tech stack (shown only if any detail present)
+ * - Recent activity card: up to 5 items + "View All Activity →" text button
  *
- * Design Improvements (2026-01-23):
- * - COMPACT DESIGN: Reduced all spacing for better content visibility
- * - Single-column stats layout (matches React grid-cols-1) - fixes text truncation
- * - CLICKABLE STATS: All stat cards navigate to respective tabs (Chats/Tasks/Members)
- * - CLICKABLE ACTIVITY: "View All" button navigates to Activity tab
- * - All text sizes reduced: About 12sp, headers 15sp, stats labels 14sp
- * - Button heights reduced to 46dp, icon sizes reduced throughout
- * - Section spacing: 12dp between sections, 8-10dp within cards
- * - Activity items: 32dp avatars, 12sp text, tighter line heights
- * - Improved readability with more content visible on screen at once
+ * Redesign (2026-02-27):
+ * - Hero card replaces the plain "About" card header
+ * - Stats row is now horizontal (3 equal cards) instead of single-column
+ * - Quick actions use OutlinedButton instead of filled + outlined mix
+ * - About section uses SectionCard("ABOUT")
+ * - Activity section uses SectionCard("RECENT ACTIVITY")
+ * - TopAppBar: back arrow, project name title, MoreVert overflow menu
  *
  * Colors from theme.css:
  * - Background: --background (#0F0F14)
@@ -108,7 +109,12 @@ private val mockProject = ProjectData(
     chatCount = 12,
     taskCount = 24,
     completedTasks = 16,
-    lastActivity = "2 hours ago"
+    lastActivity = "2 hours ago",
+    category = "Design",
+    visibility = "Team",
+    deadline = "March 31, 2026",
+    githubUrl = "github.com/example/app-redesign",
+    techStack = "Kotlin, Compose, Figma"
 )
 
 // Recent activity mock data (line 149-152)
@@ -139,86 +145,201 @@ fun ProjectDetailsScreenReact(
     onViewTasks: () -> Unit = {},  // Navigate to Tasks tab
     onViewMembers: () -> Unit = {},  // Navigate to Members tab
     onViewActivity: () -> Unit = {},  // Navigate to Activity tab
-    onMoreMenu: () -> Unit = {}
+    onMoreMenu: () -> Unit = {},
+    onArchive: () -> Unit = {},
+    onDelete: () -> Unit = {},
+    onChangeVisibility: (String) -> Unit = {}
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(ColorTokens.ReactTheme.background)
-    ) {
-        // React-designed top app bar (consistent with other screens)
-        ProjectDetailsTopBar(
-            projectName = project.name,
-            projectStatus = project.status,
-            currentMember = currentMember,
-            onBackClick = onBack,
-            onMenuClick = onMoreMenu
-        )
+    // Visibility picker dialog state
+    var showVisibilityPicker by remember { mutableStateOf(false) }
+    // Overflow menu state
+    var showOverflowMenu by remember { mutableStateOf(false) }
 
-        // Overview content
+    Scaffold(
+        containerColor = ColorTokens.ReactTheme.background,
+        topBar = {
+            ProjectDetailsTopBar(
+                projectName = project.name,
+                currentMember = currentMember,
+                onBackClick = onBack,
+                onMenuClick = { showOverflowMenu = true },
+                showOverflowMenu = showOverflowMenu,
+                onDismissMenu = { showOverflowMenu = false },
+                onEditClick = { showOverflowMenu = false; onMoreMenu() },
+                onArchiveClick = { showOverflowMenu = false; onArchive() },
+                onDeleteClick = { showOverflowMenu = false; onDelete() },
+                onVisibilityClick = { showOverflowMenu = false; showVisibilityPicker = true }
+            )
+        }
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),  // px-4
-            verticalArrangement = Arrangement.spacedBy(12.dp)  // Reduced for compactness
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Add top spacing
+            item { Spacer(modifier = Modifier.height(4.dp)) }
+
+            // 1. Hero Card
             item {
-                Spacer(modifier = Modifier.height(2.dp))
+                HeroCard(project = project)
             }
 
+            // 2. Stats Row (3 equal-width clickable cards)
             item {
-                OverviewTab(
+                StatsRow(
                     project = project,
-                    activities = activities,
-                    onNewTask = onNewTask,
-                    onNewChat = onNewChat,
-                    onViewChats = onViewChats,
-                    onViewTasks = onViewTasks,
-                    onViewMembers = onViewMembers,
-                    onViewActivity = onViewActivity,
-                    onTabSelected = {} // No longer needed, but kept for compatibility
+                    onMembersClick = onViewMembers,
+                    onTasksClick = onViewTasks,
+                    onChatsClick = onViewChats
                 )
             }
 
-            // Add bottom padding for bottom nav
+            // 3. Quick Actions Row
             item {
-                Spacer(modifier = Modifier.height(16.dp))
+                QuickActionsRow(
+                    onCreateTask = onNewTask,
+                    onCreateChat = onNewChat
+                )
             }
+
+            // 4. About Card (only if any detail is present)
+            val hasAboutDetails = project.deadline != null ||
+                    project.githubUrl != null ||
+                    project.websiteUrl != null ||
+                    project.techStack != null ||
+                    project.projectMotive != null ||
+                    project.businessModel != null ||
+                    project.targetAudience != null ||
+                    project.openSourceLicense != null ||
+                    project.industryTags.isNotEmpty()
+
+            if (hasAboutDetails) {
+                item {
+                    AboutCard(project = project)
+                }
+            }
+
+            // 5. Activity Card
+            item {
+                ActivityCard(
+                    activities = activities.take(5),
+                    onViewAll = onViewActivity
+                )
+            }
+
+            item { Spacer(modifier = Modifier.height(24.dp)) }
         }
+    }
+
+    // Visibility picker dialog
+    if (showVisibilityPicker) {
+        val options = listOf("Private", "Internal", "Public")
+        val currentVis = project.visibility ?: "Private"
+        AlertDialog(
+            onDismissRequest = { showVisibilityPicker = false },
+            title = { Text("Change Visibility", color = ColorTokens.ReactTheme.foreground) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    options.forEach { option ->
+                        val isSelected = option.equals(currentVis, ignoreCase = true)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (isSelected) ColorTokens.ReactTheme.primary.copy(alpha = 0.15f)
+                                    else ColorTokens.ReactTheme.card
+                                )
+                                .clickable {
+                                    onChangeVisibility(option.uppercase())
+                                    showVisibilityPicker = false
+                                }
+                                .padding(horizontal = 12.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = when (option) {
+                                    "Private" -> Icons.Default.Lock
+                                    "Internal" -> Icons.Default.People
+                                    else -> Icons.Default.Public
+                                },
+                                contentDescription = null,
+                                tint = if (isSelected) ColorTokens.ReactTheme.primary
+                                else ColorTokens.ReactTheme.mutedForeground,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Column {
+                                Text(
+                                    text = option,
+                                    fontSize = 14.sp,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = if (isSelected) ColorTokens.ReactTheme.primary
+                                    else ColorTokens.ReactTheme.foreground
+                                )
+                                Text(
+                                    text = when (option) {
+                                        "Private" -> "Only project members"
+                                        "Internal" -> "All organization members"
+                                        else -> "Anyone can discover"
+                                    },
+                                    fontSize = 11.sp,
+                                    color = ColorTokens.ReactTheme.mutedForeground
+                                )
+                            }
+                            if (isSelected) {
+                                Spacer(Modifier.weight(1f))
+                                Text("Current", fontSize = 11.sp, color = ColorTokens.ReactTheme.mutedForeground)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showVisibilityPicker = false }) {
+                    Text("Cancel", color = ColorTokens.ReactTheme.mutedForeground)
+                }
+            },
+            containerColor = ColorTokens.ReactTheme.card,
+            shape = RoundedCornerShape(Tokens.CornerRadius.lg)
+        )
     }
 }
 
-/**
- * Project Details Top App Bar - React Design
- * Acts as top bar for Overview screen, showing project name and status
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// Top App Bar
+// ─────────────────────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProjectDetailsTopBar(
     projectName: String,
-    projectStatus: String,
     currentMember: ProjectMember? = null,
     onBackClick: () -> Unit,
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    showOverflowMenu: Boolean = false,
+    onDismissMenu: () -> Unit = {},
+    onEditClick: () -> Unit = {},
+    onArchiveClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {},
+    onVisibilityClick: () -> Unit = {}
 ) {
-    Surface(
-        color = ColorTokens.ReactTheme.card,
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = ColorTokens.ReactTheme.border,
-                shape = RectangleShape
+    TopAppBar(
+        title = {
+            Text(
+                text = projectName,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = ColorTokens.ReactTheme.foreground
             )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Back button
+        },
+        navigationIcon = {
             IconButton(onClick = onBackClick) {
                 Icon(
                     imageVector = IconSet.Navigation.back,
@@ -227,296 +348,240 @@ private fun ProjectDetailsTopBar(
                     modifier = Modifier.size(22.dp)
                 )
             }
-
-            // Project name and status
-            Column(
-                modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(
-                    text = projectName,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        color = ColorTokens.ReactTheme.foreground
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    StatusBadge(status = projectStatus)
-                    Text(
-                        text = "Project Details",
-                        fontSize = 12.sp,
-                        color = ColorTokens.ReactTheme.mutedForeground
-                    )
-                }
-            }
-
-            // Menu button - gated on EDIT_PROJECT permission
+        },
+        actions = {
             PermissionGated(
                 permission = Permission.EDIT_PROJECT,
                 currentMember = currentMember,
                 action = "Edit project"
             ) {
-                IconButton(onClick = onMenuClick) {
-                    Icon(
-                        imageVector = IconSet.Action.moreVert,
-                        contentDescription = "More options",
-                        tint = ColorTokens.ReactTheme.foreground,
-                        modifier = Modifier.size(22.dp)
-                    )
+                Box {
+                    IconButton(onClick = onMenuClick) {
+                        Icon(
+                            imageVector = IconSet.Action.moreVert,
+                            contentDescription = "More options",
+                            tint = ColorTokens.ReactTheme.foreground,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showOverflowMenu,
+                        onDismissRequest = onDismissMenu
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Edit") },
+                            onClick = onEditClick,
+                            leadingIcon = {
+                                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Change Visibility") },
+                            onClick = onVisibilityClick,
+                            leadingIcon = {
+                                Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(18.dp))
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Archive") },
+                            onClick = onArchiveClick,
+                            leadingIcon = {
+                                Icon(Icons.Default.Archive, contentDescription = null, modifier = Modifier.size(18.dp))
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    "Delete",
+                                    color = ColorTokens.ReactTheme.destructive
+                                )
+                            },
+                            onClick = onDeleteClick,
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = ColorTokens.ReactTheme.destructive,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        )
+                    }
                 }
             }
-        }
-    }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = ColorTokens.ReactTheme.card,
+            titleContentColor = ColorTokens.ReactTheme.foreground,
+            navigationIconContentColor = ColorTokens.ReactTheme.foreground,
+            actionIconContentColor = ColorTokens.ReactTheme.foreground
+        ),
+        modifier = Modifier.border(
+            width = 1.dp,
+            color = ColorTokens.ReactTheme.border,
+            shape = RectangleShape
+        )
+    )
 }
 
-// Overview Tab Content (line 79-180)
-@Composable
-private fun OverviewTab(
-    project: ProjectData,
-    activities: List<ActivityItem> = mockActivities,  // Accept activities parameter
-    onNewTask: () -> Unit = {},
-    onNewChat: () -> Unit = {},
-    onViewChats: () -> Unit = {},  // Navigate to Chats tab
-    onViewTasks: () -> Unit = {},  // Navigate to Tasks tab
-    onViewMembers: () -> Unit = {},  // Navigate to Members tab
-    onViewActivity: () -> Unit = {},  // Navigate to Activity tab
-    onTabSelected: (ProjectTabReact) -> Unit = {}  // Kept for compatibility but unused
-) {
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. Hero Card
+// ─────────────────────────────────────────────────────────────────────────────
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)  // More compact
-    ) {
-        // About Card - shows all available project details
-        KosmosCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+@Composable
+private fun HeroCard(project: ProjectData) {
+    KosmosCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Project name + status badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "About",
-                        fontSize = 15.sp,
+                Text(
+                    text = project.name,
+                    style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.SemiBold,
                         color = ColorTokens.ReactTheme.foreground
-                    )
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        tint = ColorTokens.ReactTheme.mutedForeground,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
+                    ),
+                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                ProjectStatusChip(status = project.status)
+            }
 
-                if (project.description.isNotBlank()) {
-                    Text(
-                        text = project.description,
-                        fontSize = 12.sp,
-                        lineHeight = 18.sp,
-                        color = ColorTokens.ReactTheme.mutedForeground
-                    )
-                }
+            // Description
+            val descriptionText = if (project.description.isBlank()) "(No description)" else project.description
+            Text(
+                text = descriptionText,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = if (project.description.isBlank())
+                        ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.5f)
+                    else
+                        ColorTokens.ReactTheme.mutedForeground
+                ),
+                lineHeight = 20.sp
+            )
 
-                // Detail rows for non-null fields
-                project.category?.let { AboutDetailRow(Icons.Default.Category, "Category", it) }
-                project.visibility?.let { AboutDetailRow(Icons.Default.Visibility, "Visibility", it) }
-                project.deadline?.let { AboutDetailRow(Icons.Default.CalendarToday, "Deadline", it) }
-                project.createdAt?.let { AboutDetailRow(Icons.Default.Schedule, "Created", it) }
-                project.projectMotive?.let { AboutDetailRow(Icons.Default.Flag, "Motive", it) }
-                project.techStack?.let { AboutDetailRow(Icons.Default.Code, "Tech Stack", it) }
-                project.businessModel?.let { AboutDetailRow(Icons.Default.Business, "Business Model", it) }
-                project.targetAudience?.let { AboutDetailRow(Icons.Default.People, "Target Audience", it) }
-                // industryTags: BUSINESS category only — parsed from JSON array stored in Project.industryTags
-                if (project.industryTags.isNotEmpty()) {
-                    AboutDetailRow(Icons.Default.TrendingUp, "Industry", project.industryTags.joinToString(" · "))
-                }
-                project.openSourceLicense?.let { AboutDetailRow(Icons.Default.Gavel, "License", it) }
-                project.githubUrl?.let { AboutDetailRow(Icons.Default.Link, "GitHub", it) }
-                project.websiteUrl?.let { AboutDetailRow(Icons.Default.Language, "Website", it) }
-
-                if (project.tags.isNotEmpty()) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(top = 4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Label,
-                            contentDescription = null,
-                            tint = ColorTokens.ReactTheme.mutedForeground,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        project.tags.forEach { tag ->
-                            Text(
-                                text = tag,
-                                fontSize = 11.sp,
-                                color = ColorTokens.ReactTheme.primary,
-                                modifier = Modifier
-                                    .background(
-                                        ColorTokens.ReactTheme.primary.copy(alpha = 0.1f),
-                                        RoundedCornerShape(4.dp)
-                                    )
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
+            // Category + Visibility tags
+            val hasTags = project.category != null || project.visibility != null
+            if (hasTags) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    project.category?.let { cat ->
+                        OutlinedTagChip(label = cat)
+                    }
+                    project.visibility?.let { vis ->
+                        OutlinedTagChip(label = vis)
                     }
                 }
             }
         }
+    }
+}
 
-        // Stats Grid - All stats are clickable to navigate to respective tabs
-        StatsGrid(
-            project = project,
-            onChatsClick = onViewChats,  // Navigate to Chats tab
-            onTasksClick = onViewTasks,  // Navigate to Tasks tab
-            onMembersClick = onViewMembers  // Navigate to Members tab
-        )
+@Composable
+private fun ProjectStatusChip(status: String) {
+    val color = when (status) {
+        "Active" -> ColorTokens.Status.online
+        "Archived" -> ColorTokens.ReactTheme.mutedForeground
+        else -> ColorTokens.ReactTheme.primary
+    }
+    StatusBadge(
+        text = status,
+        color = color,
+        size = BadgeSize.MEDIUM
+    )
+}
 
-        // Quick Actions (line 115-127)
-        QuickActions(
-            onNewTask = onNewTask,
-            onNewChat = onNewChat
-        )
-
-        // Recent Activity (line 146-179)
-        RecentActivityCard(
-            activities = activities,
-            onViewAll = onViewActivity  // Navigate to Activity tab
+@Composable
+private fun OutlinedTagChip(label: String) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, ColorTokens.ReactTheme.border)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = ColorTokens.ReactTheme.mutedForeground,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
         )
     }
 }
 
-// Stats Grid (line 93-112)
-// Single-column layout as per React design (grid-cols-1)
-// All stats are clickable to navigate to their respective tabs
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. Stats Row
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
-private fun StatsGrid(
+private fun StatsRow(
     project: ProjectData,
-    onChatsClick: (() -> Unit)? = null,  // Navigate to Chats tab
-    onTasksClick: (() -> Unit)? = null,  // Navigate to Tasks tab
-    onMembersClick: (() -> Unit)? = null  // Navigate to Members tab
+    onMembersClick: () -> Unit,
+    onTasksClick: () -> Unit,
+    onChatsClick: () -> Unit
 ) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(10.dp)  // Compact spacing
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        StatCard(
-            icon = Icons.Default.Chat,
-            label = "Active Chats",
-            value = project.chatCount,
-            color = Color(0xFF7C3AED),
-            onClick = onChatsClick,
-            modifier = Modifier.fillMaxWidth()
-        )
-        StatCard(
-            icon = Icons.Default.CheckBox,
-            label = "Total Tasks",
-            value = project.taskCount,
-            color = Color(0xFFA855F7),
-            onClick = onTasksClick,
-            modifier = Modifier.fillMaxWidth()
-        )
-        StatCard(
+        MiniStatCard(
             icon = Icons.Default.People,
-            label = "Team Members",
-            value = project.memberCount,
+            label = "Members",
+            value = project.memberCount.toString(),
             color = Color(0xFF6366F1),
             onClick = onMembersClick,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.weight(1f)
         )
-    }
-}
-
-@Composable
-private fun AboutDetailRow(icon: ImageVector, label: String, value: String) {
-    Row(
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(vertical = 2.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = ColorTokens.ReactTheme.mutedForeground,
-            modifier = Modifier.size(14.dp).padding(top = 2.dp)
+        MiniStatCard(
+            icon = Icons.Default.CheckBox,
+            label = "Tasks",
+            value = "${project.completedTasks}/${project.taskCount}",
+            color = Color(0xFFA855F7),
+            onClick = onTasksClick,
+            modifier = Modifier.weight(1f)
         )
-        Text(
-            text = "$label: ",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color = ColorTokens.ReactTheme.foreground
-        )
-        Text(
-            text = value,
-            fontSize = 12.sp,
-            color = ColorTokens.ReactTheme.mutedForeground,
+        MiniStatCard(
+            icon = Icons.AutoMirrored.Filled.Chat,
+            label = "Chats",
+            value = project.chatCount.toString(),
+            color = Color(0xFF7C3AED),
+            onClick = onChatsClick,
             modifier = Modifier.weight(1f)
         )
     }
 }
 
-// Stat Card Component (from StatCard.tsx line 12-34)
-// Enhanced: High contrast design with excellent readability
 @Composable
-private fun StatCard(
+private fun MiniStatCard(
     icon: ImageVector,
     label: String,
-    value: Int,
+    value: String,
     color: Color,
-    onClick: (() -> Unit)? = null,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val cardModifier = modifier.then(
-        Modifier.shadow(
-            elevation = 4.dp,
-            shape = RoundedCornerShape(10.dp),
-            ambientColor = Color.Black.copy(alpha = 0.15f),
-            spotColor = Color.Black.copy(alpha = 0.15f)
-        )
-    )
-
-    // Use Card directly for better click handling
     Card(
         onClick = {
-            Log.d("StatCard", "Card clicked! Label: $label, onClick null: ${onClick == null}")
-            onClick?.invoke()
+            Log.d("MiniStatCard", "Clicked: $label")
+            onClick()
         },
-        modifier = cardModifier,
-        colors = CardDefaults.cardColors(
-            containerColor = ColorTokens.ReactTheme.card
-        ),
-        border = BorderStroke(
-            width = 1.dp,
-            color = ColorTokens.ReactTheme.border
-        ),
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = ColorTokens.ReactTheme.card),
+        border = BorderStroke(1.dp, ColorTokens.ReactTheme.border),
         shape = RoundedCornerShape(Tokens.CornerRadius.md),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = Tokens.Elevation.level1
-        ),
-        enabled = onClick != null  // Only enable if clickable
+        elevation = CardDefaults.cardElevation(defaultElevation = Tokens.Elevation.level1)
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),  // Compact
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(Tokens.Spacing.md)  // Card padding
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Icon container with glow
             Box(
                 modifier = Modifier
-                    .size(40.dp)  // More compact
-                    .shadow(
-                        elevation = 6.dp,
-                        shape = RoundedCornerShape(8.dp),
-                        ambientColor = color.copy(alpha = 0.2f),
-                        spotColor = color.copy(alpha = 0.2f)
-                    )
+                    .size(36.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(color.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
@@ -525,305 +590,285 @@ private fun StatCard(
                     imageVector = icon,
                     contentDescription = null,
                     tint = color,
-                    modifier = Modifier.size(22.dp)  // More compact
+                    modifier = Modifier.size(20.dp)
                 )
             }
-            // Label and value - ENHANCED READABILITY
-            Column(
-                verticalArrangement = Arrangement.spacedBy(2.dp)  // Tighter spacing
-            ) {
-                Text(
-                    text = label,
-                    fontSize = 14.sp,  // Readable size
-                    fontWeight = FontWeight.SemiBold,
-                    color = ColorTokens.ReactTheme.foreground,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = value.toString(),
-                    fontSize = 24.sp,  // Slightly smaller but still prominent
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = ColorTokens.ReactTheme.foreground,
-                    lineHeight = 24.sp
+                    color = ColorTokens.ReactTheme.foreground
                 )
-            }
-            // Show arrow icon if clickable
-            if (onClick != null) {
-                Spacer(modifier = Modifier.weight(1f))
-                Icon(
-                    imageVector = Icons.Default.ArrowForward,
-                    contentDescription = "View all",
-                    tint = ColorTokens.ReactTheme.primary,
-                    modifier = Modifier.size(18.dp)  // More compact
-                )
-            }
-        }  // Close Row
-    }  // Close Card
-}
-
-// Quick Actions (line 115-127)
-// Enhanced: Compact design with better labels
-@Composable
-private fun QuickActions(
-    onNewTask: () -> Unit = {},
-    onNewChat: () -> Unit = {}
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp)  // More compact
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Star,
-                contentDescription = null,
-                tint = ColorTokens.ReactTheme.primary,
-                modifier = Modifier.size(16.dp)  // More compact
             )
             Text(
-                text = "Quick Actions",
-                fontSize = 15.sp,  // More compact
-                fontWeight = FontWeight.SemiBold,
-                color = ColorTokens.ReactTheme.foreground
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = ColorTokens.ReactTheme.mutedForeground
+                ),
+                maxLines = 1
             )
-        }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Create Task button (primary) - clearer title
-            Button(
-                onClick = onNewTask,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(46.dp)  // More compact
-                    .shadow(
-                        elevation = 6.dp,
-                        shape = RoundedCornerShape(10.dp),
-                        ambientColor = ColorTokens.ReactTheme.primary.copy(alpha = 0.35f),
-                        spotColor = ColorTokens.ReactTheme.primary.copy(alpha = 0.35f)
-                    ),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = ColorTokens.ReactTheme.primary,
-                    contentColor = ColorTokens.ReactTheme.primaryForeground
-                ),
-                shape = RoundedCornerShape(10.dp),
-                contentPadding = PaddingValues(10.dp)  // More compact
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)  // More compact
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Create Task",
-                        fontSize = 13.sp,  // More compact
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-
-            // Start Chat button (secondary) - clearer title
-            OutlinedButton(
-                onClick = onNewChat,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(46.dp),  // More compact
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = ColorTokens.ReactTheme.secondary,
-                    contentColor = ColorTokens.ReactTheme.foreground
-                ),
-                border = androidx.compose.foundation.BorderStroke(
-                    width = 1.5.dp,
-                    color = ColorTokens.ReactTheme.border
-                ),
-                shape = RoundedCornerShape(10.dp),
-                contentPadding = PaddingValues(10.dp)  // More compact
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)  // More compact
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Start Chat",
-                        fontSize = 13.sp,  // More compact
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
         }
     }
 }
 
-// Recent Activity Card (line 146-179)
-// Enhanced: Compact design with better spacing, clickable to view all
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Quick Actions Row
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
-private fun RecentActivityCard(
-    activities: List<ActivityItem> = mockActivities,
-    onViewAll: () -> Unit = {}
+private fun QuickActionsRow(
+    onCreateTask: () -> Unit,
+    onCreateChat: () -> Unit
 ) {
-    KosmosCard(
-        modifier = Modifier.fillMaxWidth()
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(10.dp)  // More compact
+        OutlinedButton(
+            onClick = onCreateTask,
+            modifier = Modifier.weight(1f).height(48.dp),
+            border = BorderStroke(1.dp, ColorTokens.ReactTheme.primary),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = ColorTokens.ReactTheme.primary
+            ),
+            shape = RoundedCornerShape(10.dp)
         ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "+ New Task",
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.SemiBold
+                )
+            )
+        }
+
+        OutlinedButton(
+            onClick = onCreateChat,
+            modifier = Modifier.weight(1f).height(48.dp),
+            border = BorderStroke(1.dp, ColorTokens.ReactTheme.border),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = ColorTokens.ReactTheme.foreground
+            ),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "+ New Chat",
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.SemiBold
+                )
+            )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. About Card
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun AboutCard(project: ProjectData) {
+    SectionCard(title = "ABOUT") {
+        project.deadline?.let {
+            AboutDetailRow(Icons.Default.CalendarToday, it)
+        }
+        project.githubUrl?.let {
+            AboutDetailRow(Icons.Default.Link, it)
+        }
+        project.websiteUrl?.let {
+            AboutDetailRow(Icons.Default.Language, it)
+        }
+        project.techStack?.let { stack ->
+            // Tech stack as small tags
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = null,
-                        tint = ColorTokens.ReactTheme.primary,
-                        modifier = Modifier.size(16.dp)  // More compact
-                    )
-                    Text(
-                        text = "Recent Activity",
-                        fontSize = 15.sp,  // More compact
-                        fontWeight = FontWeight.SemiBold,
-                        color = ColorTokens.ReactTheme.foreground
-                    )
-                }
-                // View All button
-                TextButton(
-                    onClick = onViewAll,
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "View All",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = ColorTokens.ReactTheme.primary
-                    )
-                }
-            }
-            Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp)  // More compact
-            ) {
-                activities.forEachIndexed { index, activity ->
-                    ActivityItem(activity = activity)
-                    if (index < activities.size - 1) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 2.dp),
-                            color = ColorTokens.ReactTheme.border.copy(alpha = 0.4f),  // More subtle
-                            thickness = 0.5.dp  // Thinner
+                Icon(
+                    imageVector = Icons.Default.Code,
+                    contentDescription = null,
+                    tint = ColorTokens.ReactTheme.mutedForeground,
+                    modifier = Modifier.size(14.dp)
+                )
+                stack.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { tech ->
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = ColorTokens.ReactTheme.primary.copy(alpha = 0.1f)
+                    ) {
+                        Text(
+                            text = tech,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ColorTokens.ReactTheme.primary,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
                 }
             }
         }
+        project.projectMotive?.let {
+            AboutDetailRow(Icons.Default.Flag, it)
+        }
+        project.businessModel?.let {
+            AboutDetailRow(Icons.Default.Business, it)
+        }
+        project.targetAudience?.let {
+            AboutDetailRow(Icons.Default.People, it)
+        }
+        if (project.industryTags.isNotEmpty()) {
+            AboutDetailRow(Icons.AutoMirrored.Filled.TrendingUp, project.industryTags.joinToString(" · "))
+        }
+        project.openSourceLicense?.let {
+            AboutDetailRow(Icons.Default.Gavel, it)
+        }
     }
 }
 
-// Activity Item (line 154-176)
-// Enhanced: Compact design with better readability
 @Composable
-private fun ActivityItem(
-    activity: ActivityItem
-) {
+private fun AboutDetailRow(icon: ImageVector, value: String) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),  // More compact
-        verticalAlignment = Alignment.Top
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Avatar - more compact
-        Box(
-            modifier = Modifier
-                .size(32.dp)  // More compact
-                .shadow(
-                    elevation = 3.dp,
-                    shape = CircleShape,
-                    ambientColor = ColorTokens.ReactTheme.primary.copy(alpha = 0.25f),
-                    spotColor = ColorTokens.ReactTheme.primary.copy(alpha = 0.25f)
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = ColorTokens.ReactTheme.mutedForeground,
+            modifier = Modifier.size(14.dp)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall.copy(
+                color = ColorTokens.ReactTheme.mutedForeground
+            ),
+            modifier = Modifier.weight(1f),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. Activity Card
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun ActivityCard(
+    activities: List<ActivityItem>,
+    onViewAll: () -> Unit
+) {
+    SectionCard(title = "RECENT ACTIVITY") {
+        if (activities.isEmpty()) {
+            Text(
+                text = "No recent activity.",
+                style = MaterialTheme.typography.bodySmall.copy(
+                    color = ColorTokens.ReactTheme.mutedForeground
                 )
-                .clip(CircleShape)
-                .background(ColorTokens.ReactTheme.primary),
-            contentAlignment = Alignment.Center
+            )
+        } else {
+            activities.forEachIndexed { index, activity ->
+                ActivityListItem(activity = activity)
+                if (index < activities.lastIndex) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 2.dp),
+                        color = ColorTokens.ReactTheme.border.copy(alpha = 0.4f),
+                        thickness = 0.5.dp
+                    )
+                }
+            }
+        }
+
+        // View All Activity link
+        TextButton(
+            onClick = onViewAll,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp)
         ) {
             Text(
-                text = activity.user.first().toString(),
-                fontSize = 12.sp,  // More compact
-                fontWeight = FontWeight.Bold,
-                color = Color.White
+                text = "View All Activity →",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    color = ColorTokens.ReactTheme.primary,
+                    fontWeight = FontWeight.SemiBold
+                )
             )
         }
-        // Activity text - more compact
+    }
+}
+
+@Composable
+private fun ActivityListItem(activity: ActivityItem) {
+    val (entityIcon, entityColor) = getActivityEntityIcon(activity.action)
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        // Icon circle (entity type based)
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(entityColor.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = entityIcon,
+                contentDescription = null,
+                tint = entityColor,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+
+        // Content
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp)  // Tighter spacing
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
-                text = buildString {
-                    append(activity.user)
-                    append(" ")
-                    append(activity.action)
-                },
-                fontSize = 12.sp,  // More compact
-                lineHeight = 16.sp,  // Tighter line height
-                color = ColorTokens.ReactTheme.foreground
+                text = "${activity.user} ${activity.action}",
+                style = MaterialTheme.typography.bodySmall.copy(
+                    color = ColorTokens.ReactTheme.foreground
+                ),
+                lineHeight = 16.sp
             )
             Row(
-                horizontalArrangement = Arrangement.spacedBy(3.dp),  // Tighter spacing
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Schedule,
                     contentDescription = null,
                     tint = ColorTokens.ReactTheme.mutedForeground.copy(alpha = 0.7f),
-                    modifier = Modifier.size(10.dp)  // More compact
+                    modifier = Modifier.size(10.dp)
                 )
                 Text(
                     text = activity.time,
-                    fontSize = 10.sp,  // More compact
-                    color = ColorTokens.ReactTheme.mutedForeground,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = ColorTokens.ReactTheme.mutedForeground
+                    )
                 )
             }
         }
     }
 }
 
-// Status Badge (reused from ProjectListScreenReact)
-@Composable
-private fun StatusBadge(
-    status: String
-) {
-    val (bgColor, textColor) = when (status) {
-        "Active" -> ColorTokens.Success.light to ColorTokens.Success.onLight
-        "Archived" -> ColorTokens.TaskStatus.cancelled to ColorTokens.TaskStatus.onCancelled
-        else -> ColorTokens.TaskStatus.todo to ColorTokens.TaskStatus.onTodo
-    }
-
-    Surface(
-        color = bgColor,
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-    ) {
-        Text(
-            text = status,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color = textColor,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
+private fun getActivityEntityIcon(action: String): Pair<ImageVector, Color> {
+    return when {
+        action.contains("task", ignoreCase = true) -> Icons.Default.CheckBox to Color(0xFFA855F7)
+        action.contains("chat", ignoreCase = true) || action.contains("message", ignoreCase = true) -> Icons.AutoMirrored.Filled.Chat to Color(0xFF7C3AED)
+        action.contains("member", ignoreCase = true) || action.contains("joined", ignoreCase = true) || action.contains("invited", ignoreCase = true) -> Icons.Default.People to Color(0xFF6366F1)
+        action.contains("completed", ignoreCase = true) -> Icons.Default.CheckCircle to Color(0xFF34D399)
+        action.contains("added", ignoreCase = true) || action.contains("created", ignoreCase = true) -> Icons.Default.Add to Color(0xFF60A5FA)
+        action.contains("started", ignoreCase = true) -> Icons.Default.PlayArrow to Color(0xFF60A5FA)
+        else -> Icons.Default.FiberManualRecord to ColorTokens.ReactTheme.mutedForeground
     }
 }
-

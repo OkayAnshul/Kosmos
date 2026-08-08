@@ -1,14 +1,15 @@
 package com.example.kosmos.features.tasks.presentation.redesign
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -24,22 +25,19 @@ import com.example.kosmos.shared.utils.ValidationUtils
 /**
  * Quick Task Creation Sheet
  *
- * Bottom sheet for rapid task creation with:
- * - Title and description
- * - Status selection
- * - Priority selection
- * - Due date picker
- * - Project selection (optional)
- * - Assignee selection (optional)
- * - Smart defaults
- * - Quick save
+ * Full-screen scaffold for rapid task creation with:
+ * - Title and description (BASICS section)
+ * - Status and priority selection (STATUS & PRIORITY section)
+ * - Project, assignee, due date, estimated hours (DETAILS section)
+ * - Tags (TAGS section)
+ * - Sticky bottom bar with Cancel / Create Task buttons
  *
  * Power user features:
  * - Keyboard navigation
  * - Smart suggestions
  * - Template support (future)
  *
- * P1-07: Now includes proper validation using ValidationUtils
+ * P1-07: Includes proper validation using ValidationUtils
  */
 
 /**
@@ -88,185 +86,240 @@ fun QuickTaskCreationSheet(
 
     val canCreate = title.isNotBlank() && !isCreating && titleError == null && descriptionError == null
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        modifier = modifier
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(Tokens.Spacing.md),
-            verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.md)
-        ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Create Task",
-                    style = MaterialTheme.typography.titleLarge
-                )
-
-                IconButtonStandard(
-                    icon = IconSet.Navigation.close,
-                    onClick = onDismiss,
-                    contentDescription = "Close"
-                )
-            }
-
-            // Title input
-            TextFieldStandard(
-                value = title,
-                onValueChange = {
-                    title = it
-                    // Validate on change
-                    titleError = ValidationUtils.validateTaskTitle(it)
+    Scaffold(
+        modifier = modifier,
+        containerColor = ColorTokens.ReactTheme.background,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "New Task",
+                        fontWeight = FontWeight.SemiBold
+                    )
                 },
-                label = "Task Title",
-                placeholder = "What needs to be done?",
-                supportingText = titleError ?: if (title.isNotBlank()) "${title.length}/200 characters" else null,
-                isError = titleError != null,
-                imeAction = ImeAction.Next,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Description input
-            TextFieldMultiline(
-                value = description,
-                onValueChange = {
-                    description = it
-                    // Validate on change
-                    descriptionError = ValidationUtils.validateTaskDescription(it)
+                navigationIcon = {
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
                 },
-                label = "Description (optional)",
-                placeholder = "Add more details...",
-                supportingText = descriptionError ?: if (description.isNotBlank()) "${description.length}/2000 characters" else null,
-                isError = descriptionError != null,
-                minLines = 3,
-                maxLines = 5,
-                modifier = Modifier.fillMaxWidth()
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = ColorTokens.ReactTheme.background,
+                    titleContentColor = ColorTokens.ReactTheme.foreground,
+                    navigationIconContentColor = ColorTokens.ReactTheme.mutedForeground
+                )
             )
+        },
+        bottomBar = {
+            Surface(color = ColorTokens.ReactTheme.background) {
+                Column {
+                    HorizontalDivider(color = ColorTokens.ReactTheme.border)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(Tokens.Spacing.md),
+                        horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
+                    ) {
+                        SecondaryButton(
+                            text = "Cancel",
+                            onClick = onDismiss,
+                            modifier = Modifier.weight(1f),
+                            enabled = !isCreating
+                        )
+                        LoadingButton(
+                            text = "Create Task",
+                            onClick = {
+                                // P1-07: Validate all fields before creating
+                                val titleValidation = ValidationUtils.validateTaskTitle(title)
+                                val descValidation = ValidationUtils.validateTaskDescription(description)
 
-            // Status selection
-            Column(
-                verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
-            ) {
-                Text(
-                    text = "Status",
-                    style = TypographyTokens.Custom.inputLabel,
-                    color = ColorTokens.ReactTheme.mutedForeground
-                )
+                                titleError = titleValidation
+                                descriptionError = descValidation
 
-                ChipGroup(
-                    chips = TaskStatus.values().map {
-                        it.name.replace('_', ' ').lowercase().replaceFirstChar { c -> c.uppercase() }
-                    },
-                    selectedChips = setOf(
-                        selectedStatus.name.replace('_', ' ').lowercase().replaceFirstChar { c -> c.uppercase() }
-                    ),
-                    onChipClick = { statusName ->
-                        val status = TaskStatus.values().find {
-                            it.name.replace('_', ' ').lowercase().replaceFirstChar { c -> c.uppercase() } == statusName
-                        }
-                        status?.let { selectedStatus = it }
-                    },
-                    multiSelect = false
-                )
-            }
-
-            // Priority selection
-            Column(
-                verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
-            ) {
-                Text(
-                    text = "Priority",
-                    style = TypographyTokens.Custom.inputLabel,
-                    color = ColorTokens.ReactTheme.mutedForeground
-                )
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
-                ) {
-                    TaskPriority.values().forEach { priority ->
-                        PriorityChip(
-                            priority = priority,
-                            isSelected = selectedPriority == priority,
-                            onClick = { selectedPriority = priority },
-                            modifier = Modifier.weight(1f)
+                                // Only create if all validations pass
+                                if (titleValidation == null && descValidation == null) {
+                                    onCreate(
+                                        QuickTaskData(
+                                            title = title,
+                                            description = description.takeIf { it.isNotBlank() },
+                                            status = selectedStatus,
+                                            priority = selectedPriority,
+                                            projectId = selectedProjectId,
+                                            dueDate = dueDate,
+                                            assigneeIds = selectedAssignees,
+                                            tags = tags,
+                                            estimatedHours = estimatedHoursInput.toFloatOrNull()
+                                        )
+                                    )
+                                }
+                            },
+                            isLoading = isCreating,
+                            modifier = Modifier.weight(1f),
+                            enabled = canCreate
                         )
                     }
                 }
             }
-
-            HorizontalDivider()
-
-            // Optional fields
-            Column(
-                verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
-            ) {
-                Text(
-                    text = "Optional",
-                    style = TypographyTokens.Custom.caption,
-                    color = ColorTokens.ReactTheme.mutedForeground
-                )
-
-                // Project selection
-                if (availableProjects.isNotEmpty()) {
-                    SelectableListItem(
-                        icon = IconSet.Navigation.projects,
-                        label = "Project",
-                        value = selectedProjectName ?: "Select project",
-                        onClick = { showProjectPicker = true },
-                        isValueSet = selectedProjectName != null
-                    )
-                }
-
-                // Due date
-                SelectableListItem(
-                    icon = IconSet.Time.calendar,
-                    label = "Due Date",
-                    value = dueDate ?: "Set due date",
-                    onClick = { showDatePicker = true },
-                    isValueSet = dueDate != null
-                )
-
-                // Assignee (single select)
-                if (availableAssignees.isNotEmpty()) {
-                    SelectableListItem(
-                        icon = IconSet.User.profile,
-                        label = "Assignee",
-                        value = when {
-                            selectedAssignees.isEmpty() -> "Assign to..."
-                            else -> availableAssignees.find { it.id == selectedAssignees.first() }?.name ?: "1 assignee"
+        }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // BASICS section — title + description
+            item {
+                SectionCard(title = "BASICS") {
+                    // Title input
+                    TextFieldStandard(
+                        value = title,
+                        onValueChange = {
+                            title = it
+                            titleError = ValidationUtils.validateTaskTitle(it)
                         },
-                        onClick = { showAssigneePicker = true },
-                        isValueSet = selectedAssignees.isNotEmpty()
+                        label = "Task Title",
+                        placeholder = "What needs to be done?",
+                        supportingText = titleError ?: if (title.isNotBlank()) "${title.length}/200 characters" else null,
+                        isError = titleError != null,
+                        imeAction = ImeAction.Next,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Description input with char count
+                    TextFieldMultiline(
+                        value = description,
+                        onValueChange = {
+                            description = it
+                            descriptionError = ValidationUtils.validateTaskDescription(it)
+                        },
+                        label = "Description (optional)",
+                        placeholder = "Add more details...",
+                        supportingText = descriptionError ?: if (description.isNotBlank()) "${description.length}/2000 characters" else null,
+                        isError = descriptionError != null,
+                        minLines = 3,
+                        maxLines = 5,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
+            }
 
-                // Estimated hours
-                TextFieldStandard(
-                    value = estimatedHoursInput,
-                    onValueChange = { v ->
-                        // Allow only numeric input with up to one decimal
-                        if (v.isEmpty() || v.matches(Regex("^\\d{0,3}(\\.\\d{0,1})?\$"))) {
-                            estimatedHoursInput = v
+            // STATUS & PRIORITY section
+            item {
+                SectionCard(title = "STATUS & PRIORITY") {
+                    // Status chips row
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
+                    ) {
+                        Text(
+                            text = "Status",
+                            style = TypographyTokens.Custom.inputLabel,
+                            color = ColorTokens.ReactTheme.mutedForeground
+                        )
+                        ChipGroup(
+                            chips = TaskStatus.values().map {
+                                it.name.replace('_', ' ').lowercase().replaceFirstChar { c -> c.uppercase() }
+                            },
+                            selectedChips = setOf(
+                                selectedStatus.name.replace('_', ' ').lowercase().replaceFirstChar { c -> c.uppercase() }
+                            ),
+                            onChipClick = { statusName ->
+                                val status = TaskStatus.values().find {
+                                    it.name.replace('_', ' ').lowercase().replaceFirstChar { c -> c.uppercase() } == statusName
+                                }
+                                status?.let { selectedStatus = it }
+                            },
+                            multiSelect = false
+                        )
+                    }
+
+                    // Priority chips row
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
+                    ) {
+                        Text(
+                            text = "Priority",
+                            style = TypographyTokens.Custom.inputLabel,
+                            color = ColorTokens.ReactTheme.mutedForeground
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
+                        ) {
+                            TaskPriority.values().forEach { priority ->
+                                PriorityChip(
+                                    priority = priority,
+                                    isSelected = selectedPriority == priority,
+                                    onClick = { selectedPriority = priority },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
-                    },
-                    label = "Estimated Hours",
-                    placeholder = "e.g. 2.5",
-                    keyboardType = KeyboardType.Decimal,
-                    imeAction = ImeAction.Next,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    }
+                }
+            }
 
-                // Tags input
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(Tokens.Spacing.xs)
-                ) {
+            // DETAILS section — project, assignee, due date, estimated hours
+            item {
+                SectionCard(title = "DETAILS") {
+                    // Project selector
+                    if (availableProjects.isNotEmpty()) {
+                        SelectableListItem(
+                            icon = IconSet.Navigation.projects,
+                            label = "Project",
+                            value = selectedProjectName ?: "Select project",
+                            onClick = { showProjectPicker = true },
+                            isValueSet = selectedProjectName != null
+                        )
+                    }
+
+                    // Assignee
+                    if (availableAssignees.isNotEmpty()) {
+                        SelectableListItem(
+                            icon = IconSet.User.profile,
+                            label = "Assignee",
+                            value = when {
+                                selectedAssignees.isEmpty() -> "Assign to..."
+                                else -> availableAssignees.find { it.id == selectedAssignees.first() }?.name ?: "1 assignee"
+                            },
+                            onClick = { showAssigneePicker = true },
+                            isValueSet = selectedAssignees.isNotEmpty()
+                        )
+                    }
+
+                    // Due date
+                    SelectableListItem(
+                        icon = IconSet.Time.calendar,
+                        label = "Due Date",
+                        value = dueDate ?: "Set due date",
+                        onClick = { showDatePicker = true },
+                        isValueSet = dueDate != null
+                    )
+
+                    // Estimated hours
+                    TextFieldStandard(
+                        value = estimatedHoursInput,
+                        onValueChange = { v ->
+                            // Allow only numeric input with up to one decimal
+                            if (v.isEmpty() || v.matches(Regex("^\\d{0,3}(\\.\\d{0,1})?\$"))) {
+                                estimatedHoursInput = v
+                            }
+                        },
+                        label = "Estimated Hours",
+                        placeholder = "e.g. 2.5",
+                        keyboardType = KeyboardType.Decimal,
+                        imeAction = ImeAction.Next,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            // TAGS section
+            item {
+                SectionCard(title = "TAGS") {
+                    // Tag input + chip group
                     TextFieldStandard(
                         value = tagInput,
                         onValueChange = { tagInput = it },
@@ -292,59 +345,10 @@ fun QuickTaskCreationSheet(
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(Tokens.Spacing.md))
-
-            // Action buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Tokens.Spacing.sm)
-            ) {
-                SecondaryButton(
-                    text = "Cancel",
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                    enabled = !isCreating
-                )
-
-                LoadingButton(
-                    text = "Create Task",
-                    onClick = {
-                        // P1-07: Validate all fields before creating
-                        val titleValidation = ValidationUtils.validateTaskTitle(title)
-                        val descValidation = ValidationUtils.validateTaskDescription(description)
-
-                        titleError = titleValidation
-                        descriptionError = descValidation
-
-                        // Only create if all validations pass
-                        if (titleValidation == null && descValidation == null) {
-                            onCreate(
-                                QuickTaskData(
-                                    title = title,
-                                    description = description.takeIf { it.isNotBlank() },
-                                    status = selectedStatus,
-                                    priority = selectedPriority,
-                                    projectId = selectedProjectId,
-                                    dueDate = dueDate,
-                                    assigneeIds = selectedAssignees,
-                                    tags = tags,
-                                    estimatedHours = estimatedHoursInput.toFloatOrNull()
-                                )
-                            )
-                        }
-                    },
-                    isLoading = isCreating,
-                    modifier = Modifier.weight(1f),
-                    enabled = canCreate
-                )
-            }
-
-            Spacer(modifier = Modifier.height(Tokens.Spacing.md))
         }
     }
 
-    // Project picker dialog
+    // Project picker dialog (overlay)
     if (showProjectPicker) {
         KosmosDialogSurface(
             onDismissRequest = { showProjectPicker = false }
@@ -386,18 +390,28 @@ fun QuickTaskCreationSheet(
         }
     }
 
-    // Date picker dialog
+    // Date picker dialog (overlay)
     if (showDatePicker) {
         DatePickerDialog(
             onDateSelected = { date ->
-                dueDate = date?.toString()
+                dueDate = date?.let {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        java.time.Instant.ofEpochMilli(it)
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toLocalDate()
+                            .toString()
+                    } else {
+                        java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                            .format(java.util.Date(it))
+                    }
+                }
                 showDatePicker = false
             },
             onDismiss = { showDatePicker = false }
         )
     }
 
-    // Assignee picker dialog
+    // Assignee picker dialog (overlay)
     if (showAssigneePicker) {
         var tempSelected by remember { mutableStateOf(selectedAssignees.firstOrNull()) }
 

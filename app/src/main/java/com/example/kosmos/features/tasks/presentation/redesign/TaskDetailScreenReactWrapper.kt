@@ -151,6 +151,17 @@ fun TaskDetailScreenReactWrapper(
         remember { mutableStateOf(null) }
     }
 
+    // Get current user's membership for permission checks
+    val projectMembers by if (task != null) {
+        projectRepository.getProjectMembersFlow(task.projectId)
+            .collectAsStateWithLifecycle(initialValue = emptyList())
+    } else {
+        remember { mutableStateOf(emptyList()) }
+    }
+    val currentMember = remember(projectMembers, currentUser) {
+        projectMembers.find { it.userId == currentUser?.id }
+    }
+
     // Comment handler
     val onAddComment: (String) -> Unit = { content ->
         viewModel.addComment(content)
@@ -206,6 +217,7 @@ fun TaskDetailScreenReactWrapper(
                 comments = task.comments,
                 currentUserName = currentUser?.displayName ?: "Unknown",
                 currentUserAvatar = currentUser?.displayName?.firstOrNull()?.toString() ?: "?",
+                currentMember = currentMember,
                 onBack = onBack,
                 onEdit = onEdit,
                 onMore = { showManagementSheet = true },
@@ -552,9 +564,14 @@ private fun formatDate(timestamp: Long): String {
  */
 private fun formatHours(hours: Float): String {
     if (hours == 0f) return "0h"
+    val totalSeconds = (hours * 3600).toInt()
+    if (totalSeconds < 60) return "${totalSeconds}s"
     val h = hours.toInt()
     val m = ((hours - h) * 60).toInt()
+    val s = (totalSeconds % 60)
     return when {
+        h == 0 && s > 0 -> "${m}m ${s}s"
+        h == 0 -> "${m}m"
         m == 0 -> "${h}h"
         else -> "${h}h ${m}m"
     }

@@ -99,7 +99,8 @@ class ProjectRepository @Inject constructor(
     private val dispatchers: DispatcherProvider,  // P1-12: Proper threading
     private val projectInviteDao: ProjectInviteDao,
     private val supabaseProjectInviteDataSource: SupabaseProjectInviteDataSource,
-    private val notificationService: SupabaseNotificationService
+    private val notificationService: SupabaseNotificationService,
+    private val demoMode: com.example.kosmos.features.demo.DemoMode
 ) {
 
     companion object {
@@ -1035,6 +1036,23 @@ class ProjectRepository @Inject constructor(
      * Search public projects via Supabase (for Discover screen)
      */
     suspend fun searchPublicProjects(query: String): Result<List<Project>> {
+        if (demoMode.isEnabled) {
+            return try {
+                val projects = projectDao.getAllProjectsFlow().first().let { all ->
+                    if (query.isBlank()) {
+                        all
+                    } else {
+                        all.filter {
+                            it.name.contains(query.trim(), ignoreCase = true) ||
+                                it.description.contains(query.trim(), ignoreCase = true)
+                        }
+                    }
+                }
+                Result.success(projects)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
         return supabaseProjectDataSource.searchProjects(query)
     }
 

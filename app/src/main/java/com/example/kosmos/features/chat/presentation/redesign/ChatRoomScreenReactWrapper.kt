@@ -6,6 +6,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kosmos.core.models.MessageType
 import com.example.kosmos.data.repository.ProjectRepository
 import com.example.kosmos.features.chat.presentation.ChatViewModel
+import android.widget.Toast
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -22,9 +23,11 @@ import java.util.*
 fun ChatRoomScreenReactWrapper(
     chatRoomId: String,
     onBack: () -> Unit,
+    onViewMembers: (() -> Unit)? = null,
     chatViewModel: ChatViewModel = hiltViewModel(),
     projectRepository: ProjectRepository = hiltViewModel<ProjectRepoHolder>().projectRepository
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     // Load chat via ChatViewModel (starts realtime, loads messages, loads chat room)
     LaunchedEffect(chatRoomId) {
         chatViewModel.loadChat(chatRoomId)
@@ -120,6 +123,22 @@ fun ChatRoomScreenReactWrapper(
         },
         onSendMessage = handleSendMessage,
         onBack = onBack,
+        onViewMembers = onViewMembers ?: {
+            Toast.makeText(context, "Members view coming soon", Toast.LENGTH_SHORT).show()
+        },
+        onSearchMessages = {
+            chatViewModel.searchMessages("")
+            Toast.makeText(context, "Search coming soon", Toast.LENGTH_SHORT).show()
+        },
+        onToggleMute = {
+            Toast.makeText(context, "Mute toggled", Toast.LENGTH_SHORT).show()
+        },
+        onChatSettings = {
+            Toast.makeText(context, "Chat settings coming soon", Toast.LENGTH_SHORT).show()
+        },
+        onLeaveChat = {
+            Toast.makeText(context, "Leave chat coming soon", Toast.LENGTH_SHORT).show()
+        },
         onReaction = { messageId, emoji ->
             chatViewModel.toggleReaction(messageId, emoji)
         },

@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -54,6 +55,7 @@ fun LoginScreen(
     isRememberMeEnabled: () -> Boolean = { false },
     // Called with the Google ID token once Credential Manager resolves
     onGoogleIdToken: (idToken: String, rawNonce: String?) -> Unit = { _, _ -> },
+    onEnterDemoMode: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var email by remember { mutableStateOf(getSavedEmail()) }
@@ -339,6 +341,38 @@ fun LoginScreen(
                     text = "Sign up",
                     onClick = onNavigateToSignUp
                 )
+            }
+
+            // Demo mode entry — explore the app fully offline, no account needed
+            if (BuildConfig.DEMO_MODE_ENABLED) {
+                OutlinedButton(
+                    onClick = onEnterDemoMode,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    border = ButtonDefaults.outlinedButtonBorder().copy(
+                        brush = SolidColor(ColorTokens.ReactTheme.primary.copy(alpha = 0.5f))
+                    ),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = ColorTokens.ReactTheme.card,
+                        contentColor = ColorTokens.ReactTheme.primary
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    enabled = !uiState.isLoading
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Explore,
+                        contentDescription = null,
+                        tint = ColorTokens.ReactTheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Explore Demo Mode",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
 
             // Footer

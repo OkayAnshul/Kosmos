@@ -16,6 +16,7 @@ import com.example.kosmos.data.repository.TaskRepository
 import kotlinx.serialization.json.Json
 import com.example.kosmos.features.project.presentation.ProjectViewModel
 import com.example.kosmos.features.projects.components.EditProjectDialog
+import com.example.kosmos.shared.ui.components.ConfirmationDialog
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -56,6 +57,7 @@ fun ProjectDetailsScreenReactWrapper(
 ) {
     // State for edit dialog
     var showEditDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -64,14 +66,20 @@ fun ProjectDetailsScreenReactWrapper(
     val project = uiState.projects.find { it.id == projectId }
     val stats = uiState.projectStats[projectId]
 
+    // Get current user's membership for permission checks
+    val currentMember = remember(uiState.currentProjectMembers, uiState.currentUserId) {
+        uiState.currentProjectMembers.find { it.userId == uiState.currentUserId }
+    }
+
     // Handle edit project
-    val handleSaveProject: (String, String, ProjectStatus) -> Unit = { name, description, status ->
+    val handleSaveProject: (String, String, ProjectStatus, com.example.kosmos.core.models.ProjectVisibility) -> Unit = { name, description, status, visibility ->
         coroutineScope.launch {
             viewModel.updateProjectDetails(
                 projectId = projectId,
                 name = name,
                 description = description,
-                status = status
+                status = status,
+                visibility = visibility
             )
             showEditDialog = false
 
@@ -95,12 +103,29 @@ fun ProjectDetailsScreenReactWrapper(
         coroutineScope.launch {
             viewModel.deleteProject(projectId)
             showEditDialog = false
-            snackbarHostState.showSnackbar(
-                message = "Project deleted",
-                duration = SnackbarDuration.Short
-            )
-            // Navigate back after deletion
-            onBack()
+            showDeleteConfirmation = false
+            // Wait briefly for ViewModel state to update, then check for error
+            kotlinx.coroutines.delay(200)
+            val currentError = viewModel.uiState.value.error
+            if (currentError != null) {
+                snackbarHostState.showSnackbar(
+                    message = currentError,
+                    duration = SnackbarDuration.Long
+                )
+            } else {
+                snackbarHostState.showSnackbar(
+                    message = "Project deleted",
+                    duration = SnackbarDuration.Short
+                )
+                onBack()
+            }
+        }
+    }
+
+    // Handle archive project
+    val handleArchiveProject: () -> Unit = {
+        coroutineScope.launch {
+            viewModel.archiveProject(projectId)
         }
     }
 
@@ -132,20 +157,22 @@ fun ProjectDetailsScreenReactWrapper(
     }
 
     // Load recent activities for the project (limit to 5 most recent)
-    val activities by taskRepository.getActivityForProjectFlow(projectId)
-        .map { activityList ->
-            activityList
-                .sortedByDescending { it.timestamp }
-                .take(5)
-                .map { activity ->
-                    ActivityItem(
-                        user = activity.actorName,
-                        action = activity.commitMessage ?: activity.autoDescription,
-                        time = formatActivityTime(activity.timestamp)
-                    )
-                }
-        }
-        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val recentActivityFlow = remember(projectId) {
+        taskRepository.getActivityForProjectFlow(projectId)
+            .map { activityList ->
+                activityList
+                    .sortedByDescending { it.timestamp }
+                    .take(5)
+                    .map { activity ->
+                        ActivityItem(
+                            user = activity.actorName,
+                            action = activity.commitMessage ?: activity.autoDescription,
+                            time = formatActivityTime(activity.timestamp)
+                        )
+                    }
+            }
+    }
+    val activities by recentActivityFlow.collectAsStateWithLifecycle(initialValue = emptyList())
 
     // Map domain Project model to ProjectData UI model
     val projectData = if (project != null) {
@@ -200,6 +227,7 @@ fun ProjectDetailsScreenReactWrapper(
             projectId = projectId,
             project = projectData,
             activities = activities,
+            currentMember = currentMember,
             onBack = onBack,
             onNewTask = onNewTask,
             onNewChat = onNewChat,
@@ -213,6 +241,24 @@ fun ProjectDetailsScreenReactWrapper(
                 } else {
                     showEditDialog = true
                 }
+            },
+            onArchive = handleArchiveProject,
+            onDelete = { showDeleteConfirmation = true },
+            onChangeVisibility = { visibilityName ->
+                if (project != null) {
+                    val newVisibility = try {
+                        com.example.kosmos.core.models.ProjectVisibility.valueOf(visibilityName)
+                    } catch (_: Exception) { project.visibility }
+                    coroutineScope.launch {
+                        viewModel.updateProjectDetails(
+                            projectId = projectId,
+                            name = project.name,
+                            description = project.description,
+                            status = project.status,
+                            visibility = newVisibility
+                        )
+                    }
+                }
             }
         )
 
@@ -221,6 +267,18 @@ fun ProjectDetailsScreenReactWrapper(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
+
+        // Delete Confirmation Dialog (standalone from overflow menu)
+        if (showDeleteConfirmation) {
+            ConfirmationDialog(
+                title = "Delete Project",
+                message = "Are you sure you want to delete \"${project?.name ?: "this project"}\"? This action cannot be undone and will remove all tasks, chats, and members.",
+                onConfirm = handleDeleteProject,
+                onDismiss = { showDeleteConfirmation = false },
+                confirmText = "Delete",
+                isDestructive = true
+            )
+        }
 
         // Edit/Delete Project Dialog
         if (showEditDialog && project != null) {

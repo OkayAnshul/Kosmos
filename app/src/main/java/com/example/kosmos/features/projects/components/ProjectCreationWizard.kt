@@ -2,10 +2,8 @@ package com.example.kosmos.features.projects.components
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -19,18 +17,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.example.kosmos.core.models.ProjectRole
 import com.example.kosmos.core.models.User
 import com.example.kosmos.data.repository.ProjectCreationData
 import com.example.kosmos.features.project.presentation.SelectedMember
+import com.example.kosmos.shared.ui.components.WizardStepIndicator
 import com.example.kosmos.shared.ui.designsystem.ColorTokens
 import com.example.kosmos.shared.ui.designsystem.Tokens.Spacing
 
 /**
  * Multi-step project creation wizard
  *
+ * Full-screen Scaffold implementation.
  * Flow: Project Details → Add Members → Review & Create
  *
  * Features:
@@ -41,7 +39,6 @@ import com.example.kosmos.shared.ui.designsystem.Tokens.Spacing
  * - Success animation on completion
  * - Offline-first project creation
  *
- * @param isOpen Whether wizard dialog is visible
  * @param currentStep Current wizard step (1-3)
  * @param projectData Current project data (partial during wizard flow)
  * @param selectedMembers Members selected to add to project
@@ -64,7 +61,6 @@ import com.example.kosmos.shared.ui.designsystem.Tokens.Spacing
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectCreationWizard(
-    isOpen: Boolean,
     currentStep: Int,
     projectData: ProjectCreationData?,
     selectedMembers: List<SelectedMember>,
@@ -97,215 +93,175 @@ fun ProjectCreationWizard(
         }
     }
 
-    if (isOpen) {
-        Dialog(
-            onDismissRequest = {
-                if (!isCreating) onDismiss()
-            },
-            properties = DialogProperties(
-                dismissOnBackPress = !isCreating,
-                dismissOnClickOutside = !isCreating,
-                usePlatformDefaultWidth = false
-            )
-        ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(Spacing.md),
-                shape = RoundedCornerShape(24.dp),
-                color = ColorTokens.ReactTheme.background,
-                contentColor = ColorTokens.ReactTheme.foreground,
-                border = BorderStroke(1.dp, ColorTokens.ReactTheme.border)
-            ) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    // Main wizard content
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(ColorTokens.ReactTheme.background)
-                    ) {
-                        // Header
-                        WizardHeader(
-                            currentStep = currentStep,
-                            onDismiss = if (!isCreating) onDismiss else null
+    // Step subtitle text shown below TopAppBar
+    val stepSubtitle = when (currentStep) {
+        1 -> "Tell us about your project"
+        2 -> "Add your team members"
+        3 -> "Review and create"
+        else -> ""
+    }
+
+    Scaffold(
+        containerColor = ColorTokens.ReactTheme.background,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = "New Project",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold
                         )
-
-                        // Progress indicator
-                        WizardProgressIndicator(
-                            currentStep = currentStep,
-                            totalSteps = 3,
-                            onStepClick = { step ->
-                                if (step < currentStep && !isCreating) {
-                                    onStepChange(step)
-                                }
-                            }
-                        )
-
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = Spacing.md),
-                            color = ColorTokens.ReactTheme.border
-                        )
-
-                        // Step content with animated transitions
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                        ) {
-                            AnimatedContent(
-                                targetState = currentStep,
-                                transitionSpec = {
-                                    if (targetState > initialState) {
-                                        // Forward navigation
-                                        slideInHorizontally(
-                                            initialOffsetX = { fullWidth -> fullWidth },
-                                            animationSpec = spring(
-                                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                stiffness = Spring.StiffnessLow
-                                            )
-                                        ) + fadeIn() togetherWith
-                                                slideOutHorizontally(
-                                                    targetOffsetX = { fullWidth -> -fullWidth },
-                                                    animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessLow
-                                                    )
-                                                ) + fadeOut()
-                                    } else {
-                                        // Backward navigation
-                                        slideInHorizontally(
-                                            initialOffsetX = { fullWidth -> -fullWidth },
-                                            animationSpec = spring(
-                                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                stiffness = Spring.StiffnessLow
-                                            )
-                                        ) + fadeIn() togetherWith
-                                                slideOutHorizontally(
-                                                    targetOffsetX = { fullWidth -> fullWidth },
-                                                    animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessLow
-                                                    )
-                                                ) + fadeOut()
-                                    }
-                                },
-                                label = "step_transition"
-                            ) { step ->
-                                when (step) {
-                                    1 -> Step1ProjectDetails(
-                                        projectData = projectData,
-                                        validationErrors = validationErrors,
-                                        onDataUpdate = onProjectDataUpdate
-                                    )
-                                    2 -> Step2AddMembers(
-                                        selectedMembers = selectedMembers,
-                                        recentCollaborators = recentCollaborators,
-                                        connectionUsers = connectionUsers,
-                                        allUsers = allUsers,
-                                        searchQuery = userSearchQuery,
-                                        currentUserId = currentUserId,
-                                        onAddMember = onAddMember,
-                                        onRemoveMember = onRemoveMember,
-                                        onUpdateMemberRole = onUpdateMemberRole,
-                                        onSearchQueryChange = onSearchQueryChange
-                                    )
-                                    3 -> Step3ReviewCreate(
-                                        projectData = projectData,
-                                        selectedMembers = selectedMembers,
-                                        currentUserName = currentUserName,
-                                        onEditDetails = { onStepChange(1) },
-                                        onEditMembers = { onStepChange(2) }
-                                    )
-                                }
-                            }
-                        }
-
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = Spacing.md),
-                            color = ColorTokens.ReactTheme.border
-                        )
-
-                        // Navigation buttons
-                        WizardNavigationButtons(
-                            currentStep = currentStep,
-                            canProceed = validationErrors.isEmpty() && projectData != null,
-                            isCreating = isCreating,
-                            onBack = { onStepChange(currentStep - 1) },
-                            onNext = { onStepChange(currentStep + 1) },
-                            onCreate = {
-                                onCreate()
-                                showSuccessAnimation = true
-                            }
-                        )
-                    }
-
-                    // Success animation overlay
-                    AnimatedVisibility(
-                        visible = showSuccessAnimation,
-                        enter = fadeIn() + scaleIn(
-                            initialScale = 0.3f,
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessMedium
+                        if (stepSubtitle.isNotEmpty()) {
+                            Text(
+                                text = stepSubtitle,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = ColorTokens.ReactTheme.mutedForeground
                             )
-                        ),
-                        exit = fadeOut()
-                    ) {
-                        SuccessOverlay()
+                        }
                     }
-
-                    // Loading overlay (during creation, before success)
-                    if (isCreating && !showSuccessAnimation) {
-                        LoadingOverlay()
+                },
+                navigationIcon = {
+                    IconButton(onClick = if (!isCreating) onDismiss else { {} }) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close"
+                        )
                     }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = ColorTokens.ReactTheme.background,
+                    titleContentColor = ColorTokens.ReactTheme.foreground,
+                    navigationIconContentColor = ColorTokens.ReactTheme.mutedForeground
+                )
+            )
+        },
+        bottomBar = {
+            Surface(color = ColorTokens.ReactTheme.background) {
+                Column {
+                    HorizontalDivider(color = ColorTokens.ReactTheme.border)
+                    WizardNavigationButtons(
+                        currentStep = currentStep,
+                        canProceed = validationErrors.isEmpty() && projectData != null,
+                        isCreating = isCreating,
+                        onBack = { onStepChange(currentStep - 1) },
+                        onNext = { onStepChange(currentStep + 1) },
+                        onCreate = {
+                            onCreate()
+                            showSuccessAnimation = true
+                        }
+                    )
                 }
             }
         }
-    }
-}
-
-/**
- * Wizard header with title and close button
- */
-@Composable
-private fun WizardHeader(
-    currentStep: Int,
-    onDismiss: (() -> Unit)?
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(ColorTokens.ReactTheme.card)
-            .padding(Spacing.md),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(
-                text = "Create New Project",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = ColorTokens.ReactTheme.foreground
-            )
-            Text(
-                text = when (currentStep) {
-                    1 -> "Tell us about your project"
-                    2 -> "Add your team members"
-                    3 -> "Review and create"
-                    else -> ""
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = ColorTokens.ReactTheme.mutedForeground
-            )
-        }
-
-        onDismiss?.let { dismiss ->
-            IconButton(onClick = dismiss) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Close wizard",
-                    tint = ColorTokens.ReactTheme.mutedForeground
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Step indicator below TopAppBar
+                WizardStepIndicator(
+                    currentStep = currentStep,
+                    totalSteps = 3
                 )
+
+                HorizontalDivider(color = ColorTokens.ReactTheme.border)
+
+                // Step content with animated transitions
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ) {
+                    AnimatedContent(
+                        targetState = currentStep,
+                        transitionSpec = {
+                            if (targetState > initialState) {
+                                // Forward navigation
+                                slideInHorizontally(
+                                    initialOffsetX = { fullWidth -> fullWidth },
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessLow
+                                    )
+                                ) + fadeIn() togetherWith
+                                        slideOutHorizontally(
+                                            targetOffsetX = { fullWidth -> -fullWidth },
+                                            animationSpec = spring(
+                                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                stiffness = Spring.StiffnessLow
+                                            )
+                                        ) + fadeOut()
+                            } else {
+                                // Backward navigation
+                                slideInHorizontally(
+                                    initialOffsetX = { fullWidth -> -fullWidth },
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessLow
+                                    )
+                                ) + fadeIn() togetherWith
+                                        slideOutHorizontally(
+                                            targetOffsetX = { fullWidth -> fullWidth },
+                                            animationSpec = spring(
+                                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                stiffness = Spring.StiffnessLow
+                                            )
+                                        ) + fadeOut()
+                            }
+                        },
+                        label = "step_transition"
+                    ) { step ->
+                        when (step) {
+                            1 -> Step1ProjectDetails(
+                                projectData = projectData,
+                                validationErrors = validationErrors,
+                                onDataUpdate = onProjectDataUpdate
+                            )
+                            2 -> Step2AddMembers(
+                                selectedMembers = selectedMembers,
+                                recentCollaborators = recentCollaborators,
+                                connectionUsers = connectionUsers,
+                                allUsers = allUsers,
+                                searchQuery = userSearchQuery,
+                                currentUserId = currentUserId,
+                                onAddMember = onAddMember,
+                                onRemoveMember = onRemoveMember,
+                                onUpdateMemberRole = onUpdateMemberRole,
+                                onSearchQueryChange = onSearchQueryChange
+                            )
+                            3 -> Step3ReviewCreate(
+                                projectData = projectData,
+                                selectedMembers = selectedMembers,
+                                currentUserName = currentUserName,
+                                onEditDetails = { onStepChange(1) },
+                                onEditMembers = { onStepChange(2) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Success animation overlay
+            AnimatedVisibility(
+                visible = showSuccessAnimation,
+                enter = fadeIn() + scaleIn(
+                    initialScale = 0.3f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    )
+                ),
+                exit = fadeOut()
+            ) {
+                SuccessOverlay()
+            }
+
+            // Loading overlay (during creation, before success)
+            if (isCreating && !showSuccessAnimation) {
+                LoadingOverlay()
             }
         }
     }
@@ -326,9 +282,9 @@ private fun LoadingOverlay() {
             modifier = Modifier
                 .padding(Spacing.lg)
                 .widthIn(max = 300.dp),
-            shape = RoundedCornerShape(20.dp),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
             color = ColorTokens.ReactTheme.card,
-            border = BorderStroke(1.dp, ColorTokens.ReactTheme.border)
+            border = androidx.compose.foundation.BorderStroke(1.dp, ColorTokens.ReactTheme.border)
         ) {
             Column(
                 modifier = Modifier

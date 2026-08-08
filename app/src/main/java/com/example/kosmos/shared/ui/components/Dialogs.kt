@@ -663,43 +663,47 @@ fun DatePickerDialog(
         initialSelectedDateMillis = initialDate
     )
 
-    AlertDialog(
+    androidx.compose.material3.DatePickerDialog(
         onDismissRequest = onDismiss,
-        modifier = modifier
+        confirmButton = {
+            TextButtonStandard(
+                text = "OK",
+                onClick = {
+                    onDateSelected(datePickerState.selectedDateMillis)
+                    onDismiss()
+                }
+            )
+        },
+        dismissButton = {
+            TextButtonStandard(
+                text = "Cancel",
+                onClick = onDismiss
+            )
+        },
+        modifier = modifier,
+        colors = androidx.compose.material3.DatePickerDefaults.colors(
+            containerColor = ColorTokens.ReactTheme.card
+        )
     ) {
-        Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = Tokens.Elevation.level3
-        ) {
-            Column(
-                modifier = Modifier.padding(Tokens.Spacing.md)
-            ) {
                 DatePicker(
                     state = datePickerState,
-                    showModeToggle = true
+                    showModeToggle = true,
+                    colors = androidx.compose.material3.DatePickerDefaults.colors(
+                        containerColor = ColorTokens.ReactTheme.card,
+                        titleContentColor = ColorTokens.ReactTheme.foreground,
+                        headlineContentColor = ColorTokens.ReactTheme.foreground,
+                        weekdayContentColor = ColorTokens.ReactTheme.mutedForeground,
+                        navigationContentColor = ColorTokens.ReactTheme.foreground,
+                        yearContentColor = ColorTokens.ReactTheme.foreground,
+                        currentYearContentColor = ColorTokens.ReactTheme.primary,
+                        selectedYearContainerColor = ColorTokens.ReactTheme.primary,
+                        selectedYearContentColor = ColorTokens.ReactTheme.primaryForeground,
+                        dayContentColor = ColorTokens.ReactTheme.foreground,
+                        selectedDayContainerColor = ColorTokens.ReactTheme.primary,
+                        selectedDayContentColor = ColorTokens.ReactTheme.primaryForeground,
+                        todayContentColor = ColorTokens.ReactTheme.primary,
+                        todayDateBorderColor = ColorTokens.ReactTheme.primary
+                    )
                 )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = Tokens.Spacing.md),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButtonStandard(
-                        text = "Cancel",
-                        onClick = onDismiss
-                    )
-                    Spacer(modifier = Modifier.width(Tokens.Spacing.sm))
-                    TextButtonStandard(
-                        text = "OK",
-                        onClick = {
-                            onDateSelected(datePickerState.selectedDateMillis)
-                            onDismiss()
-                        }
-                    )
-                }
-            }
-        }
     }
 }

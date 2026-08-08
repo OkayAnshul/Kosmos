@@ -84,6 +84,7 @@ class ProjectViewModel @Inject constructor(
                 .collect { user ->
                     // User is now authenticated and loaded
                     Log.d(TAG, "User authenticated: ${user.username}")
+                    _uiState.value = _uiState.value.copy(currentUserId = user.id)
                     // REMOVED: syncProjectsFromSupabase() - Sync now handled by InitialSyncManager in MainActivity
                     loadUserProjects()
                     // Preload users for project creation wizard
@@ -467,7 +468,8 @@ class ProjectViewModel @Inject constructor(
         projectId: String,
         name: String,
         description: String,
-        status: com.example.kosmos.core.models.ProjectStatus? = null
+        status: com.example.kosmos.core.models.ProjectStatus? = null,
+        visibility: com.example.kosmos.core.models.ProjectVisibility? = null
     ) {
         currentUser?.let { user ->
             viewModelScope.launch {
@@ -480,7 +482,8 @@ class ProjectViewModel @Inject constructor(
                     val updatedProject = project.copy(
                         name = name,
                         description = description,
-                        status = status ?: project.status
+                        status = status ?: project.status,
+                        visibility = visibility ?: project.visibility
                     )
 
                     val result = projectRepository.updateProject(updatedProject, user.id)
@@ -1138,6 +1141,7 @@ enum class ProjectSortOption {
  */
 data class ProjectUiState(
     // Existing fields
+    val currentUserId: String? = null,
     val projects: List<Project> = emptyList(),
     val currentProjectMembers: List<ProjectMember> = emptyList(),
     val projectStats: Map<String, ProjectStats> = emptyMap(),

@@ -11,12 +11,16 @@ import com.example.kosmos.features.project.presentation.ProjectFilter
 import com.example.kosmos.core.models.ProjectStatus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import android.content.SharedPreferences
+import androidx.compose.ui.platform.LocalContext
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 /**
  * Wrapper for ProjectListScreenReact that connects to the backend.
@@ -38,6 +42,13 @@ fun ProjectListScreenReactWrapper(
     viewModel: ProjectViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Read accent style preference
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("kosmos_prefs", android.content.Context.MODE_PRIVATE) }
+    val accentStyle = remember {
+        ProjectAccentStyle.fromPref(prefs.getString(ProjectAccentStyle.PREF_KEY, null))
+    }
     val coroutineScope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -128,7 +139,8 @@ fun ProjectListScreenReactWrapper(
             },
             isRefreshing = isRefreshing,
             onRefresh = onRefresh,
-            notificationBadgeCount = notificationBadgeCount
+            notificationBadgeCount = notificationBadgeCount,
+            accentStyle = accentStyle
         )
 
         // Snackbar for error/success messages
@@ -138,33 +150,43 @@ fun ProjectListScreenReactWrapper(
         )
     }
 
-    // Create Project Wizard (full 3-step flow with members)
+    // Create Project Wizard — rendered in a full-screen Dialog so it sits above the
+    // bottom nav bar (which lives in the outer Scaffold and would otherwise cover the
+    // wizard's navigation buttons).
     if (showCreateDialog) {
-        com.example.kosmos.features.projects.components.ProjectCreationWizard(
-            isOpen = true,
-            currentStep = uiState.wizardStep,
-            projectData = uiState.projectCreationData,
-            selectedMembers = uiState.selectedMembers,
-            recentCollaborators = uiState.recentCollaborators,
-            connectionUsers = uiState.connectionUsers,
-            allUsers = uiState.allUsers,
-            userSearchQuery = uiState.userSearchQuery,
-            validationErrors = uiState.validationErrors,
-            isCreating = uiState.isCreatingProject,
-            currentUserId = viewModel.getCurrentUserId(),
-            currentUserName = viewModel.getCurrentUserName(),
-            onStepChange = { step -> viewModel.setWizardStep(step) },
-            onProjectDataUpdate = { data -> viewModel.updateProjectData(data) },
-            onAddMember = { user, role -> viewModel.addMemberToSelection(user, role) },
-            onRemoveMember = { userId -> viewModel.removeMemberFromSelection(userId) },
-            onUpdateMemberRole = { userId, role -> viewModel.updateMemberRole(userId, role) },
-            onSearchQueryChange = { query -> viewModel.searchUsers(query) },
-            onCreate = { viewModel.createProjectWithWizardData() },
-            onDismiss = {
-                viewModel.resetWizard()
-                showCreateDialog = false
-            }
-        )
+        Dialog(
+            onDismissRequest = {},
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnClickOutside = false,
+                decorFitsSystemWindows = false
+            )
+        ) {
+            com.example.kosmos.features.projects.components.ProjectCreationWizard(
+                currentStep = uiState.wizardStep,
+                projectData = uiState.projectCreationData,
+                selectedMembers = uiState.selectedMembers,
+                recentCollaborators = uiState.recentCollaborators,
+                connectionUsers = uiState.connectionUsers,
+                allUsers = uiState.allUsers,
+                userSearchQuery = uiState.userSearchQuery,
+                validationErrors = uiState.validationErrors,
+                isCreating = uiState.isCreatingProject,
+                currentUserId = viewModel.getCurrentUserId(),
+                currentUserName = viewModel.getCurrentUserName(),
+                onStepChange = { step -> viewModel.setWizardStep(step) },
+                onProjectDataUpdate = { data -> viewModel.updateProjectData(data) },
+                onAddMember = { user, role -> viewModel.addMemberToSelection(user, role) },
+                onRemoveMember = { userId -> viewModel.removeMemberFromSelection(userId) },
+                onUpdateMemberRole = { userId, role -> viewModel.updateMemberRole(userId, role) },
+                onSearchQueryChange = { query -> viewModel.searchUsers(query) },
+                onCreate = { viewModel.createProjectWithWizardData() },
+                onDismiss = {
+                    viewModel.resetWizard()
+                    showCreateDialog = false
+                }
+            )
+        }
     }
 }
 

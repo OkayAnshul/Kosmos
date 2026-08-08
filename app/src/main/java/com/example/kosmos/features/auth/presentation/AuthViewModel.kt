@@ -91,6 +91,43 @@ class AuthViewModel @Inject constructor(
 
     fun isRememberMeEnabled(): Boolean = authRepository.isRememberMeEnabled()
 
+    fun isDemoMode(): Boolean = authRepository.isDemoMode()
+
+    /**
+     * Enter offline demo mode — seeds the Room DB with mock data and signs
+     * in the demo user without any network access.
+     */
+    fun enterDemoMode() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+
+            try {
+                val result = authRepository.enterDemoMode()
+                result.fold(
+                    onSuccess = { user ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            isLoggedIn = true,
+                            currentUser = user
+                        )
+                    },
+                    onFailure = { exception ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = exception.message ?: "Demo mode failed to load"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Demo mode failed to load"
+                )
+            }
+        }
+    }
+
     fun signUp(signUpData: SignUpData) {
         if (!isValidSignUpInput(signUpData)) return
 

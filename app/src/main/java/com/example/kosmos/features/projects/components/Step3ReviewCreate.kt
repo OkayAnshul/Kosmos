@@ -121,38 +121,12 @@ fun Step3ReviewCreate(
 
         HorizontalDivider(color = ColorTokens.ReactTheme.border)
 
-        // Info Cards
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            // What happens next
-            InfoCard(
-                icon = Icons.Default.RocketLaunch,
-                title = "What Happens Next?",
-                description = "Your project will be created instantly. Team members will receive invites and can join once they accept.",
-                containerColor = ColorTokens.ReactTheme.primary.copy(alpha = 0.1f),
-                borderColor = ColorTokens.ReactTheme.primary.copy(alpha = 0.3f),
-                iconTint = ColorTokens.ReactTheme.primary
-            )
-
-            // Privacy info
-            InfoCard(
-                icon = Icons.Default.Lock,
-                title = "Project Privacy",
-                description = "This project is PRIVATE by default. Only you and invited members can access it. You can change visibility settings later.",
-                containerColor = WizardColors.amber.copy(alpha = 0.1f),
-                borderColor = WizardColors.amber.copy(alpha = 0.3f),
-                iconTint = WizardColors.amber
-            )
-
-            // Offline mode info (if applicable)
-            InfoCard(
-                icon = Icons.Default.CloudOff,
-                title = "Offline Mode",
-                description = "Project will be created locally and synced to cloud when you're back online.",
-                containerColor = ColorTokens.ReactTheme.card,
-                borderColor = ColorTokens.ReactTheme.border,
-                iconTint = ColorTokens.ReactTheme.mutedForeground
-            )
-        }
+        // Brief summary note
+        Text(
+            text = "Your project will be created instantly. Team members will receive invites.",
+            style = MaterialTheme.typography.bodySmall,
+            color = ColorTokens.ReactTheme.mutedForeground
+        )
 
         HorizontalDivider(color = ColorTokens.ReactTheme.border)
 

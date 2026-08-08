@@ -232,7 +232,11 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideHttpLoggingInterceptor(): HttpLoggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = if (BuildConfig.ENABLE_LOGGING) {
+            HttpLoggingInterceptor.Level.BODY
+        } else {
+            HttpLoggingInterceptor.Level.NONE
+        }
     }
 
     @Provides
@@ -297,8 +301,10 @@ object RepositoryModule {
         supabase: SupabaseClient,
         userDao: UserDao,
         sharedPreferences: android.content.SharedPreferences,
+        demoMode: com.example.kosmos.features.demo.DemoMode,
+        demoDataSeeder: com.example.kosmos.features.demo.DemoDataSeeder,
         @dagger.hilt.android.qualifiers.ApplicationContext context: android.content.Context
-    ): AuthRepository = AuthRepository(supabase, userDao, sharedPreferences, context)
+    ): AuthRepository = AuthRepository(supabase, userDao, sharedPreferences, demoMode, demoDataSeeder, context)
 
     @Provides
     @Singleton
@@ -308,8 +314,9 @@ object RepositoryModule {
         supabase: SupabaseClient,
         supabaseUserDataSource: com.example.kosmos.data.datasource.SupabaseUserDataSource,
         networkMonitor: NetworkMonitor,
-        syncQueueDao: com.example.kosmos.core.database.dao.SyncQueueDao
-    ): UserRepository = UserRepository(userDao, projectMemberDao, supabase, supabaseUserDataSource, networkMonitor, syncQueueDao)
+        syncQueueDao: com.example.kosmos.core.database.dao.SyncQueueDao,
+        demoMode: com.example.kosmos.features.demo.DemoMode
+    ): UserRepository = UserRepository(userDao, projectMemberDao, supabase, supabaseUserDataSource, networkMonitor, syncQueueDao, demoMode)
 
     @Provides
     @Singleton
@@ -341,7 +348,8 @@ object RepositoryModule {
         dispatchers: DispatcherProvider,
         projectInviteDao: com.example.kosmos.core.database.dao.ProjectInviteDao,
         supabaseProjectInviteDataSource: com.example.kosmos.data.datasource.SupabaseProjectInviteDataSource,
-        notificationService: com.example.kosmos.features.notifications.SupabaseNotificationService
+        notificationService: com.example.kosmos.features.notifications.SupabaseNotificationService,
+        demoMode: com.example.kosmos.features.demo.DemoMode
     ): ProjectRepository = ProjectRepository(
         database,
         projectDao,
@@ -355,7 +363,8 @@ object RepositoryModule {
         dispatchers,
         projectInviteDao,
         supabaseProjectInviteDataSource,
-        notificationService
+        notificationService,
+        demoMode
     )
 
     @Provides
